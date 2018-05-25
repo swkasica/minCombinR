@@ -1,0 +1,35 @@
+Package: gevitR
+Type: Package
+Title: What the Package Does (Title Case)
+Version: 0.1.0
+Author: Shannah Fisher
+Maintainer: The package maintainer <yourself@somewhere.net>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
+Imports:
+    ape,
+    assertthat,
+    circlize,
+    dplyr,
+    ggbeeswarm,
+    genoPlotR,
+    ggplot2,
+    ggraph,
+    ggtree,
+    grid,
+    gridExtra,
+    igraph,
+    jpeg,
+    leaflet,
+    likert,
+    magrittr,
+    pheatmap,
+    png,
+    tm,
+    RCircos,
+    reshape2,
+    VennDiagram
