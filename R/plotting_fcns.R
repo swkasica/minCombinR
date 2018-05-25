@@ -1,10 +1,9 @@
-#Helper function to check if the input string, chart_type, is one of the valid chart types possible
-check_valid_chart_type <- function(chart_type) {
-  all_chart_types <-  c("bar_chart", "stacked_bar_chart")
-  if (!(chart_type %in% all_chart_types)) {
-    stop(paste(chart_type, " is not a valid chart_type.
-               chart_type can be one of: ",
-               "'", paste(all_chart_types, collapse = "', '"), "'",
+#Helper function to check if the input string is one of the valid strings possible
+check_valid_str <- function(str_in, valid_options) {
+  if (!(str_in %in% valid_options)) {
+    stop(paste(str_in, " is not a valid input.
+               valid inputs include: ",
+               "'", paste(valid_options, collapse = "', '"), "'",
                sep = "")
          )
   }
@@ -17,7 +16,8 @@ check_valid_chart_type <- function(chart_type) {
 #'
 #'@export
 plot_chart <- function(chart_type, data, x_var, y_var, fill, group, value) {
-  check_valid_chart_type(chart_type)
+  all_chart_types <-  c("bar_chart", "stacked_bar_chart")
+  check_valid_str(chart_type, all_chart_types)
   switch(chart_type,
          #Common Statistical Chart Types
          "bar_chart" = plot_bar_chart(data, x_var, y_var),
@@ -28,4 +28,14 @@ plot_chart <- function(chart_type, data, x_var, y_var, fill, group, value) {
          "density_plot" = plot_density_chart(data, x_var, y_var),
          "scatter_plot" = plot_scatter(data, x_var, y_var),
          "pie_chart" = plot_pie_chart(data, group, value))
+}
+
+#'Combine multiple charts together
+#'
+#'@export
+combine_charts <- function(combo_type, chart1, facet_by) {
+  all_combo_types <- c("small_multiples")
+  check_valid_str(combo_type, all_combo_types)
+  switch(combo_type,
+         "small_multiples" = combine_small_multiples(chart1, facet_by))
 }
