@@ -38,7 +38,7 @@ plot_heatmap <- function(data, x, y, fill) {
     my_data <- data_as_mat %>% dplyr::select(-y)
   }
 
-  pheatmap::pheatmap(
+  hm <- pheatmap::pheatmap(
     mat               = my_data,
     cluster_rows      = FALSE,
     cluster_cols      = FALSE,
@@ -50,6 +50,7 @@ plot_heatmap <- function(data, x, y, fill) {
     fontsize_col      = 8,
     main              = "Heatmap Title"
   )
+  hm$gtable
 }
 
 # Divergent Bar chart

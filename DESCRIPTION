@@ -27,6 +27,7 @@ Imports:
     leaflet,
     likert,
     magrittr,
+    multipanelfigure,
     pheatmap,
     png,
     tm,
