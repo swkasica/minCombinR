@@ -15,7 +15,7 @@ check_valid_str <- function(str_in, valid_options) {
 #'See alternative documentation for examples
 #'
 #'@export
-plot_chart <- function(chart_type, data, x_var, y_var, fill, group, value) {
+plot_chart <- function(chart_type, data, x_var, y_var, facet_by, fill, group, value) {
   all_chart_types <-  c("bar",
                         "stacked_bar",
                         "divergent_bar",
@@ -27,14 +27,14 @@ plot_chart <- function(chart_type, data, x_var, y_var, fill, group, value) {
   check_valid_str(chart_type, all_chart_types)
   switch(chart_type,
          #Common Statistical Chart Types
-         "bar" = plot_bar_chart(data, x_var, y_var),
-         "stacked_bar" = plot_stacked_bar_chart(data, x_var, fill),
-         "divergent_bar" = plot_divergent_bar_chart(data),
-         "line" = plot_line_chart(data, x_var, y_var),
-         "heat_map" = plot_heatmap(data, x_var, y_var, fill),
-         "density" = plot_density_chart(data, x_var, y_var),
-         "scatter" = plot_scatter(data, x_var, y_var),
-         "pie" = plot_pie_chart(data, group, value))
+         "bar" = plot_bar_chart(data, x_var, y_var, facet_by),
+         "stacked_bar" = plot_stacked_bar_chart(data, x_var, fill, facet_by),
+         "divergent_bar" = plot_divergent_bar_chart(data, facet_by),
+         "line" = plot_line_chart(data, x_var, y_var, facet_by),
+         "heat_map" = plot_heatmap(data, x_var, y_var, fill, facet_by),
+         "density" = plot_density_chart(data, x_var, y_var, facet_by),
+         "scatter" = plot_scatter(data, x_var, y_var, facet_by),
+         "pie" = plot_pie_chart(data, group, value), facet_by)
 }
 
 #'Combine multiple charts together
@@ -43,10 +43,10 @@ plot_chart <- function(chart_type, data, x_var, y_var, fill, group, value) {
 #'ncol and nrow is for many types general
 #'
 #'@export
-combine_charts <- function(combo_type, charts, facet_by, ncols, nrows) {
+combine_charts <- function(combo_type, charts) {
   all_combo_types <- c("small_multiples", "many_types_general")
   check_valid_str(combo_type, all_combo_types)
   switch(combo_type,
-         "small_multiples" = combine_small_multiples(charts, facet_by), #Currently only works for ggplot2 charts
-         "many_types_general" = combine_many_types_general(charts, nrows = nrows, ncols = ncols))
+         "small_multiples" = combine_many_types_general(charts),
+         "many_types_general" = combine_many_types_general(charts))
 }
