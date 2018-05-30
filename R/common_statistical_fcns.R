@@ -70,7 +70,7 @@ plot_heatmap <- function(data, x, y, fill, facet_by){
     create_hm(data, fill)
   }
   else {
-    facet_dat <- lapply(unique(my_data[[facet_by]]), function(x) {print(filter(my_data, group == x))})
+    facet_dat <- lapply(unique(data[[facet_by]]), function(x) {print(filter(my_data, group == x))})
     all_plots <- lapply(facet_dat, FUN=create_hm)
     plot_many_types_general(all_plots)
   }
