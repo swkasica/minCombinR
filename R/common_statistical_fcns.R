@@ -41,19 +41,22 @@ plot_line_chart <- function(data, x, y, facet_by) {
 }
 
 # Heatmap
-# facet_plot is a helper function for plot_heatmap...
+# create_hm is a helper function for plot_heatmap...
 # can place in plot_heatmap function but would like to have it out for now otherwise it's too confusing
-create_hm <- function(x, fill) {
-  if (missing(fill)) {
-    data_as_df <- x %>% dplyr::group_by_("x_col", "y_col") %>% dplyr::tally()
-    data_as_mat <- reshape2::dcast(data_as_df, paste("y_col", "~", "x_col"), value.var="n")
+
+#@param x data frame for plotting
+#@param facet logical
+create_hm <- function(dat, x, y) {
+  if (!missing(x) && !missing(y)) {
+    data_as_df <- dat %>% dplyr::group_by_(x, y) %>% dplyr::tally()
+    data_as_mat <- reshape2::dcast(data_as_df, paste(y, "~", x), value.var="n")
     data_as_mat[is.na(data_as_mat)] <- 0
-    rownames(data_as_mat) <- data_as_mat$"y_col"
-    my_data <- data_as_mat %>% dplyr::select(-"y_col")
+    rownames(data_as_mat) <- data_as_mat[[y]]
+    dat <- data_as_mat %>% dplyr::select(-y)
   }
 
   hm <- pheatmap::pheatmap(
-    mat               = my_data,
+    mat               = dat,
     cluster_rows      = FALSE,
     cluster_cols      = FALSE,
     fontsize_row      = 8,
@@ -62,16 +65,27 @@ create_hm <- function(x, fill) {
   hm$gtable
 }
 
-plot_heatmap <- function(data, x, y, fill, facet_by){
-  if (!missing(fill) && !missing(facet_by)){
-    stop("The feature fill and facet_by has not been implemented !!!")
+#' Plot a heatmap
+#' @param data A data frame
+#' @param x optional categorical variable for x-axis if quantitative value attribute has not been calculated in data
+#' @param y optional categorical variable for y-axis. If given (along with x_col), will calculate the number of occurences with x_var.
+plot_heatmap <- function(data, x, y, facet_by){
+  if(missing(x) && !missing(y) || !missing(x) && missing(y)) {
+    stop("You must input BOTH or NEITHER a x_var and y_var.")
   }
+  if (missing(x) && !missing(facet_by)){
+    stop("The feature facet_by has not been implemented for a matrix input yet!!!")
+  }
+
   if(missing(facet_by)) {
-    create_hm(data, fill)
-  }
-  else {
-    facet_dat <- lapply(unique(data[[facet_by]]), function(x) {print(dplyr::filter(data, group == x))})
-    all_plots <- lapply(facet_dat, FUN=create_hm)
+    if(missing(x) && missing(y)) {
+      create_hm(data)
+    } else {
+      create_hm(data,x,y)
+    }
+  } else {
+    facet_dat <- lapply(unique(data[[facet_by]]), function(x) {dplyr::filter(data, group == x)})
+    all_plots <- lapply(facet_dat, FUN=create_hm, x, y)
     combine_many_types_general(all_plots)
   }
 }
@@ -103,17 +117,22 @@ plot_scatter <- function(data, x, y, facet_by) {
 }
 
 # Pie chart
-plot_pie_chart <- function(data, group, value, facet_by) {
-  gg_chart <- ggplot(data, aes(x="", y=value, fill=group)) +
+plot_pie_chart <- function(data, group, facet_by) {
+  data <- dplyr::group_by_(data, group)
+  data <- dplyr::summarise(data, total = n())
+  gg_chart <- ggplot(data, aes_string(x=shQuote(""), y="total", fill=group)) +
     geom_bar(width = 1, stat = "identity") +
     coord_polar("y", start=0)
+
   if (!missing(facet_by)) {
     gg_chart <- gg_chart + facet_wrap(facet_by)
   }
+
   gg_chart
 }
 
 # Venn Diagrams
+# TODO: change input to (data, category, scope) [see examples_obsandGenotype]
 plot_venn <- function(num_circles, area1, area2, area3, cross_area, overlap12, overlap23, overlap13, overlap123, category_names, facet_by) {
   if (num_circles == 2) {
     grid::grid.newpage()
@@ -128,6 +147,7 @@ plot_venn <- function(num_circles, area1, area2, area3, cross_area, overlap12, o
 }
 
 # Histogram
+#TODO: decide to remove or keep binwidth
 plot_histogram <- function(data, x, binwidth, facet_by) {
   if (missing(binwidth)) {
     gg_chart <- ggplot(data, aes_string(x)) + geom_histogram()

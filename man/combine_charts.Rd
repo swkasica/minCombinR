@@ -4,7 +4,7 @@
 \alias{combine_charts}
 \title{Combine multiple charts together}
 \usage{
-combine_charts(combo_type, charts, facet_by, ncols, nrows)
+combine_charts(combo_type, charts)
 }
 \description{
 facet_by is for small_multiples

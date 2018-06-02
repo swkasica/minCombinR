@@ -30,6 +30,7 @@ Imports:
     multipanelfigure,
     pheatmap,
     png,
+    timelineS,
     tm,
     RCircos,
     reshape2,

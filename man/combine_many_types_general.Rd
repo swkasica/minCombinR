@@ -4,7 +4,7 @@
 \alias{combine_many_types_general}
 \title{Combine charts with format: many types general}
 \usage{
-combine_many_types_general(charts, nrows, ncols)
+combine_many_types_general(charts, label = NULL)
 }
 \description{
 Combine charts with format: many types general

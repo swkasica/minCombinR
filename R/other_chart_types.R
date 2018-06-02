@@ -8,12 +8,14 @@ plot_table <- function(data) {
 
 #Category Stripe
 plot_category_stripe <- function(data, category) {
-  ggplot(data, aes(x=rownames(data), y="categories", fill=category)) +
+  ggplot(data, aes(x=rownames(data), y="categories", fill=shQuote(data[[category]]))) +
     geom_bin2d() +
-    theme(axis.title = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank(),
-          panel.background = element_blank())
+    theme(axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.text.x = element_blank(),
+          panel.background = element_blank()) +
+    guides(fill=guide_legend(title = category))
 }
 
 #Image

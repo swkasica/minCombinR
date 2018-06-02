@@ -4,7 +4,7 @@
 \alias{plot_chart}
 \title{Plot a basic chart type}
 \usage{
-plot_chart(chart_type, data, x_var, y_var, fill, group, value)
+plot_chart(chart_type, data, x_var, y_var, facet_by, fill, group, value)
 }
 \description{
 See alternative documentation for input and return values
