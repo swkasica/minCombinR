@@ -7,6 +7,7 @@ plot_node_link <- function(data, directed = FALSE) {
 }
 
 #Flow diagram
+# TODO: I don't like this package. Find a new one or a way to fix it.
 plot_chord_diagram <- function(data) {
   circlize::chordDiagram(data, transparency=0.5)
 }

@@ -132,7 +132,7 @@ plot_scatter <- function(data, x, y, facet_by) {
 
 # Pie chart
 # Note  - instead of group, consider just using x_var like other functions?
-plot_pie_chart <- function(data, group,facet_by) {
+plot_pie_chart <- function(data, group, facet_by) {
 
   #due to summarization step, need to group by the facet too in order for this to work
   #might also want to make these frequencies
