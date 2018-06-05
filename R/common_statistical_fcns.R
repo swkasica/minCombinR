@@ -21,9 +21,12 @@ plot_bar_chart <- function(data, x, y, facet_by) {
 }
 
 # Stacked Bar chart
+# Notes :
+# - Fill is the relevant variable, but confusing terminology / context
+# - set default colour scale to something else?
 plot_stacked_bar_chart <- function(data, x, fill, facet_by) {
   gg_chart <- ggplot(data, aes_string(x=x)) +
-    geom_bar(aes(fill=fill), position="fill")
+    geom_bar(aes_string(fill=fill), position="fill")
 
   if (!missing(facet_by)) {
     gg_chart <- gg_chart + facet_wrap(facet_by)
@@ -32,8 +35,14 @@ plot_stacked_bar_chart <- function(data, x, fill, facet_by) {
 }
 
 # Line Chart
-plot_line_chart <- function(data, x, y, facet_by) {
-  gg_chart <- ggplot(data, aes_string(x, y)) + geom_line()
+# Note  - added group features to resolve an error
+plot_line_chart <- function(data, x, y, group,facet_by) {
+  if(missing(group)){
+    gg_chart <- ggplot(data, aes_string(x, y,group=1)) + geom_line()
+  }else{
+    gg_chart <- ggplot(data, aes_string(x=x, y=y,group=group)) + geom_line(aes_string(colour = group))
+  }
+
   if (!missing(facet_by)) {
     gg_chart <- gg_chart + facet_wrap(facet_by)
   }
@@ -43,17 +52,20 @@ plot_line_chart <- function(data, x, y, facet_by) {
 # Heatmap
 # create_hm is a helper function for plot_heatmap...
 # can place in plot_heatmap function but would like to have it out for now otherwise it's too confusing
+# Note - would be good to discuss further, this is a note quite what most people need in a heatmap. Made modes
 
 #@param x data frame for plotting
 #@param facet logical
-create_hm <- function(dat, x, y) {
-  if (!missing(x) && !missing(y)) {
-    data_as_df <- dat %>% dplyr::group_by_(x, y) %>% dplyr::tally()
-    data_as_mat <- reshape2::dcast(data_as_df, paste(y, "~", x), value.var="n")
-    data_as_mat[is.na(data_as_mat)] <- 0
-    rownames(data_as_mat) <- data_as_mat[[y]]
-    dat <- data_as_mat %>% dplyr::select(-y)
-  }
+create_hm <- function(dat, x, y,fill) {
+  # if (!missing(x) && !missing(y)) {
+  #   data_as_df <- dat %>% dplyr::group_by_(x, y) %>% dplyr::tally()
+  #   data_as_mat <- reshape2::dcast(data_as_df, paste(y, "~", x), value.var="n")
+  #   data_as_mat[is.na(data_as_mat)] <- 0
+  #   rownames(data_as_mat) <- data_as_mat[[y]]
+  #   dat <- data_as_mat %>% dplyr::select(-y)
+  # }
+
+  tmp<-data.matrix(dat,rownames.force = TRUE)
 
   hm <- pheatmap::pheatmap(
     mat               = dat,
@@ -91,6 +103,8 @@ plot_heatmap <- function(data, x, y, facet_by){
 }
 
 # Divergent Bar chart
+# Note - bar chart might not be categorical in all cases, can also be a continous value
+#        consider expanding functionality.
 plot_divergent_bar_chart <- function(data, facet_by) {
   likert_data <- likert::likert(data)
   plot(likert_data)
@@ -117,15 +131,29 @@ plot_scatter <- function(data, x, y, facet_by) {
 }
 
 # Pie chart
-plot_pie_chart <- function(data, group, facet_by) {
-  data <- dplyr::group_by_(data, group)
-  data <- dplyr::summarise(data, total = n())
-  gg_chart <- ggplot(data, aes_string(x=shQuote(""), y="total", fill=group)) +
-    geom_bar(width = 1, stat = "identity") +
-    coord_polar("y", start=0)
+# Note  - instead of group, consider just using x_var like other functions?
+plot_pie_chart <- function(data, group,facet_by) {
 
+  #due to summarization step, need to group by the facet too in order for this to work
+  #might also want to make these frequencies
   if (!missing(facet_by)) {
-    gg_chart <- gg_chart + facet_wrap(facet_by)
+    data <- data %>%
+      count_(c(group,facet_by))%>%
+      group_by_(facet_by)%>%
+      mutate(freq = n/sum(n))
+
+    gg_chart <- ggplot(data, aes_string(x=shQuote(""), y="freq", fill=group)) +
+      geom_bar(width = 1, stat = "identity") +
+      coord_polar("y", start=0)+
+      facet_wrap(facet_by)
+  }else{
+    data <- data%>%
+      count_(group)%>%
+      mutate(freq = n/sum(n))
+
+    gg_chart <- ggplot(data, aes_string(x=shQuote(""), y="freq", fill=group)) +
+      geom_bar(width = 1, stat = "identity") +
+      coord_polar("y", start=0)
   }
 
   gg_chart

@@ -31,11 +31,11 @@ plot_chart <- function(chart_type, data, x_var, y_var, facet_by, fill, group, va
          "bar" = plot_bar_chart(data, x_var, y_var, facet_by),
          "stacked_bar" = plot_stacked_bar_chart(data, x_var, fill, facet_by),
          "divergent_bar" = plot_divergent_bar_chart(data, facet_by),
-         "line" = plot_line_chart(data, x_var, y_var, facet_by),
+         "line" = plot_line_chart(data, x_var, y_var, group,facet_by),
          "heat_map" = plot_heatmap(data, x_var, y_var, facet_by),
          "density" = plot_density_chart(data, x_var, y_var, facet_by),
          "scatter" = plot_scatter(data, x_var, y_var, facet_by),
-         "pie" = plot_pie_chart(data, group, facet_by),
+         "pie" = plot_pie_chart(data, group, facet_by)
 
          #Chart types to try some data sets
          )
