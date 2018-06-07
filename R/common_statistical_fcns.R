@@ -50,10 +50,12 @@ plot_line_chart <- function(data, x, y, group, facet_by) {
 }
 
 # Heatmap
-# Heatmap
 # In this function, I am assuming the data input is a matrix with numeric values in the cells and a column for facetting
 plot_heatmap <- function(data, facet_by) {
   create_hm <- function(dat, title) {
+    if (missing(title)) {
+      title = NA
+    }
     pheatmap::pheatmap(
       mat               = dat,
       cluster_rows      = FALSE,
@@ -135,6 +137,7 @@ plot_pie_chart <- function(data, group, facet_by) {
 
 # Venn Diagrams
 # TODO: change input to (data, category, scope) [see examples_obsandGenotype]
+# TODO: add facetting option
 plot_venn <- function(num_circles, area1, area2, area3, cross_area, overlap12, overlap23, overlap13, overlap123, category_names, facet_by) {
   if (num_circles == 2) {
     grid::grid.newpage()
