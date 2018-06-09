@@ -38,5 +38,5 @@ combine_small_multiples <- function(gg_chart, facet_var) {
 #' Combine charts with format: many_types_general
 combine_many_types_general <- function(chart_list) {
   lapply(chart_list, function(x) ggplotify::as.grob(x))
-  plot_grid(plotlist = chart_list)
+  cowplot::plot_grid(plotlist = chart_list)
 }

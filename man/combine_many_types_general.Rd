@@ -2,10 +2,10 @@
 % Please edit documentation in R/combinations.R
 \name{combine_many_types_general}
 \alias{combine_many_types_general}
-\title{Combine charts with format: many types general}
+\title{Combine charts with format: many_types_general}
 \usage{
-combine_many_types_general(charts, label = NULL)
+combine_many_types_general(chart_list)
 }
 \description{
-Combine charts with format: many types general
+Combine charts with format: many_types_general
 }

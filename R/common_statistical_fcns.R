@@ -56,14 +56,14 @@ plot_heatmap <- function(data, facet_by) {
     if (missing(title)) {
       title = NA
     }
-    pheatmap::pheatmap(
+    hm <- pheatmap::pheatmap(
       mat               = dat,
       cluster_rows      = FALSE,
       cluster_cols      = FALSE,
       fontsize_row      = 8,
       fontsize_col      = 8,
       main              = title)
-    # hm$gtable
+    hm$gtable
   }
 
   if (!missing(facet_by)) {
@@ -97,6 +97,7 @@ plot_density_chart <- function(data, x, y, facet_by) {
 }
 
 # Scatter plot
+# TODO: include geom_jitter?
 plot_scatter <- function(data, x, y, facet_by) {
   gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
     geom_point()
