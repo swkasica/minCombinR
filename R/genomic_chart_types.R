@@ -35,8 +35,8 @@ plot_clonal_tree <- function(nwk_file, node_groups) {
 }
 
 #Standard Genomic Map
-plot_linear_genome_map_from_df <- function(all_data, comparisons = NULL) {
-  genoPlotR::plot_gene_map(all_data, comparisons)
+plot_linear_genome_map_from_df <- function(data, comparisons = NULL) {
+  genoPlotR::plot_gene_map(data, comparisons)
 }
 
 #Radial Genomic Map

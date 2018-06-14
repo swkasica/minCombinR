@@ -4,12 +4,15 @@
 \alias{plot_simple}
 \title{Plot a simple chart type}
 \usage{
-plot_simple(chart_type, data, x_var, y_var, facet_by, fill, group, value)
+plot_simple(chart_type, data, x_var = NA, y_var = NA, fill = NA,
+  group = NA, title = NA, breaks = NA)
 }
 \description{
-This function will create a single chart object that can be passed into render_charts() to render.
+This function will create a single chart object that can be passed into layout_charts() to layout.
 }
 \details{
 See alternative documentation for input and return values
 See alternative documentation for examples
+
+TODO: currently, the user must name each of the args that are optional if they don't have them in the right order
 }

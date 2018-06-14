@@ -19,15 +19,29 @@ plot_category_stripe <- function(data, category) {
 }
 
 #Image
-plot_jpeg_image <- function(sourcejpeg) {
-  jpeg::readJPEG(source=sourcejpeg)
+
+plot_image <- function(path, ...) {
+  img_type <- strsplit(path, '[.]')[[1]]
+  if (img_type == "jpg" || img_type == "jpeg") {
+    jpeg::readJPEG(source=sourcejpeg, ...)
+  }
+  else if (img_type == "png") {
+    png::readPNG(source=sourcepng, ...)
+  }
+  else if (img_type == "pdf") {
+    tm::readPDF(source=sourcepdf, ...)
+  }
 }
 
-plot_png_image <- function(sourcepng) {
-  png::readPNG(source=sourcepng)
-}
-
-plot_pdf_image <- function(sourcepdf) {
-  tm::readPDF(source=sourcepdf)
-}
+# plot_jpeg_image <- function(sourcejpeg) {
+#   jpeg::readJPEG(source=sourcejpeg)
+# }
+#
+# plot_png_image <- function(sourcepng) {
+#   png::readPNG(source=sourcepng)
+# }
+#
+# plot_pdf_image <- function(sourcepdf) {
+#   tm::readPDF(source=sourcepdf)
+# }
 

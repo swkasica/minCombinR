@@ -6,6 +6,9 @@
 \usage{
 plot_many_types_general(...)
 }
+\arguments{
+\item{...}{Any number of lists of arguments to generate a plot}
+}
 \description{
 Many types general plot
 }

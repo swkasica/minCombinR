@@ -7,12 +7,15 @@ plot_streamgraph <- function(data, key = "key", value = "value", date = "date") 
 }
 
 #Annotated Timeline
-plot_timeline <- function(data) {
+plot_timeline <- function(data, stacked=FALSE, start, end, names, phase) {
+  if(stacked) {
+    timelineS::timelineG(data, start = start, end = end, names = names, phase = phase)
+  }
   timelineS::timelineS(data)
 }
 
 #Stacked Timeline
 #TODO: Obtain data to inform decision on input values
-plot_stacked_timeline <- function(data, start, end, names, phase) {
-  timelineG(data, start = start, end = end, names = names, phase = phase)
-}
+# plot_stacked_timeline <- function(data, start, end, names, phase) {
+#   timelineS::timelineG(data, start = start, end = end, names = names, phase = phase)
+# }

@@ -35,5 +35,6 @@ Imports:
     timelineS,
     tm,
     RCircos,
+    RColorBrewer,
     reshape2,
     VennDiagram
