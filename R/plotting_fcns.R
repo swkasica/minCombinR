@@ -19,11 +19,15 @@ check_valid_str <- function(str_in, valid_options) {
 #'TODO: currently, the user must name each of the args that are optional if they don't have them in the right order
 #'
 #'@export
-plot_simple <- function(chart_type, data, x_var=NA, y_var=NA, fill=NA, group=NA, title=NA, breaks=NA,
-                        path, category, cluster_var, comparisons) {
+plot_simple <- function(chart_type, data, x=NA, y=NA, stack_by=NA, fill=NA, group=NA, title=NA, breaks=NA,
+                        path, category, cluster_var, comparisons,
+                        #FOR COMPOSITE
+                        flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
+                        #FOR MANY TYPES LINKED
+                        colour_var=NA, colour_scale=NA) {
   #TODO: alphabetize?
   all_chart_types <-  c(#common statistical
-                        "bar", "stacked_bar","divergent_bar", "line",
+                        "bar", "divergent_bar", "line", #"stack_by_bar",
                         "heat_map", "density", "scatter", "pie", "venn",
                         "histogram","pdf", "boxplot","violin", "swarm",
                         #relational
@@ -40,28 +44,29 @@ plot_simple <- function(chart_type, data, x_var=NA, y_var=NA, fill=NA, group=NA,
                         )
   check_valid_str(chart_type, all_chart_types)
   switch(chart_type,
-         #Common Statistical Chart Types
-         "bar" = plot_bar_chart(data, x_var, y_var, title),
-         "stacked_bar" = plot_stacked_bar_chart(data, x_var, fill, title),
-         "divergent_bar" = plot_divergent_bar_chart(data, title),
-         "line" = plot_line_chart(data, x_var, y_var, group, title),
-         "heat_map" = plot_heatmap(data, title, breaks),
-         "density" = plot_density_chart(data, x_var, y_var, title),
-         "scatter" = plot_scatter(data, x_var, y_var, title),
-         "pie" = plot_pie_chart(data, group, title),
-         "histogram" = plot_histogram(data, x_var, binwidth, title),
-         "pdf" = plot_pdf(data, x_var, title),
-         "boxplot" = plot_boxplot(data, x_var, y_var, title),
-         "violin" = plot_violinplot(data, x_var, y_var, title),
-         "swarm" = plot_swarm_plot(data, x_var, y_var, title),
+         #Common Stat Chart Types
+         "bar" = plot_bar_chart(data, x, y, stack_by, title, flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale),
+         # "stacked_bar" = plot_stacked_bar_chart(data, x, fill, title, colour_var, colour_scale),
+         "divergent_bar" = plot_divergent_bar_chart(data, title, colour_var, colour_scale),
+         "line" = plot_line_chart(data, x, y, group, title, colour_var, colour_scale),
+         "heat_map" = plot_heatmap(data, title, breaks, colour_var, colour_scale),
+         "density" = plot_density_chart(data, x, y, title, colour_var, colour_scale),
+         "scatter" = plot_scatter(data, x, y, title, colour_var, colour_scale),
+         "pie" = plot_pie_chart(data, group, title, colour_var, colour_scale),
+         "histogram" = plot_histogram(data, x, binwidth, title, colour_var, colour_scale),
+         "pdf" = plot_pdf(data, x, title, colour_var, colour_scale),
+         "boxplot" = plot_boxplot(data, x, y, title, flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale),
+         "violin" = plot_violinplot(data, x, y, title, colour_var, colour_scale),
+         "swarm" = plot_swarm_plot(data, x, y, title, colour_var, colour_scale),
 
+        #TODO: many types linked and composite for non-common_stat_chart_types (and non ggplot2)
          #Relational
          "node_link" = plot_node_link(data, directed),
          "flow_diagram" = plot_flow_diagram(data), #TODO
 
          #Temporal
          #"stream_graph" = plot_streamgraph(data, key, value, date), #TODO: change param names
-         #"timeline" = plot_timeline(data, stacked, start, end, names, phase), #TODO: change input for stacked
+         #"timeline" = plot_timeline(data, stack_by, start, end, names, phase), #TODO: change input for stack_by
 
          #Spatial
          #"geographic_map" = plot_geographic_map(lat, long), #TODO: change input (see examples_obsandGenotype)
@@ -90,23 +95,24 @@ plot_simple <- function(chart_type, data, x_var=NA, y_var=NA, fill=NA, group=NA,
 #'@export
 plot_many_types_general <- function(...) {
   args_list <- list(...)
-  lapply(args_list, function(x) {do.call(plot_simple, x)})
+  all_plots <- lapply(args_list, function(x) {do.call(plot_simple, x)})
+  layout_plots(all_plots)
 }
 
 #' Small multiples
 #'
 #'@param chart_type A string indicating type of chart to generate. Options are:
 #'@param data A data frame
-#'@param x_var optional for: ... required for: ...
-#'@param y_var optional for: ... required for: ...
+#'@param x optional for: ... required for: ...
+#'@param y optional for: ... required for: ...
 #'@param fill optional: ...
 #'@param group optional: ... not applciable for : ...
 #'@param facet_by
 #'
 #'@export
-plot_small_multiples <- function(chart_type, data, facet_by, x_var=NA, y_var=NA, fill=NA, group=NA) {
+plot_small_multiples <- function(chart_type, data, facet_by, x=NA, y=NA, fill=NA, group=NA) {
 
-  #TODO: DISCUSS IF SAME X_AXIS AND Y_AXIS SCALES IS NEEDED
+  #TODO: DISCUSS IF SAME X_AXIS AND Y_AXIS SCALES IS NEEDED... Maybe just continuous values?
   #TODO: decide if input is a list of args or the args as implemented currently
   #TODO: pre-calculate breaks for heatmap legend
 
@@ -116,14 +122,84 @@ plot_small_multiples <- function(chart_type, data, facet_by, x_var=NA, y_var=NA,
 
   #Create a list of plots for each of the facet_dat subsets
   all_plots <- lapply(facet_dat,
-                      function(x) gevitR::plot_simple(chart_type = chart_type,
-                                                      data = select(x, -facet_by),
-                                                      x_var = x_var,
-                                                      y_var = y_var,
-                                                      fill = fill,
-                                                      group = group,
-                                                      breaks = seq(0, 9, by = 1)))
-  all_plots
+                      function(sub_dat) gevitR::plot_simple(chart_type = chart_type,
+                                                            data = select(sub_dat, -facet_by),
+                                                            x = x,
+                                                            y = y,
+                                                            fill = fill,
+                                                            group = group,
+                                                            breaks = seq(0, 9, by = 1)))
+  layout_plots(all_plots)
+}
+
+#TODO: Currently assuming data is coming from the exact same source
+# : AKA: this means no reordering or range adjustments required for x-axis
+#TODO: move the charts closer together somehow
+#TODO: handle reordering
+#TODO: handle range adjustments (discrete and continuous)
+#TODO: make rotate and alignment(?...) computed rather than specified
+#TODO: allow more than 2 charts
+#TODO: currently only works with ggplots !!! change for each chart_type that isn't derived from ggplot2
+#TODO: consider case where the geoms are in the exact same chart (ex. hist and line together)
+#'Composite
+#'
+plot_composite <- function(plot1_args, plot2_args, alignment = 'v', rotate1 = F, rotate2 = F) {
+  if (alignment == 'v') {
+    plot1 <- do.call(gevitR::plot_simple, c(plot1_args, flip_coord=rotate1, rm_y_labels=F, rm_x_labels=T))
+    plot2 <- do.call(gevitR::plot_simple, c(plot2_args, flip_coord=rotate2))
+    cowplot::plot_grid(plot1, plot2, ncol = 1, align = "hv")
+  } else if (alignment == 'h') {
+    plot1 <- do.call(gevitR::plot_simple, c(plot1_args, flip_coord=rotate1))
+    plot2 <- do.call(gevitR::plot_simple, c(plot2_args, flip_coord=rotate2, rm_y_labels=T, rm_x_labels=F))
+    cowplot::plot_grid(plot1, plot2, nrow = 1, align = "hv")
+  } else {
+    stop('Alignment can be one of "h" (horizontal) and "v" (vertical)')
+  }
+
+  #This fixes the distance between the plots problem but isn't using cowplot (uses grid and ggplotGrob) which might not work for non-ggplots.
+  # library(grid)
+  # grid.newpage()
+  # grid.draw(rbind(ggplotGrob(simple_bar), ggplotGrob(simple_box), size = "last"))
+}
+
+#TODO: allow for linking in other ways than color
+#TODO: decide on color palette for different types of data (discrete and continuous)
+#TODO: use common color scale legend
+#TODO: add manual colour options to non-statistical and non-ggplot basic charts
+#'Many Types Linked
+#'
+plot_many_linked <- function(link_var, link_by="colour", ...) {
+  charts <- list(...)
+  if (link_by == "colour" || link_by == "color") {
+    colour_to_var_link <- data.frame()
+    lapply(charts, function(chart) {
+      ref_data <- get(as.character(chart$data)) #TODO: some sort of try catch here to make sure the linking variable can be found (for each chart)
+      linking_colours <- unique(ref_data[[link_var]])
+      if (length(linking_colours) > length(colour_to_var_link)) {
+        colour_to_var_link <<- linking_colours
+      }
+
+    })
+
+    get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
+    colours <- get_palette(length(colour_to_var_link))
+    names(colours) <- colour_to_var_link
+
+    print(charts)
+    print(charts[[1]])
+    print(charts[[1]]$data)
+    #Convert numeric link_var to discrete
+    tmp_dat <- get(as.character(charts[[1]]$data))
+    if (class(tmp_dat[[link_var]]) == "numeric") {link_var = paste0("factor(", link_var, ")")}
+
+    plots <- lapply(charts, function(chart) {
+      print(link_var)
+      print(class(link_var))
+      print(chart$data)
+      do.call(plot_simple, args = c(chart, list(colour_var = link_var, colour_scale = colours)))
+    })
+    gevitR::layout_plots(plots)
+  }
 }
 
 #'Layout plots
