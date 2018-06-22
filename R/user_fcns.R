@@ -1,13 +1,16 @@
 #General TODO's
 # Note: more specific TODO's are on appropriate functions
 #TODO: Allow the user to override the defaults (something with ..., although not sure how to do it yet)
+#TODO: Allow the user to
+#TODO: decide on standard input when using factor(var)... do we include the functionality or does the user have to
+# -- currently the user has to do that for variables like group in line charts, but not for link_var in many types linekd
 
 #' Specify requirements to make a base chart
 #'
 #' @param chart_type
 #'
 #' @export
-specify_base <- function(chart_type, data, x, y, ...) {
+specify_base <- function(chart_type, data, x, y, z, ...) {
   all_chart_types <-  c(#common statistical
     "bar", "divergent_bar", "line", #"stacked_bar",
     "heat_map", "density", "scatter", "pie", "venn",
@@ -75,7 +78,7 @@ plot <- function(specs) {
                                function(x) {
                                  specs[[x]][1] == "specify_base()" && !is.na(as.list(specs[[x]][1]))
                                  })]
-
+    #View multiple plots in a single view
     if (specs$combo_type == "small_multiple") {
       base_specs <- as.list(specs$'base_1')
       base_specs[[1]] <- NULL
@@ -95,7 +98,6 @@ plot <- function(specs) {
         x[[1]] <- NULL
         as.list(x)
       })
-      print(specs$link_var)
       return(do.call(plot_many_linked, c(link_var = specs$link_var, link_by = specs$link_by, base_specs)))
     }
 

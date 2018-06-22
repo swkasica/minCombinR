@@ -10,6 +10,7 @@ NULL
 
 #Standard Bar Chart or Stacked Bar Chart (using stack_by)
 #TODO: Do we want option for grouping bars?
+#TODO: Do we want position="fill" or "stacked" stacked bar chart?
 #NOTE: I combined this with plot_stacked_bar chart (AP can use stack_by if they want to make a stacked bar chart)
 plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
                            flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
@@ -58,6 +59,7 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
   }
 
   if(!is.na(colour_scale)[1]) {
+
     gg_chart <- gg_chart %+% aes_string(fill = colour_var)
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
@@ -98,7 +100,9 @@ plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scal
   }
 
   if(!is.na(colour_scale)[1]) {
+    #Add colour variable
     gg_chart <- gg_chart %+% aes_string(colour = colour_var)
+    #Scale colour variable
     gg_chart <- gg_chart +
       scale_colour_manual(name = colour_var, values = colour_scale)
   }
@@ -108,33 +112,45 @@ plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scal
 
 # Heatmap
 # In this function, I am assuming the data input is a matrix with numeric values in the cells and a column for facetting
-#TODO: shorten the if statements for breaks (mostly using breaks for small multiples)
-plot_heatmap <- function(data, title, breaks=NA, colour_var=NA, colour_scale=NA) {
-  print(breaks)
-  if (is.na(breaks)) {
-    hm <- pheatmap::pheatmap(
-      mat               = data,
-      cluster_rows      = FALSE,
-      cluster_cols      = FALSE,
-      fontsize_row      = 8,
-      fontsize_col      = 8,
-      main              = title)
-    return(hm$gtable)
-  } else {
-    hm <- pheatmap::pheatmap(
-      mat               = data,
-      cluster_rows      = FALSE,
-      cluster_cols      = FALSE,
-      fontsize_row      = 8,
-      fontsize_col      = 8,
-      breaks            = breaks,
-      color = colorRampPalette(rev(RColorBrewer::brewer.pal(n = 7, name = "RdYlBu")))(length(breaks)),
-      main              = title)
-    return(hm$gtable)
+#TODO: Discuss what to do for NA values (will just not have a tile right now.)
+plot_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA) {
+    gg_chart <- ggplot(data, aes_string(x, y, fill = z)) +
+      geom_tile()
+
+  #To scale colour (called from many_types_linked and small_multiple)
+  if (!is.na(colour_scale)[1]) {
+    if (colour_var != z && !(is.na(colour_var))) {
+      warning("z is masking link_var because link_var and z have to be the same for a heat_map when linking with colour")
+    }
+    get_palette <- colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))
+    colr_pal <- get_palette(abs(diff(colour_scale)))
+    gg_chart <- gg_chart + scale_fill_gradientn(colours = colr_pal, limits = colour_scale)
   }
 
-    # all_plots <- lapply(facet_dat,
-    #                     function(x) create_hm(select(x, -one_of(facet_by)), unique(x[[facet_by]])))
+  gg_chart
+
+  #Keeping this here in case... for now will use ggplot to be consistent.
+  # if (is.na(breaks)) {
+  #   hm <- pheatmap::pheatmap(
+  #     mat               = data,
+  #     cluster_rows      = FALSE,
+  #     cluster_cols      = FALSE,
+  #     fontsize_row      = 8,
+  #     fontsize_col      = 8,
+  #     main              = title)
+  #   return(hm$gtable)
+  # } else {
+  #   hm <- pheatmap::pheatmap(
+  #     mat               = data,
+  #     cluster_rows      = FALSE,
+  #     cluster_cols      = FALSE,
+  #     fontsize_row      = 8,
+  #     fontsize_col      = 8,
+  #     color = colorRampPalette(rev(RColorBrewer::brewer.pal(n = 7, name = "RdYlBu")))(length(breaks)),
+  #     breaks            = breaks,
+  #     main              = title)
+  #   return(hm$gtable)
+  # }
 
 }
 
@@ -149,6 +165,8 @@ plot_divergent_bar_chart <- function(data, title, colour_var=NA, colour_scale=NA
 }
 
 # Density chart
+#TODO: Test with real dataset to see what you want this to do
+#TODO: allow many_linked with colour_scale and colour_var depending on what you decide with dataset
 plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA) {
   gg_chart <- ggplot(data, aes_string(x=x, y=y) ) +
     stat_density_2d(aes(fill = ..level..), geom = "polygon")
@@ -160,7 +178,7 @@ plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA
 
   if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
-      scale_fill_manual(name = colour_var, values = colour_scale)
+      scale_fill_manual(name = colour_var, values = ..level..)
   }
 
   gg_chart
@@ -176,37 +194,38 @@ plot_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA) {
     gg_chart <- gg_chart + ggtitle(title)
   }
 
-
   if(!is.na(colour_scale)[1]) {
+    #Add colour variable
+    gg_chart <- gg_chart %+% aes_string(colour = colour_var)
+    #Scale colour variable
     gg_chart <- gg_chart +
-      scale_fill_manual(name = colour_var, values = colour_scale)
+      scale_colour_manual(name = colour_var, values = colour_scale)
   }
 
   gg_chart
 }
 
 # Pie chart
-# Note  - instead of group, consider just using x_var like other functions?
-plot_pie_chart <- function(data, group, title, colour_var=NA, colour_scale=NA) {
+plot_pie_chart <- function(data, x, title, colour_var=NA, colour_scale=NA) {
 
   #due to summarization step, need to group by the facet too in order for this to work
   #might also want to make these frequencies
   # if (!is.na(facet_by)) {
   #   data <- data %>%
-  #     count_(c(group,facet_by))%>%
+  #     count_(c(x,facet_by))%>%
   #     group_by_(facet_by)%>%
   #     mutate(freq = n/sum(n))
   #
-  #   gg_chart <- ggplot(data, aes_string(x=shQuote(""), y="freq", fill=group)) +
+  #   gg_chart <- ggplot(data, aes_string(x=shQuote(""), y="freq", fill=x)) +
   #     geom_bar(width = 1, stat = "identity") +
   #     coord_polar("y", start=0)+
   #     facet_wrap(facet_by)
   # }else{
-  data <- data%>%
-    count_(group)%>%
+  data <- data %>%
+    count_(x) %>%
     mutate(freq = n/sum(n))
 
-  gg_chart <- ggplot(data, aes_string(x=shQuote(""), y="freq", fill=group)) +
+  gg_chart <- ggplot(data, aes_string(x=shQuote(""), y="freq", fill=x)) +
     geom_bar(width = 1, stat = "identity") +
     coord_polar("y", start=0)
   # }
@@ -214,7 +233,6 @@ plot_pie_chart <- function(data, group, title, colour_var=NA, colour_scale=NA) {
   if(!is.na(title)) {
     gg_chart <- gg_chart + ggtitle(title)
   }
-
 
   if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
@@ -241,14 +259,9 @@ plot_venn <- function(num_circles, area1, area2, area3, cross_area, overlap12, o
 }
 
 # Histogram
-#TODO: decide to remove or keep binwidth
-plot_histogram <- function(data, x, binwidth, title, colour_var=NA, colour_scale=NA) {
-  if (is.na(binwidth)) {
-    gg_chart <- ggplot(data, aes_string(x)) + geom_histogram()
-  }
-  else {
-    gg_chart <- ggplot(data, aes_string(x)) + geom_histogram(binwidth = binwidth)
-  }
+#TODO: decide to add binwidth... should probably
+plot_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA) {
+  gg_chart <- ggplot(data, aes_string(x)) + geom_histogram()
 
   if(!is.na(title)) {
     gg_chart <- gg_chart + ggtitle(title)

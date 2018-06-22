@@ -9,6 +9,54 @@ check_valid_str <- function(str_in, valid_options) {
   }
 }
 
+#This is used for many_types_linked and small_multiple (which is why I have it as a helper function)
+get_colour_scales <- function(specified_charts, colour_var) {
+
+  #TODO: To see the types_of_variables_for_charts go to: Dropbox\gevitR\scratch\shannah\Organization
+  #Gets the limits (colour_scale) for a continuous colour_var
+  if(specified_charts[[1]]$chart_type == "heat_map") {
+    min_lim <- sapply(specified_charts, function(chart) {
+      ref_data <- get(as.character(chart$data)) #TODO: some sort of try catch here to make sure the linking variable can be found (for each chart)
+      unique_link_var <- unique(ref_data[[colour_var]])
+      min(unique_link_var)
+    })
+
+    max_lim <- sapply(specified_charts, function(chart) {
+      ref_data <- get(as.character(chart$data)) #TODO: some sort of try catch here to make sure the linking variable can be found (for each chart)
+      unique_link_var <- unique(ref_data[[colour_var]])
+      max(unique_link_var)
+    })
+
+    min_lim <- min(min_lim)
+    max_lim <- max(max_lim)
+    colour_scale <- c(min_lim, max_lim)
+  }
+  #Gets the colour-var-link (colour_scale) for a discrete colour_var
+  else {
+    print("!!!")
+    colour_to_var_link <- data.frame()
+    #TODO: instead of the longest, make sure you get ALL of the possible values (could be the case that the longest doesn't include everything!!!)
+    lapply(specified_charts, function(chart) {
+      ref_data <- get(as.character(chart$data)) #TODO: some sort of try catch here to make sure the linking variable can be found (for each chart)
+      unique_link_var <- unique(ref_data[[colour_var]])
+      if (length(unique_link_var) > length(colour_to_var_link)) {
+        colour_to_var_link <<- unique_link_var
+      }
+    })
+    #Gets the colour match for a discrete colour_var
+    get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
+    colour_scale <- get_palette(length(colour_to_var_link))
+    names(colour_scale) <- colour_to_var_link
+
+    #Convert numeric colour_var to discrete
+    tmp_dat <- get(as.character(specified_charts[[1]]$data))
+    if (class(tmp_dat[[colour_var]]) == "numeric") {
+      colour_var <- paste0("factor(", colour_var, ")")
+    }
+  }
+  return(list(colour_var, colour_scale))
+}
+
 #'Plot a simple chart type
 #'
 #'This function will create a single chart object that can be passed into layout_charts() to layout.
@@ -19,7 +67,7 @@ check_valid_str <- function(str_in, valid_options) {
 #'TODO: currently, the user must name each of the args that are optional if they don't have them in the right order
 #'
 #'@export
-plot_simple <- function(chart_type, data, x=NA, y=NA, stack_by=NA, fill=NA, group=NA, title=NA, breaks=NA,
+plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA, group=NA, title=NA,
                         path, category, cluster_var, comparisons,
                         #FOR COMPOSITE
                         flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
@@ -49,11 +97,11 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, stack_by=NA, fill=NA, grou
          # "stacked_bar" = plot_stacked_bar_chart(data, x, fill, title, colour_var, colour_scale),
          "divergent_bar" = plot_divergent_bar_chart(data, title, colour_var, colour_scale),
          "line" = plot_line_chart(data, x, y, group, title, colour_var, colour_scale),
-         "heat_map" = plot_heatmap(data, title, breaks, colour_var, colour_scale),
+         "heat_map" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale),
          "density" = plot_density_chart(data, x, y, title, colour_var, colour_scale),
          "scatter" = plot_scatter(data, x, y, title, colour_var, colour_scale),
-         "pie" = plot_pie_chart(data, group, title, colour_var, colour_scale),
-         "histogram" = plot_histogram(data, x, binwidth, title, colour_var, colour_scale),
+         "pie" = plot_pie_chart(data, x, title, colour_var, colour_scale),
+         "histogram" = plot_histogram(data, x, title, colour_var, colour_scale),
          "pdf" = plot_pdf(data, x, title, colour_var, colour_scale),
          "boxplot" = plot_boxplot(data, x, y, title, flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale),
          "violin" = plot_violinplot(data, x, y, title, colour_var, colour_scale),
@@ -99,6 +147,9 @@ plot_many_types_general <- function(...) {
   layout_plots(all_plots)
 }
 
+#TODO: DISCUSS IF SAME X_AXIS AND Y_AXIS SCALES IS NEEDED... Maybe just continuous value
+#TODO: If there is colour, make sure the colour_scale is the same for each of the facets.s?
+#TODO: decide if input is a list of args or the args as implemented currently
 #' Small multiples
 #'
 #'@param chart_type A string indicating type of chart to generate. Options are:
@@ -110,15 +161,12 @@ plot_many_types_general <- function(...) {
 #'@param facet_by
 #'
 #'@export
-plot_small_multiples <- function(chart_type, data, facet_by, x=NA, y=NA, fill=NA, group=NA) {
-
-  #TODO: DISCUSS IF SAME X_AXIS AND Y_AXIS SCALES IS NEEDED... Maybe just continuous values?
-  #TODO: decide if input is a list of args or the args as implemented currently
-  #TODO: pre-calculate breaks for heatmap legend
+plot_small_multiples <- function(chart_type, data, facet_by, x=NA, y=NA, z=NA, fill=NA, group=NA) {
 
   #Create a list of data subsets according to the facetting variable
   facet_dat <- lapply(unique(data[[facet_by]]),
                       function(x) {dplyr::filter_(data, paste(facet_by, "==", quote(x)))})
+
 
   #Create a list of plots for each of the facet_dat subsets
   all_plots <- lapply(facet_dat,
@@ -126,9 +174,9 @@ plot_small_multiples <- function(chart_type, data, facet_by, x=NA, y=NA, fill=NA
                                                             data = select(sub_dat, -facet_by),
                                                             x = x,
                                                             y = y,
+                                                            z = z,
                                                             fill = fill,
-                                                            group = group,
-                                                            breaks = seq(0, 9, by = 1)))
+                                                            group = group))
   layout_plots(all_plots)
 }
 
@@ -169,34 +217,12 @@ plot_composite <- function(plot1_args, plot2_args, alignment = 'v', rotate1 = F,
 #'Many Types Linked
 #'
 plot_many_linked <- function(link_var, link_by="colour", ...) {
-  charts <- list(...)
+  specified_charts <- list(...)
   if (link_by == "colour" || link_by == "color") {
-    colour_to_var_link <- data.frame()
-    lapply(charts, function(chart) {
-      ref_data <- get(as.character(chart$data)) #TODO: some sort of try catch here to make sure the linking variable can be found (for each chart)
-      linking_colours <- unique(ref_data[[link_var]])
-      if (length(linking_colours) > length(colour_to_var_link)) {
-        colour_to_var_link <<- linking_colours
-      }
+    colour_info <- get_colour_scales(specified_charts, link_var)
 
-    })
-
-    get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
-    colours <- get_palette(length(colour_to_var_link))
-    names(colours) <- colour_to_var_link
-
-    print(charts)
-    print(charts[[1]])
-    print(charts[[1]]$data)
-    #Convert numeric link_var to discrete
-    tmp_dat <- get(as.character(charts[[1]]$data))
-    if (class(tmp_dat[[link_var]]) == "numeric") {link_var = paste0("factor(", link_var, ")")}
-
-    plots <- lapply(charts, function(chart) {
-      print(link_var)
-      print(class(link_var))
-      print(chart$data)
-      do.call(plot_simple, args = c(chart, list(colour_var = link_var, colour_scale = colours)))
+    plots <- lapply(specified_charts, function(chart) {
+      do.call(plot_simple, args = c(chart, list(colour_var = colour_info[[1]], colour_scale = colour_info[[2]])))
     })
     gevitR::layout_plots(plots)
   }
@@ -209,11 +235,11 @@ plot_many_linked <- function(link_var, link_by="colour", ...) {
 #'@export
 layout_plots <- function(chart_list) {
 
-  chart_list <- lapply(chart_list, function(x) {
-    if('gg' %in% class(x)) {
-      ggplotify::as.grob(x)
+  chart_list <- lapply(chart_list, function(chart) {
+    if('gg' %in% class(chart)) {
+      ggplotify::as.grob(chart)
     }else {
-      ggplotify::as.grob(x)
+      ggplotify::as.grob(chart)
     }
   })
   cowplot::plot_grid(plotlist = chart_list, labels = "AUTO")
