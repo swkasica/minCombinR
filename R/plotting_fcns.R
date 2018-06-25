@@ -33,7 +33,6 @@ get_colour_scales <- function(specified_charts, colour_var) {
   }
   #Gets the colour-var-link (colour_scale) for a discrete colour_var
   else {
-    print("!!!")
     colour_to_var_link <- data.frame()
     #TODO: instead of the longest, make sure you get ALL of the possible values (could be the case that the longest doesn't include everything!!!)
     lapply(specified_charts, function(chart) {
@@ -76,8 +75,8 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
   #TODO: alphabetize?
   all_chart_types <-  c(#common statistical
                         "bar", "divergent_bar", "line", #"stack_by_bar",
-                        "heat_map", "density", "scatter", "pie", "venn",
-                        "histogram","pdf", "boxplot","violin", "swarm",
+                        "heat_map", "heatmap", "density", "scatter", "pie", "venn",
+                        "histogram","pdf", "boxplot","box_plot","violin", "swarm",
                         #relational
                         "node_link", "flow_diagram",
                         #temporal
@@ -98,12 +97,14 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
          "divergent_bar" = plot_divergent_bar_chart(data, title, colour_var, colour_scale),
          "line" = plot_line_chart(data, x, y, group, title, colour_var, colour_scale),
          "heat_map" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale),
+         "heatmap" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale),
          "density" = plot_density_chart(data, x, y, title, colour_var, colour_scale),
          "scatter" = plot_scatter(data, x, y, title, colour_var, colour_scale),
          "pie" = plot_pie_chart(data, x, title, colour_var, colour_scale),
          "histogram" = plot_histogram(data, x, title, colour_var, colour_scale),
          "pdf" = plot_pdf(data, x, title, colour_var, colour_scale),
          "boxplot" = plot_boxplot(data, x, y, title, flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale),
+         "box_plot" = plot_boxplot(data, x, y, title, flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale),
          "violin" = plot_violinplot(data, x, y, title, colour_var, colour_scale),
          "swarm" = plot_swarm_plot(data, x, y, title, colour_var, colour_scale),
 
@@ -210,10 +211,10 @@ plot_composite <- function(plot1_args, plot2_args, alignment = 'v', rotate1 = F,
   # grid.draw(rbind(ggplotGrob(simple_bar), ggplotGrob(simple_box), size = "last"))
 }
 
-#TODO: allow for linking in other ways than color
-#TODO: decide on color palette for different types of data (discrete and continuous)
-#TODO: use common color scale legend
-#TODO: add manual colour options to non-statistical and non-ggplot basic charts
+#TODO: allow for linking in other ways than color (WHAT OTHER WAYS?)
+#TODO: decide on color palette for different types of data (discrete and continuous) (DO IN MEETING)
+#TODO: use common color scale legend (link_var legend) [do this in the future but not yet]
+#TODO: add manual colour options to non-common_statistical charts (DO ONCE HAVE BASE CHARTS NAILED DOWN)
 #'Many Types Linked
 #'
 plot_many_linked <- function(link_var, link_by="colour", ...) {
@@ -224,6 +225,7 @@ plot_many_linked <- function(link_var, link_by="colour", ...) {
     plots <- lapply(specified_charts, function(chart) {
       do.call(plot_simple, args = c(chart, list(colour_var = colour_info[[1]], colour_scale = colour_info[[2]])))
     })
+
     gevitR::layout_plots(plots)
   }
 }
@@ -233,7 +235,7 @@ plot_many_linked <- function(link_var, link_by="colour", ...) {
 #'@param chart_list A list of charts
 #'
 #'@export
-layout_plots <- function(chart_list) {
+layout_plots <- function(chart_list, shared_legend=FALSE) {
 
   chart_list <- lapply(chart_list, function(chart) {
     if('gg' %in% class(chart)) {
@@ -242,6 +244,15 @@ layout_plots <- function(chart_list) {
       ggplotify::as.grob(chart)
     }
   })
+
+  #This is currently not being used because creating a shared legend for many_linked and small_multiples
+  #    may be more useful later. Right now, it is easier to make sure the fcns are doing waht they should
+  #    by looking at the legend for each chart.
+  if (shared_legend == TRUE) {
+    legend <- cowplot::get_legend(chart_list[[1]])
+    return(cowplot::plot_grid(plotlist = chart_list, labels = "AUTO", legend = legend))
+  }
+
   cowplot::plot_grid(plotlist = chart_list, labels = "AUTO")
 }
 

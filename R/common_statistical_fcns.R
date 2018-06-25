@@ -59,10 +59,10 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
   }
 
   if(!is.na(colour_scale)[1]) {
-
     gg_chart <- gg_chart %+% aes_string(fill = colour_var)
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
+      # theme(legend.position = "none")
   }
 
   gg_chart
@@ -105,6 +105,7 @@ plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scal
     #Scale colour variable
     gg_chart <- gg_chart +
       scale_colour_manual(name = colour_var, values = colour_scale)
+      # theme(legend.position = "none")
   }
 
   gg_chart
@@ -124,7 +125,9 @@ plot_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA) {
     }
     get_palette <- colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))
     colr_pal <- get_palette(abs(diff(colour_scale)))
-    gg_chart <- gg_chart + scale_fill_gradientn(colours = colr_pal, limits = colour_scale)
+    gg_chart <- gg_chart +
+      scale_fill_gradientn(colours = colr_pal, limits = colour_scale)
+      # theme(legend.position = "none")
   }
 
   gg_chart
@@ -179,6 +182,7 @@ plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA
   if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = ..level..)
+      # theme(legend.position = "none")
   }
 
   gg_chart
@@ -200,6 +204,7 @@ plot_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA) {
     #Scale colour variable
     gg_chart <- gg_chart +
       scale_colour_manual(name = colour_var, values = colour_scale)
+      # theme(legend.position = "none")
   }
 
   gg_chart
@@ -237,6 +242,7 @@ plot_pie_chart <- function(data, x, title, colour_var=NA, colour_scale=NA) {
   if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
+      # theme(legend.position = "none")
   }
 
   gg_chart
@@ -267,10 +273,13 @@ plot_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA) {
     gg_chart <- gg_chart + ggtitle(title)
   }
 
-
   if(!is.na(colour_scale)[1]) {
+    #Add colour variable
+    gg_chart <- gg_chart %+% aes_string(fill = colour_var)
+    #Add manual colour scale
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
+      # theme(legend.position = "none")
   }
 
   gg_chart
@@ -284,10 +293,12 @@ plot_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA) {
     gg_chart <- gg_chart + ggtitle(title)
   }
 
-
   if(!is.na(colour_scale)[1]) {
+    #Add colour variable
+    gg_chart <- gg_chart %+% aes_string(fill = colour_var)
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
+      # theme(legend.position = "none")
   }
 
   gg_chart
@@ -315,10 +326,12 @@ plot_boxplot <- function(data, x, y, title, flip_coord=F, rm_y_labels=F, rm_x_la
       theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
   }
 
-
   if(!is.na(colour_scale)[1]) {
+    #Add colour variable
+    gg_chart <- gg_chart %+% aes_string(fill = colour_var)
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
+      # theme(legend.position = "none")
   }
 
   gg_chart
@@ -334,8 +347,11 @@ plot_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA) {
 
 
   if(!is.na(colour_scale)[1]) {
+    #Add colour variable
+    gg_chart <- gg_chart %+% aes_string(fill = colour_var)
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
+      # theme(legend.position = "none")
   }
 
   gg_chart
@@ -349,10 +365,12 @@ plot_swarm_plot <- function(data, x, y, title, colour_var=NA, colour_scale=NA) {
     gg_chart <- gg_chart + ggtitle(title)
   }
 
-
   if(!is.na(colour_scale)[1]) {
+    #Add colour variable
+    gg_chart <- gg_chart %+% aes_string(color = colour_var)
     gg_chart <- gg_chart +
-      scale_fill_manual(name = colour_var, values = colour_scale)
+      scale_colour_manual(name = colour_var, values = colour_scale)
+      # theme(legend.position = "none")
   }
 
   gg_chart

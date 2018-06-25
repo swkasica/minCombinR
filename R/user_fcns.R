@@ -13,8 +13,8 @@
 specify_base <- function(chart_type, data, x, y, z, ...) {
   all_chart_types <-  c(#common statistical
     "bar", "divergent_bar", "line", #"stacked_bar",
-    "heat_map", "density", "scatter", "pie", "venn",
-    "histogram","pdf", "boxplot","violin", "swarm",
+    "heat_map","heatmap", "density", "scatter", "pie", "venn",
+    "histogram","pdf", "boxplot","box_plot","violin", "swarm",
     #relational
     "node_link", "flow_diagram",
     #temporal
