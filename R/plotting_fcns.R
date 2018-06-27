@@ -17,35 +17,34 @@ get_colour_scales <- function(specified_charts, colour_var) {
   if(specified_charts[[1]]$chart_type == "heat_map") {
     min_lim <- sapply(specified_charts, function(chart) {
       ref_data <- get(as.character(chart$data)) #TODO: some sort of try catch here to make sure the linking variable can be found (for each chart)
-      unique_link_var <- unique(ref_data[[colour_var]])
-      min(unique_link_var)
+      unique_links <- unique(ref_data[[colour_var]])
+      min(unique_links)
     })
 
     max_lim <- sapply(specified_charts, function(chart) {
       ref_data <- get(as.character(chart$data)) #TODO: some sort of try catch here to make sure the linking variable can be found (for each chart)
-      unique_link_var <- unique(ref_data[[colour_var]])
-      max(unique_link_var)
+      unique_links <- unique(ref_data[[colour_var]])
+      max(unique_links)
     })
 
     min_lim <- min(min_lim)
     max_lim <- max(max_lim)
     colour_scale <- c(min_lim, max_lim)
   }
-  #Gets the colour-var-link (colour_scale) for a discrete colour_var
+  #Matches the colour-var-link (colour_scale) for a discrete colour_var
+  #TODO: consider using a hash
   else {
-    colour_to_var_link <- data.frame()
-    #TODO: instead of the longest, make sure you get ALL of the possible values (could be the case that the longest doesn't include everything!!!)
+    #Get all the possible linking values.
+    all_link_vars <- list()
     lapply(specified_charts, function(chart) {
       ref_data <- get(as.character(chart$data)) #TODO: some sort of try catch here to make sure the linking variable can be found (for each chart)
-      unique_link_var <- unique(ref_data[[colour_var]])
-      if (length(unique_link_var) > length(colour_to_var_link)) {
-        colour_to_var_link <<- unique_link_var
-      }
+      unique_links <- unique(ref_data[[colour_var]])
+      all_link_vars <<- unique(c(all_link_vars, as.vector(unique_links)))
     })
     #Gets the colour match for a discrete colour_var
     get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
-    colour_scale <- get_palette(length(colour_to_var_link))
-    names(colour_scale) <- colour_to_var_link
+    colour_scale <- get_palette(length(all_link_vars))
+    names(colour_scale) <- all_link_vars
 
     #Convert numeric colour_var to discrete
     tmp_dat <- get(as.character(specified_charts[[1]]$data))
@@ -53,10 +52,11 @@ get_colour_scales <- function(specified_charts, colour_var) {
       colour_var <- paste0("factor(", colour_var, ")")
     }
   }
+
   return(list(colour_var, colour_scale))
 }
 
-#'Plot a simple chart type
+#'Plot a base chart type
 #'
 #'This function will create a single chart object that can be passed into layout_charts() to layout.
 #'
@@ -148,9 +148,8 @@ plot_many_types_general <- function(...) {
   layout_plots(all_plots)
 }
 
-#TODO: DISCUSS IF SAME X_AXIS AND Y_AXIS SCALES IS NEEDED... Maybe just continuous value
-#TODO: If there is colour, make sure the colour_scale is the same for each of the facets.s?
-#TODO: decide if input is a list of args or the args as implemented currently
+#TODO: Make the same x-axis and y-axis ranges.
+#TODO: If there is colour, make sure the colour_scale is the same for each of the facets!
 #' Small multiples
 #'
 #'@param chart_type A string indicating type of chart to generate. Options are:
@@ -163,7 +162,9 @@ plot_many_types_general <- function(...) {
 #'
 #'@export
 plot_small_multiples <- function(chart_type, data, facet_by, x=NA, y=NA, z=NA, fill=NA, group=NA) {
+  #Discrete x_axis (character variables or factors)
 
+  #Continuous x_axis (numerical)
   #Create a list of data subsets according to the facetting variable
   facet_dat <- lapply(unique(data[[facet_by]]),
                       function(x) {dplyr::filter_(data, paste(facet_by, "==", quote(x)))})
@@ -181,34 +182,90 @@ plot_small_multiples <- function(chart_type, data, facet_by, x=NA, y=NA, z=NA, f
   layout_plots(all_plots)
 }
 
-#TODO: Currently assuming data is coming from the exact same source
-# : AKA: this means no reordering or range adjustments required for x-axis
+#TODO: THIS ASSUMES THAT AT LEAST ONE AXIS IS THE EXACT SAME FOR THE CHARTS BEING COMBINED.
 #TODO: move the charts closer together somehow
-#TODO: handle reordering
+#TODO: handle reordering for x axis and y axis.
 #TODO: handle range adjustments (discrete and continuous)
 #TODO: make rotate and alignment(?...) computed rather than specified
 #TODO: allow more than 2 charts
 #TODO: currently only works with ggplots !!! change for each chart_type that isn't derived from ggplot2
 #TODO: consider case where the geoms are in the exact same chart (ex. hist and line together)
+#TODO: add boolean variable to add charts on top of each other.
+#TODO: implement options for adding charts on top of each other rather than aligned 'v' or 'h'
+#TODO: if one of the charts have a legend, make sure they align properly still.
 #'Composite
 #'
-plot_composite <- function(plot1_args, plot2_args, alignment = 'v', rotate1 = F, rotate2 = F) {
-  if (alignment == 'v') {
-    plot1 <- do.call(gevitR::plot_simple, c(plot1_args, flip_coord=rotate1, rm_y_labels=F, rm_x_labels=T))
-    plot2 <- do.call(gevitR::plot_simple, c(plot2_args, flip_coord=rotate2))
+plot_composite <- function(alignment = NA, rotate1 = F, rotate2 = F, ...) {
+  args_list <- list(...)
+  #TODO: allow for more than 2 charts
+  chart1_args <- args_list[[1]]
+  chart2_args <- args_list[[2]]
+
+  #Automatic rotations
+  #TODO:Find the axis that are the same (get from base call)
+
+  #When user specifies the alignment and rotations!
+  if (alignment == "v" || alignment == "vertical") {
+    plot1 <- do.call(plot_simple, c(chart1_args, flip_coord=rotate1, rm_y_labels=FALSE, rm_x_labels=TRUE))
+    plot2 <- do.call(plot_simple, c(chart2_args, flip_coord=rotate2))
     cowplot::plot_grid(plot1, plot2, ncol = 1, align = "hv")
-  } else if (alignment == 'h') {
-    plot1 <- do.call(gevitR::plot_simple, c(plot1_args, flip_coord=rotate1))
-    plot2 <- do.call(gevitR::plot_simple, c(plot2_args, flip_coord=rotate2, rm_y_labels=T, rm_x_labels=F))
+  } else if (alignment == "h" || alignment == "horizontal") {
+    plot1 <- do.call(plot_simple, c(chart1_args, flip_coord=rotate1))
+    plot2 <- do.call(plot_simple, c(chart2_args, flip_coord=rotate2, rm_y_labels=TRUE, rm_x_labels=FALSE))
     cowplot::plot_grid(plot1, plot2, nrow = 1, align = "hv")
+  } else if (alignment == "o" || alignment == "overlay") {
+    #TODO: only considering plots made with both x and y values
+    #TODO: Currently only works on charts with the same data frame as input
+    #TODO: Currently only works for plots that scales are ggplot(data, aes_string(x,y))
+    #TODO: Currently only implemented for common_stat chart types
+    data <- rbind(get(as.character(chart1_args$data)), get(as.character(chart2_args$data)))
+    if (chart1_args$x == chart2_args$x) {
+      if (chart1_args$y == chart2_args$y) {
+        return(ggplot(data, aes_string(chart1_args$x, chart1_args$y)) +
+          get_geom(chart1_args$chart_type) +
+          get_geom(chart2_args$chart_type))
+      }
+      #TODO: dual axes
+    } else {
+      stop("Must have the same x axis for composite overlay (current implementation)")
+    }
   } else {
-    stop('Alignment can be one of "h" (horizontal) and "v" (vertical)')
+    stop('Alignment can be one of "h"/"horizontal", "v"/"vertical" or "o"/"overlay"')
   }
+  #TODO: also consider overlaying option (req'd: one axis the same!! (also consider rotations...))
 
   #This fixes the distance between the plots problem but isn't using cowplot (uses grid and ggplotGrob) which might not work for non-ggplots.
   # library(grid)
   # grid.newpage()
   # grid.draw(rbind(ggplotGrob(simple_bar), ggplotGrob(simple_box), size = "last"))
+}
+
+
+#Gets a geom
+get_geom <- function(chart_type) {
+  overlay_chart_types <-  c(#common statistical
+    "bar", "divergent_bar", "line", #"stack_by_bar", "heat_map", "heatmap",
+    "density", "scatter", #"pie", "venn",
+    "histogram","pdf", "boxplot","box_plot","violin", "swarm"
+  )
+  check_valid_str(chart_type, overlay_chart_types)
+  switch(chart_type,
+         #Common Stat Chart Types
+         "bar" = geom_bar(stat = "identity"), #TODO:assuming no stacked bar for now
+         # "divergent_bar" = plot_divergent_bar_chart(data, title, colour_var, colour_scale),
+         "line" = geom_line(), #TODO: assuming no groups
+         # "heat_map" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale),
+         # "heatmap" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale),
+         "density" = stat_density_2d(aes(fill = ..level..), geom = "polygon"),
+         "scatter" = geom_point(),
+         # "pie" = plot_pie_chart(data, x, title, colour_var, colour_scale),
+         # "histogram" = geom_histogram(), #TODO: Note: histogram doesn't have y axis.
+         # "pdf" = plot_pdf(data, x, title, colour_var, colour_scale),
+         "boxplot" = geom_boxplot(),
+         "box_plot" = geom_boxplot(),
+         "violin" = geom_violin(),
+         "swarm" = ggbeeswarm::geom_beeswarm()
+  )
 }
 
 #TODO: allow for linking in other ways than color (WHAT OTHER WAYS?)

@@ -4,9 +4,8 @@
 #'@importFrom graphics plot
 NULL
 
-#TODO: clean the ggplot code to reduce repetitive code (ex. colour_scale)
-#TODO: rotate all x_axis labels?
-#TODO: change functions to input ... instead of flip_coord, rm_y_labels, etc.
+#TODO: create a default axis labels rotation based on windows size.
+#TODO: clean the ggplot code to reduce repetitive code (ex. colour_scale)?
 
 #Standard Bar Chart or Stacked Bar Chart (using stack_by)
 #TODO: Do we want option for grouping bars?
@@ -15,6 +14,7 @@ NULL
 plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
                            flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
                            colour_var=NA, colour_scale=NA) {
+
   #TODO: Add a colour_var and if it is present, when making the ggplot, stacked or colour with the colour_var
   #In this case, the programmer can't specify a stack_by and a linking_var.
   #Most of the time, they really mean to just have a linking_var so this will be the default.

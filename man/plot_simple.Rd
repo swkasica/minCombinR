@@ -2,10 +2,10 @@
 % Please edit documentation in R/plotting_fcns.R
 \name{plot_simple}
 \alias{plot_simple}
-\title{Plot a simple chart type}
+\title{Plot a base chart type}
 \usage{
-plot_simple(chart_type, data, x_var = NA, y_var = NA, fill = NA,
-  group = NA, title = NA, breaks = NA, path, category, cluster_var,
+plot_simple(chart_type, data, x = NA, y = NA, z = NA, stack_by = NA,
+  fill = NA, group = NA, title = NA, path, category, cluster_var,
   comparisons, flip_coord = FALSE, rm_y_labels = FALSE,
   rm_x_labels = FALSE, colour_var = NA, colour_scale = NA)
 }

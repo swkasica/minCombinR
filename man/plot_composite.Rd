@@ -4,8 +4,7 @@
 \alias{plot_composite}
 \title{Composite}
 \usage{
-plot_composite(plot1_args, plot2_args, alignment = "v", rotate1 = F,
-  rotate2 = F)
+plot_composite(alignment = NA, rotate1 = F, rotate2 = F, ...)
 }
 \description{
 Composite

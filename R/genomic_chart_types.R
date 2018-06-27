@@ -8,6 +8,7 @@ plot_phylo_tree <- function(nwk_file) {
 }
 
 #Dendrogram
+#Can also use ggdendro
 plot_dendro <- function(data, cluster_var) {
   if (!missing(cluster_var)) {
     data <- data %>%

@@ -4,6 +4,8 @@
 #TODO: Allow the user to
 #TODO: decide on standard input when using factor(var)... do we include the functionality or does the user have to
 # -- currently the user has to do that for variables like group in line charts, but not for link_var in many types linekd
+#TODO: Change many_types_linked to multiple_linked... whoops!!
+#TODO: fix problem with get() where the most recent dataset is used? (see common_stat_examples)
 
 #' Specify requirements to make a base chart
 #'
@@ -40,7 +42,8 @@ specify_base <- function(chart_type, data, x, y, z, ...) {
 #'
 #' #'
 #' @export
-specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_by="colour") {
+specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_by="colour",
+                          alignment = NA, rotate1 = FALSE, rotate2 = FALSE) {
   lo_specs <- list(...)
   names_prefix <- "base"
   names_suffix <- seq(1:length(lo_specs))
@@ -49,8 +52,10 @@ specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_by="co
   lo_specs <- c(lo_specs, combo_type = combo_type)
   if (combo_type == "small_multiple") {
     lo_specs <- c(lo_specs, facet_by = facet_by)
-  }else if (combo_type == "many_types_linked") {
+  } else if (combo_type == "many_types_linked") {
     lo_specs <- c(link_var = link_var, link_by = link_by, lo_specs)
+  } else if (combo_type == "composite") {
+    lo_specs <- c(alignment = alignment, rotate1 = rotate1, rotate2 = rotate2, lo_specs)
   }
   return(lo_specs)
 }
@@ -101,9 +106,13 @@ plot <- function(specs) {
       return(do.call(plot_many_linked, c(link_var = specs$link_var, link_by = specs$link_by, base_specs)))
     }
 
-    # if (specs$combo_type == "composite") {
-    #
-    # }
+    if (specs$combo_type == "composite") {
+      base_specs <- lapply(base_calls, function(x) {
+        x[[1]] <- NULL
+        as.list(x)
+      })
+      return(do.call(plot_composite, c(alignment = specs$alignment, specs$rotate1, specs$rotate2, base_specs)))
+    }
 
   }
 

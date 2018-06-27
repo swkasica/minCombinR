@@ -4,7 +4,7 @@
 \alias{specify_base}
 \title{Specify requirements to make a base chart}
 \usage{
-specify_base(chart_type, data, x, y, ...)
+specify_base(chart_type, data, x, y, z, ...)
 }
 \arguments{
 \item{chart_type}{}
