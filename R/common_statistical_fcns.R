@@ -6,14 +6,17 @@ NULL
 
 #TODO: create a default axis labels rotation based on windows size.
 #TODO: clean the ggplot code to reduce repetitive code (ex. colour_scale)?
+#TODO: change colour_scale to colour_limits
 
 #Standard Bar Chart or Stacked Bar Chart (using stack_by)
 #TODO: Do we want option for grouping bars?
 #TODO: Do we want position="fill" or "stacked" stacked bar chart?
 #NOTE: I combined this with plot_stacked_bar chart (AP can use stack_by if they want to make a stacked bar chart)
+#var types - x = D, y = C
 plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
                            flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
-                           colour_var=NA, colour_scale=NA) {
+                           colour_var=NA, colour_scale=NA,
+                           x_limits=NA, y_limits=NA) {
 
   #TODO: Add a colour_var and if it is present, when making the ggplot, stacked or colour with the colour_var
   #In this case, the programmer can't specify a stack_by and a linking_var.
@@ -22,22 +25,22 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
     warning("stack_by is masked by link_var in stacked bar chart")
     gg_chart <- ggplot(data, aes_string(x=x)) +
       geom_bar(aes_string(fill=colour_var), position="fill") +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
   } else if(!is.na(stack_by) && is.na(colour_var)) {
     gg_chart <- ggplot(data, aes_string(x=x)) +
       geom_bar(aes_string(fill=stack_by), position="fill") +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
   } else if (is.na(y)) {
     gg_chart <-
       ggplot(data, aes_(x=as.name(x)),
              aes(y=..count..)) +
       geom_bar() +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
   } else {
     gg_chart <-
       ggplot(data, aes_(x = as.name(x), y = as.name(y))) +
       geom_bar(stat="identity") +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
   }
 
   if(!is.na(title)) {
@@ -65,6 +68,14 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
       # theme(legend.position = "none")
   }
 
+  if(!is.na(x_limits)[1]) {
+    gg_chart <- gg_chart + scale_x_discrete(limits = x_limits)
+  }
+
+  if(!is.na(y_limits)[1]) {
+    gg_chart <- gg_chart + scale_y_continuous(limits = y_limits)
+  }
+
   gg_chart
 }
 
@@ -88,7 +99,9 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
 # }
 
 # Line Chart
-plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scale=NA) {
+# var types: x=C, y=C
+plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scale=NA,
+                            x_limits=NA, y_limits=NA) {
   if(is.na(group)){
     gg_chart <- ggplot(data, aes_string(x = x, y = y, group = 1)) + geom_line()
   } else {
@@ -108,15 +121,24 @@ plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scal
       # theme(legend.position = "none")
   }
 
+  if(!is.na(x_limits)[1]) {
+    gg_chart <- gg_chart + scale_x_continuous(limits = x_limits)
+  }
+
+  if(!is.na(y_limits)[1]) {
+    gg_chart <- gg_chart + scale_y_continuous(limits = y_limits)
+  }
+
   gg_chart
 }
 
 # Heatmap
-# In this function, I am assuming the data input is a matrix with numeric values in the cells and a column for facetting
 #TODO: Discuss what to do for NA values (will just not have a tile right now.)
-plot_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA) {
+plot_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
+                         x_limits=NA, y_limits=NA) {
     gg_chart <- ggplot(data, aes_string(x, y, fill = z)) +
-      geom_tile()
+      geom_tile() +
+      theme(legend.position="bottom")
 
   #To scale colour (called from many_types_linked and small_multiple)
   if (!is.na(colour_scale)[1]) {
@@ -170,7 +192,8 @@ plot_divergent_bar_chart <- function(data, title, colour_var=NA, colour_scale=NA
 # Density chart
 #TODO: Test with real dataset to see what you want this to do
 #TODO: allow many_linked with colour_scale and colour_var depending on what you decide with dataset
-plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA) {
+plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
+                               x_limits=NA, y_limits=NA) {
   gg_chart <- ggplot(data, aes_string(x=x, y=y) ) +
     stat_density_2d(aes(fill = ..level..), geom = "polygon")
 
@@ -190,7 +213,8 @@ plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA
 
 # Scatter plot
 # TODO: include geom_jitter?
-plot_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA) {
+plot_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
+                         x_limits=NA, y_limits=NA) {
   gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
     geom_point()
 
@@ -211,7 +235,8 @@ plot_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA) {
 }
 
 # Pie chart
-plot_pie_chart <- function(data, x, title, colour_var=NA, colour_scale=NA) {
+plot_pie_chart <- function(data, x, title, colour_var=NA, colour_scale=NA,
+                           x_limits=NA) {
 
   #due to summarization step, need to group by the facet too in order for this to work
   #might also want to make these frequencies
@@ -266,7 +291,8 @@ plot_venn <- function(num_circles, area1, area2, area3, cross_area, overlap12, o
 
 # Histogram
 #TODO: decide to add binwidth... should probably
-plot_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA) {
+plot_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA,
+                           x_limits=NA) {
   gg_chart <- ggplot(data, aes_string(x)) + geom_histogram()
 
   if(!is.na(title)) {
@@ -286,7 +312,8 @@ plot_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA) {
 }
 
 # Probability Density Function
-plot_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA) {
+plot_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA,
+                     x_limits=NA) {
   gg_chart <- ggplot(data, aes_string(x)) + geom_density(kernel = "gaussian")
 
   if(!is.na(title)) {
@@ -305,7 +332,9 @@ plot_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA) {
 }
 
 # Boxplot
-plot_boxplot <- function(data, x, y, title, flip_coord=F, rm_y_labels=F, rm_x_labels=F, colour_var=NA, colour_scale=NA) {
+plot_boxplot <- function(data, x, y, title, flip_coord=F, rm_y_labels=F, rm_x_labels=F,
+                         colour_var=NA, colour_scale=NA,
+                         x_limits=NA, y_limits=NA) {
   gg_chart <- ggplot(data, aes_string(x,y)) + geom_boxplot()
 
   if(!is.na(title)) {
@@ -338,7 +367,8 @@ plot_boxplot <- function(data, x, y, title, flip_coord=F, rm_y_labels=F, rm_x_la
 }
 
 # Violin Plot
-plot_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA) {
+plot_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
+                            x_limits=NA, y_limits=NA) {
   gg_chart <- ggplot(data, aes_string(x,y)) + geom_violin()
 
   if(!is.na(title)) {
@@ -358,7 +388,8 @@ plot_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA) {
 }
 
 # Swarm Plot
-plot_swarm_plot <- function(data, x, y, title, colour_var=NA, colour_scale=NA) {
+plot_swarm_plot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
+                            x_limits=NA, y_limits=NA) {
   gg_chart <- ggplot(data, aes_string(x, y)) + ggbeeswarm::geom_beeswarm()
 
   if(!is.na(title)) {

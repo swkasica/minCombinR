@@ -20,7 +20,7 @@ specify_base <- function(chart_type, data, x, y, z, ...) {
     #relational
     "node_link", "flow_diagram",
     #temporal
-    "stream_graph", "timeline",
+    "stream", "timeline",
     #spatial
     "geographic_map", "choropleth", "interior_map",
     #other
@@ -43,7 +43,7 @@ specify_base <- function(chart_type, data, x, y, z, ...) {
 #' #'
 #' @export
 specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_by="colour",
-                          alignment = NA, rotate1 = FALSE, rotate2 = FALSE) {
+                          alignment = NA) {
   lo_specs <- list(...)
   names_prefix <- "base"
   names_suffix <- seq(1:length(lo_specs))
@@ -55,7 +55,7 @@ specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_by="co
   } else if (combo_type == "many_types_linked") {
     lo_specs <- c(link_var = link_var, link_by = link_by, lo_specs)
   } else if (combo_type == "composite") {
-    lo_specs <- c(alignment = alignment, rotate1 = rotate1, rotate2 = rotate2, lo_specs)
+    lo_specs <- c(alignment = alignment, lo_specs)
   }
   return(lo_specs)
 }
@@ -69,8 +69,10 @@ plot <- function(specs) {
   #No combination!
   if(class(specs) == "call") {
     spec_list <- as.list(specs)
-    spec_list = spec_list[spec_list != "specify_base"]
-    return(do.call(plot_simple, spec_list))
+    spec_list <- spec_list[spec_list != "specify_base"]
+    spec_plot <- do.call(plot_simple, spec_list)
+    return(layout_plots(list(spec_plot)))
+    # return(do.call(plot_simple, spec_list))
   }
 
   #TODO: Do for all combination types
@@ -111,7 +113,7 @@ plot <- function(specs) {
         x[[1]] <- NULL
         as.list(x)
       })
-      return(do.call(plot_composite, c(alignment = specs$alignment, specs$rotate1, specs$rotate2, base_specs)))
+      return(do.call(plot_composite, c(alignment = specs$alignment, base_specs)))
     }
 
   }

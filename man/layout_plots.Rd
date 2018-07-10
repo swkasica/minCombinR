@@ -4,7 +4,7 @@
 \alias{layout_plots}
 \title{Layout plots}
 \usage{
-layout_plots(chart_list, shared_legend = FALSE)
+layout_plots(chart_list, labels = NULL, shared_legend = FALSE)
 }
 \arguments{
 \item{chart_list}{A list of charts}

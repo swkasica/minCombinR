@@ -7,7 +7,8 @@
 plot_simple(chart_type, data, x = NA, y = NA, z = NA, stack_by = NA,
   fill = NA, group = NA, title = NA, path, category, cluster_var,
   comparisons, flip_coord = FALSE, rm_y_labels = FALSE,
-  rm_x_labels = FALSE, colour_var = NA, colour_scale = NA)
+  rm_x_labels = FALSE, colour_var = NA, colour_scale = NA,
+  x_limits = NA, y_limits = NA)
 }
 \description{
 This function will create a single chart object that can be passed into layout_charts() to layout.

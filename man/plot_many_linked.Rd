@@ -2,7 +2,7 @@
 % Please edit documentation in R/plotting_fcns.R
 \name{plot_many_linked}
 \alias{plot_many_linked}
-\title{Many Types Linked}
+\title{Composite}
 \usage{
 plot_many_linked(link_var, link_by = "colour", ...)
 }

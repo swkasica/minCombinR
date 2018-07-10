@@ -4,7 +4,7 @@
 \alias{plot_small_multiples}
 \title{Small multiples}
 \usage{
-plot_small_multiples(chart_type, data, facet_by, x = NA, y = NA, z = NA,
+plot_small_multiples(chart_type, data, facet_by, x, y = NA, z = NA,
   fill = NA, group = NA)
 }
 \arguments{

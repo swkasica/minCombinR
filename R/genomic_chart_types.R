@@ -4,27 +4,44 @@
 plot_phylo_tree <- function(nwk_file) {
   my_tree <- ape::read.tree(nwk_file)
   ggtree::ggtree(my_tree)
-  #plot(my_tree) #using ape package only (instead of ggtree)
+  #plot(my_tree) #using ape package (instead of ggtree)
 }
 
 #Dendrogram
-#Can also use ggdendro
-plot_dendro <- function(data, cluster_var) {
-  if (!missing(cluster_var)) {
-    data <- data %>%
-      dplyr::select(cluster_var)
+#Can also use ggraph
+#cluster_vars is a vector of columns to cluster by.
+plot_dendro <- function(data, tip_var=NA, cluster_vars=NA) {
+
+  #Subset the data frame to only contain the cluster_vars for clustering and the tip_var as the rownames(for labelling nodes)
+  if (!is.na(tip_var) && !is.na(cluster_vars)) {
+    data <- unique(data %>%
+                     group_by_(tip_var) %>%
+                     select(c(tip_var, cluster_vars)))
+    #Could set rownames using tibble package but it's not worth the extra dependency
+    data <- as.data.frame(data)
+    rownames(data) <- data[ , tip_var]
+    data[ , tip_var] <- NULL
   }
 
-  dend <- data %>%
+  clust_data <- data %>%
     scale() %>%
     dist() %>%
-    hclust() %>%
-    as.dendrogram()
+    hclust(method = "ward.D2")
+  clust_dendro <- as.dendrogram(clust_data)
 
-  # par(mar=c(7,3,1,1))  # move bottom margin to have the complete label
-  # plot(dend)
-  ggraph::ggraph(dend, layout='dendrogram') +
-    ggraph::geom_edge_elbow()
+  #To get order
+  # order <- clust_data$order
+  #To reorder data frame according to clustering order
+  # reordered_data <- arrange(data, clust_data$order)
+
+  #This package is mainly used to get the data from a dendrogram
+  # I could probably just use ggplot here using geom_segment and geom_text
+  ggdendro::ggdendrogram(clust_dendro)
+
+  # # par(mar=c(7,3,1,1))  # move bottom margin to have the complete label
+  # # plot(dend)
+  # ggraph::ggraph(dend, layout='dendrogram') +
+  #   ggraph::geom_edge_elbow()
 }
 
 #Clonal Tree

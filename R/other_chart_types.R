@@ -1,21 +1,33 @@
 #Helper functions for other chart types
 
 # Tables
-plot_table <- function(data) {
-  grid::grid.newpage()
-  gridExtra::grid.table(data)
+plot_table <- function(data, flip_coord=FALSE, rownames=NA) {
+
+  if (!is.na(rownames)) {
+    data <- as.data.frame(data)
+    rownames(data) <- data[ ,rownames]
+    data[ , rownames] <- NULL
+  }
+
+  if (flip_coord) {
+    data <- t(data)
+  }
+
+  gridExtra::tableGrob(data)
 }
 
 #Category Stripe
-plot_category_stripe <- function(data, category) {
-  ggplot(data, aes(x=rownames(data), y="categories", fill=shQuote(data[[category]]))) +
+plot_category_stripe <- function(data, x, category) {
+  ggplot(data, aes_string(x=x, y=shQuote("categories"), fill=category)) +
     geom_bin2d() +
     theme(axis.title.y = element_blank(),
           axis.text.y = element_blank(),
           axis.ticks.y = element_blank(),
-          axis.text.x = element_blank(),
-          panel.background = element_blank()) +
-    guides(fill=guide_legend(title = category))
+          # axis.text.x = element_blank(),
+          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          panel.background = element_blank(),
+          legend.position = "none")
+    # guides(fill=guide_legend(title = category))
 }
 
 #Image
