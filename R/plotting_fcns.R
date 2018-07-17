@@ -36,8 +36,7 @@ check_valid_str <- function(str_in, valid_options) {
 #Get consistent variables (called limits in ggplot) for all of the specified charts
 #Note - specified_charts is a list of charts, with each chart only requiring fields chart_type and data
 #Note- The var_name has to be the same type in all the specified_charts
-#TODO: var_name can only be "var" or "as.factor(var)"
-#TODO: Consider statistical transformations inherent to the base charts! The limits will need to change in these cases. This is important.
+#TODO: var_name can be "var" or "as.factor(var)" where var is the variable name
 get_limits <- function(specified_charts, var_name) {
   limits <- c()
   sapply(specified_charts, function(chart) {
@@ -97,10 +96,6 @@ get_limits <- function(specified_charts, var_name) {
 #
 #     min_lim <- min(min_lim)
 #     max_lim <- max(max_lim)
-#     print('min lim')
-#     print(min_lim)
-#     print('max lim')
-#     print(max_lim)
 #     limits <- c(min_lim, max_lim)
 #   }
 #   #For discrete variables
@@ -226,9 +221,6 @@ plot_small_multiples <- function(chart_type, data, facet_by, x, y=NA, z=NA, fill
   if(!is.na(y)) {
     y_limits <- unlist(get_limits(list(chart_specs), y))
   }
-  print(x_limits)
-  print('y_limits')
-  print(y_limits)
 
   #TODO: maybe just use facet_wrap for ggplot charts? (statistical chart types)
   #Create a list of data subsets according to the facetting variable
@@ -257,7 +249,8 @@ infer_x <- function(chart_args) {
       return(chart_args$tip_var)
     } else {
       #TODO: !!!
-      stop("This is a case where the tip_var is not defined because it is the rownames...")
+      stop("TODO: This is a case where the tip_var is not defined because it is the rownames...")
+      # return(rownames(get(as.character(chart_args$data))))
     }
   }
 
@@ -273,14 +266,17 @@ infer_y <- function(chart_args) {
     #TODO: for now, I am assuming the comp variable is the first column (this can be changed later and reoordered but requires extra checks)
     colnames(get(as.character(chart_args$data)))[1]
   }
-
   else {
     return(chart_args$y)
   }
 }
 
+#TODO: consider case where there are multiple reorderings (multiple trees or heatmaps!!!)
 get_order <- function(chart_args_list, common_var) {
-  chart_types <- lapply(chart_args_list, function(chart_args) {
+  #Using for loop because I want to exit lapply once I find a tree or heatmap
+  # chart_types <- lapply(chart_args_list, function(chart_args) {
+  # })
+  for (chart_args in chart_args_list) {
     chart_type <- chart_args$chart_type
 
     #Phylogenetic tree tip ordering - always aligns on the y axis so don't need to know common_var
@@ -290,12 +286,37 @@ get_order <- function(chart_args_list, common_var) {
       tree_tips <- subset(tree_dat, isTip)
       return(tree_tips$label[order(tree_tips$y, decreasing=TRUE)])
     }
+    #Dendrogram tree tip ordering - always aligns on the y axis so don't need to know common_var
+    #TODO: This is repeating some code from plot_dendro - see if there is a way to get the tip var without having to access the data.
+    else if (chart_type == "dendrogram") {
+      tip_var <- as.character(chart_args$tip_var)
+      cluster_vars <- as.character(chart_args$cluster_vars)
+      data <- get(as.character(chart_args$data))
+
+      if (!is.na(tip_var) && !is.na(cluster_vars)) {
+        data <- unique(data %>%
+                         group_by_(tip_var) %>%
+                         select(c(tip_var, cluster_vars)))
+        #Could set rownames using tibble package instead of base but it's not worth the extra dependency
+        data <- as.data.frame(data)
+        rownames(data) <- data[ , tip_var]
+        data[ , tip_var] <- NULL
+      }
+
+      clust_data <- data %>%
+        scale() %>%
+        dist() %>%
+        hclust(method = "ward.D2")
+      clust_dendro <- as.dendrogram(clust_data)
+      return(as.vector(ggdendro::dendro_data(clust_dendro)$labels[["label"]]))
+    }
     #TODO: Should we be reordering heatmaps or just the trees?
     #The heatmap ordering based on common_var
     # else if (chart_type == "heatmap" || chart_type == "heat_map") {
     #
     # }
-  })
+
+  }
   #Otherwise return the order that is found in the first chart specified.
   ref_data <- get(as.character(chart_args_list[[1]]$data))
   as.vector(ref_data[[common_var]])
@@ -376,24 +397,7 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
     stop('composite variable is not common. This is an error in the code. Please report.')
   }
 
-  #Decide on alignment if not already given
-  if (is.na(alignment)) {
-    x_var_count <- sum(all_x_vars == common_var)
-    y_var_count <- sum(all_y_vars == common_var)
-    if (y_var_count == 0) {
-      alignment <- 'vertical'
-    }
-    if (x_var_count == 0) {
-      alignment <- 'horizontal'
-    }
-    if (x_var_count >= y_var_count) {
-      alignment <- 'vertical'
-    } else {
-      alignment <- 'horizontal'
-    }
-  }
-
-  #Get the limits
+  #Set the global limits
   limits <- get_limits(chart_args_list, common_var)
 
   #TODO: put the below if statement into get_order() function!!
@@ -415,12 +419,29 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
     limits <- limits[order(match(limits,order))]
   }
 
-  # Is the alignment vertical?
+  #Decide on global alignment (if not already given)
+  if (is.na(alignment)) {
+    x_var_count <- sum(all_x_vars == common_var)
+    y_var_count <- sum(all_y_vars == common_var)
+    if (y_var_count == 0) {
+      alignment <- 'vertical'
+    }
+    if (x_var_count == 0) {
+      alignment <- 'horizontal'
+    }
+    if (x_var_count >= y_var_count) {
+      alignment <- 'vertical'
+    } else {
+      alignment <- 'horizontal'
+    }
+  }
+
+  # Is the global alignment vertical?
   if (alignment == 'vertical' || alignment == 'v') {
     #For each chart, does the x_axis have the common var?
     lo_plots <- lapply(chart_args_list, function(chart_args) {
       y_arg <- infer_y(chart_args)
-      print(c(chart_args, list(x_limits=unlist(limits))))
+
       #If no, rotate
       if (!is.null(y_arg) && y_arg == common_var) {
         do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE, y_limits=unlist(limits))))

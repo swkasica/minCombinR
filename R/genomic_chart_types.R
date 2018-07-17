@@ -50,7 +50,7 @@ plot_dendro <- function(data, tip_var=NA, cluster_vars=NA) {
 
   # # par(mar=c(7,3,1,1))  # move bottom margin to have the complete label
   # # plot(dend)
-  # ggraph::ggraph(dend, layout='dendrogram') +
+  # ggraph::ggraph(clust_dendro, layout='dendrogram') +
   #   ggraph::geom_edge_elbow()
 }
 
