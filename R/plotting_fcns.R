@@ -39,7 +39,7 @@ check_valid_str <- function(str_in, valid_options) {
 #TODO: var_name can only be "var" or "as.factor(var)"
 #TODO: Consider statistical transformations inherent to the base charts! The limits will need to change in these cases. This is important.
 get_limits <- function(specified_charts, var_name) {
-  limits <- list()
+  limits <- c()
   sapply(specified_charts, function(chart) {
     ref_data <- get(as.character(chart$data)) #TODO: some sort of try catch here to make sure the linking variable can be found (for each chart)
 
@@ -52,7 +52,15 @@ get_limits <- function(specified_charts, var_name) {
       limits <<- unique(c(limits, as.vector(unique_vars)))
     } else if (is.numeric(ref_data[[var_name]])) {
       unique_vars <- unique(ref_data[[var_name]])
-      min <- min(unique_vars)
+
+      #!!!
+      #Exception: If the chart type is a bar chart, the min MUST be 0 for the y-axis
+      # Note: we are restricting the bar chart to only having a discrete axis.
+      if(chart$chart_type == "bar") {
+        min <- 0
+      } else {
+        min <- min(unique_vars)
+      }
       max <- max(unique_vars)
       limits <<- c(limits, min, max)
     } else {
@@ -66,7 +74,6 @@ get_limits <- function(specified_charts, var_name) {
     max <- max(limits)
     limits <- c(min,max)
   }
-
   return(limits)
 }
 
@@ -127,13 +134,15 @@ get_limits <- function(specified_charts, var_name) {
 #'@export
 plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA, group=NA, title=NA,
                         path, category, cluster_vars=NA, tip_var=NA, comparisons,
+                        #For stream
+                        key, value, date,
                         #For table
                         rownames=NA,
                         #FOR COMPOSITE (only implemented for a few chart types)
                         flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
                         #FOR MANY TYPES LINKED
                         colour_var=NA, colour_scale=NA,
-                        #FOR SMALL MULTIPLES
+                        #FOR SMALL MULTIPLES and composite
                         x_limits=NA, y_limits=NA) {
   check_valid_str(chart_type, all_chart_types)
   switch(chart_type,
@@ -142,18 +151,18 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                                 flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits),
          # "stacked_bar" = plot_stacked_bar_chart(data, x, fill, title, colour_var, colour_scale),
          "divergent_bar" = plot_divergent_bar_chart(data, title, colour_var, colour_scale, x_limits, y_limits),
-         "line" = plot_line_chart(data, x, y, group, title, colour_var, colour_scale, x_limits, y_limits),
-         "heat_map" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits),
-         "heatmap" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits),
-         "density" = plot_density_chart(data, x, y, title, colour_var, colour_scale, x_limits, y_limits),
-         "scatter" = plot_scatter(data, x, y, title, colour_var, colour_scale, x_limits, y_limits),
-         "pie" = plot_pie_chart(data, x, title, colour_var, colour_scale, x_limits),
+         "line" = plot_line_chart(data, x, y, group, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "heat_map" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "heatmap" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "density" = plot_density_chart(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "scatter" = plot_scatter(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "pie" = plot_pie_chart(data, x, title, colour_var, colour_scale),
          "histogram" = plot_histogram(data, x, title, colour_var, colour_scale, x_limits),
-         "pdf" = plot_pdf(data, x, title, colour_var, colour_scale, x_limits),
-         "boxplot" = plot_boxplot(data, x, y, title, flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits),
-         "box_plot" = plot_boxplot(data, x, y, title, flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits),
-         "violin" = plot_violinplot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits),
-         "swarm" = plot_swarm_plot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits),
+         "pdf" = plot_pdf(data, x, title, colour_var, colour_scale, x_limits, flip_coord),
+         "boxplot" = plot_boxplot(data, x, y, title, flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "box_plot" = plot_boxplot(data, x, y, title, flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "violin" = plot_violinplot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "swarm" = plot_swarm_plot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
 
         #TODO: many types linked and composite for non-common_stat_chart_types (and non ggplot2)
          #Relational
@@ -161,7 +170,7 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
          "flow_diagram" = plot_flow_diagram(data), #TODO
 
          #Temporal
-         #"stream_graph" = plot_streamgraph(data, key, value, date), #TODO: change param names
+         "stream_graph" = plot_streamgraph(data, key, value, date), #TODO: change param names
          #"timeline" = plot_timeline(data, stack_by, start, end, names, phase), #TODO: change input for stack_by
 
          #Spatial
@@ -171,13 +180,13 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
 
          #Other
          "table" = plot_table(data, flip_coord, rownames),
-         "category_stripe" = plot_category_stripe(data, x, category),
+         "category_stripe" = plot_category_stripe(data, x, category, x_limits),
          "image" = plot_image(path), #TODO: maybe change if you use the magick package
 
          #genomic
-         "phylogenetic_tree" = plot_phylo_tree(path), #path is a path to a nwk_file
+         "phylogenetic_tree" = plot_phylo_tree(path, x_limits, y_limits), #path is a path to a nwk_file
          "dendrogram" = plot_dendro(data, tip_var, cluster_vars),
-         "clonal" = plot_clonal_tree(path, group),
+         "clonal_tree" = plot_clonal_tree(path, group, x_limits, y_limits),
          "linear_genomic_map" = plot_linear_genome_map_from_df(data, comparisons), #TODO:
          "radial_genomic_map" = NULL, #TODO: determine typical input
          "alignment" = plot_image(path) #TODO: will this be a table or an image in most cases?
@@ -270,10 +279,30 @@ infer_y <- function(chart_args) {
   }
 }
 
+get_order <- function(chart_args_list, common_var) {
+  chart_types <- lapply(chart_args_list, function(chart_args) {
+    chart_type <- chart_args$chart_type
+
+    #Phylogenetic tree tip ordering - always aligns on the y axis so don't need to know common_var
+    if (chart_type == "phylogenetic_tree") {
+      #TODO: fortify might be deprecated in the future!!! Find a new fcn for this in in the broom package (wasn't initially easy)
+      tree_dat  <- fortify(treeio::read.newick(chart_args$path))
+      tree_tips <- subset(tree_dat, isTip)
+      return(tree_tips$label[order(tree_tips$y, decreasing=TRUE)])
+    }
+    #TODO: Should we be reordering heatmaps or just the trees?
+    #The heatmap ordering based on common_var
+    # else if (chart_type == "heatmap" || chart_type == "heat_map") {
+    #
+    # }
+  })
+  #Otherwise return the order that is found in the first chart specified.
+  ref_data <- get(as.character(chart_args_list[[1]]$data))
+  as.vector(ref_data[[common_var]])
+}
+
 #New algorithm developed with Ana to check if composites are combinable:
-#TODO: remove export... just putting here for testing!
-#Currently returns nothing... will return errors for charts that are not combinable.
-#'@export
+#Returns nothing... will return errors for charts that are not combinable.
 check_combinable_composite <- function(chart_args_list) {
   chart_types <- lapply(chart_args_list, function(chart_args) {chart_args$chart_type})
   alignable_mat <- composite_matrix
@@ -322,7 +351,7 @@ check_combinable_composite <- function(chart_args_list) {
 #New algorithm for composites developed with Ana:
 #TODO: remove @export... just used for testing
 #'@export
-plot_composite <- function(..., alignment = NA) {
+plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
   chart_args_list <- list(...)
 
   #Charts are spatially alignable if it passes through here (otherwise will report error and stop)
@@ -336,19 +365,21 @@ plot_composite <- function(..., alignment = NA) {
   all_vars <- c(all_x_vars, all_y_vars)
   all_vars[sapply(all_vars, is.null)] <- NULL
 
-  #Determine the common variable name
-  comp_var <- names(table(all_vars)[table(all_vars) > (length(chart_args_list) - 1)])[1] #If there is more than one comp_var, then just combine on the first one (x).
+  #Determine the common variable name if not already specified
+  if (is.na(common_var)) {
+    common_var <- names(table(all_vars)[table(all_vars) > (length(chart_args_list) - 1)])[1] #If there is more than one common_var, then just combine on the first one (x).
+  }
 
   #TODO: remove assertion later
-  #Assert the comp_var is not null for my sake in implementing
-  if (is.null(comp_var) || is.na(comp_var)) {
+  #Assert the common_var is not null for my sake in implementing
+  if (is.null(common_var) || is.na(common_var)) {
     stop('composite variable is not common. This is an error in the code. Please report.')
   }
 
   #Decide on alignment if not already given
   if (is.na(alignment)) {
-    x_var_count <- sum(all_x_vars == comp_var)
-    y_var_count <- sum(all_y_vars == comp_var)
+    x_var_count <- sum(all_x_vars == common_var)
+    y_var_count <- sum(all_y_vars == common_var)
     if (y_var_count == 0) {
       alignment <- 'vertical'
     }
@@ -362,24 +393,46 @@ plot_composite <- function(..., alignment = NA) {
     }
   }
 
+  #Get the limits
+  limits <- get_limits(chart_args_list, common_var)
+
+  #TODO: put the below if statement into get_order() function!!
+  #Make sure all categorical variables have the same order for the common_var
+  if (!is.numeric(limits)) {
+    #If order is not specified by user
+    if (is.na(order)) {
+      #TODO: don't have this as a helper function (it's not very long)
+      order <- get_order(chart_args_list, common_var)
+    }
+    #Add any values that are in limits that are not in order!
+    lapply(limits, function(limit_val) {
+      if (!(limit_val %in% order)) {
+        order <<- c(order, limit_val)
+      }
+    })
+
+    #reorder the limits to have the correct ordering.
+    limits <- limits[order(match(limits,order))]
+  }
+
   # Is the alignment vertical?
   if (alignment == 'vertical' || alignment == 'v') {
     #For each chart, does the x_axis have the common var?
     lo_plots <- lapply(chart_args_list, function(chart_args) {
       y_arg <- infer_y(chart_args)
-
+      print(c(chart_args, list(x_limits=unlist(limits))))
       #If no, rotate
-      if (!is.null(y_arg) && y_arg == comp_var) {
-        do.call(plot_simple, c(chart_args, flip_coord=TRUE))
+      if (!is.null(y_arg) && y_arg == common_var) {
+        do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE, y_limits=unlist(limits))))
       }
 
       #If yes, do not rotate
       else {
-        do.call(plot_simple, chart_args)
+        do.call(plot_simple, args = c(chart_args, list(x_limits=unlist(limits))))
       }
       })
 
-    #Plot vertically in a grid
+    #arrange vertically
     cowplot::plot_grid(plotlist = lo_plots, ncol = 1, align = "v")
 
   #Is the alignment horizontal?
@@ -388,13 +441,13 @@ plot_composite <- function(..., alignment = NA) {
     #Generate each chart accordingly (with rotations if necessary)
     lo_plots <- lapply(chart_args_list, function(chart_args) {
       y_arg <- infer_y(chart_args)
-      if (!is.null(y_arg) && y_arg == comp_var) {
-        do.call(plot_simple, c(chart_args))
+      if (!is.null(y_arg) && y_arg == common_var) {
+        do.call(plot_simple, args = c(chart_args, list(y_limits=unlist(limits))))
         } else {
-          do.call(plot_simple, c(chart_args, flip_coord=TRUE))
+          do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE, x_limits=unlist(limits))))
           }
       })
-    #Plot horizontally in a grid
+    #Arrange horizontally
     cowplot::plot_grid(plotlist = lo_plots, nrow = 1, align = "h")
   }
   #Other alignments (not implemented overlay)

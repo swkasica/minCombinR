@@ -2,9 +2,12 @@
 #TODO: convert to uniform input (data, x, y)
 
 #Streamgraph
-plot_streamgraph <- function(data, key = "key", value = "value", date = "date") {
-  data <- dplyr::rename(data, key = key, value = value, date = date)
-  streamgraph(data, interactive = FALSE)
+#Note: Can make using ggplot's geom_area but I don't like the look.
+#TODO: Have a conversation about this chart... streamgraph is not on cran yet, which might affect our package getting onto cran
+plot_streamgraph <- function(data, key, value, date) {
+  # data <- dplyr::rename(data, key = key, value = value, date = date)
+  stream_chart <- streamgraph(data = data, key = key, value = value, date = date, interactive = FALSE)
+  stream_chart
 }
 
 #Streamgraph using ggplot2

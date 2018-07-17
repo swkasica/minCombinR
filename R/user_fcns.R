@@ -1,10 +1,9 @@
 #General TODO's
 # Note: more specific TODO's are on appropriate functions
 #TODO: Allow the user to override the defaults (something with ..., although not sure how to do it yet)
-#TODO: Allow the user to
+#TODO: MAKE ERROR MESSAGES WHEN THE USER DOENS'T INPUT THINGS THAT ARE ALLOWED. INCLUDING IF THEY HAVEN'T DECLARED THEIR BASE CHARTS YET!!
 #TODO: decide on standard input when using factor(var)... do we include the functionality or does the user have to
 # -- currently the user has to do that for variables like group in line charts, but not for link_var in many types linekd
-#TODO: Change many_types_linked to multiple_linked... whoops!!
 #TODO: fix problem with get() where the most recent dataset is used? (see common_stat_examples)
 
 #' Specify requirements to make a base chart
@@ -43,7 +42,7 @@ specify_base <- function(chart_type, data, x, y, z, ...) {
 #' #'
 #' @export
 specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_by="colour",
-                          alignment = NA) {
+                          alignment = NA, common_var=NA, order=NA) {
   lo_specs <- list(...)
   names_prefix <- "base"
   names_suffix <- seq(1:length(lo_specs))
@@ -55,7 +54,7 @@ specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_by="co
   } else if (combo_type == "many_types_linked") {
     lo_specs <- c(link_var = link_var, link_by = link_by, lo_specs)
   } else if (combo_type == "composite") {
-    lo_specs <- c(alignment = alignment, lo_specs)
+    lo_specs <- c(alignment = alignment, common_var = common_var, order = order, lo_specs)
   }
   return(lo_specs)
 }
@@ -113,7 +112,7 @@ plot <- function(specs) {
         x[[1]] <- NULL
         as.list(x)
       })
-      return(do.call(plot_composite, c(alignment = specs$alignment, base_specs)))
+      return(do.call(plot_composite, c(alignment = specs$alignment, common_var = specs$common_var, order = specs$order, base_specs)))
     }
 
   }

@@ -17,8 +17,8 @@ plot_table <- function(data, flip_coord=FALSE, rownames=NA) {
 }
 
 #Category Stripe
-plot_category_stripe <- function(data, x, category) {
-  ggplot(data, aes_string(x=x, y=shQuote("categories"), fill=category)) +
+plot_category_stripe <- function(data, x, category, x_limits=NA) {
+  gg_chart <- ggplot(data, aes_string(x=x, y=shQuote("categories"), fill=category)) +
     geom_bin2d() +
     theme(axis.title.y = element_blank(),
           axis.text.y = element_blank(),
@@ -28,6 +28,12 @@ plot_category_stripe <- function(data, x, category) {
           panel.background = element_blank(),
           legend.position = "none")
     # guides(fill=guide_legend(title = category))
+
+  if(!is.na(x_limits)[1]) {
+    gg_chart <- gg_chart + xlim(x_limits)
+  }
+
+  gg_chart
 }
 
 #Image

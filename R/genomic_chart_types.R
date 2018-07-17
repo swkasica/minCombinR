@@ -1,10 +1,20 @@
 # Helper functions for genomic chart types
 
 #Phylogenetic Tree
-plot_phylo_tree <- function(nwk_file) {
-  my_tree <- ape::read.tree(nwk_file)
-  ggtree::ggtree(my_tree)
-  #plot(my_tree) #using ape package (instead of ggtree)
+plot_phylo_tree <- function(nwk_file, x_limits=NA, y_limits=NA) {
+
+  tree_from_nwk <- ape::read.tree(nwk_file)
+  gg_chart <- ggtree::ggtree(tree_from_nwk) + ggtree::geom_treescale()
+
+  if(!is.na(x_limits)[1]) {
+    gg_chart <- gg_chart + xlim(x_limits)
+  }
+
+  if(!is.na(y_limits)[1]) {
+    gg_chart <- gg_chart + ylim(y_limits)
+  }
+
+  gg_chart
 }
 
 #Dendrogram
@@ -17,7 +27,7 @@ plot_dendro <- function(data, tip_var=NA, cluster_vars=NA) {
     data <- unique(data %>%
                      group_by_(tip_var) %>%
                      select(c(tip_var, cluster_vars)))
-    #Could set rownames using tibble package but it's not worth the extra dependency
+    #Could set rownames using tibble package instead of base but it's not worth the extra dependency
     data <- as.data.frame(data)
     rownames(data) <- data[ , tip_var]
     data[ , tip_var] <- NULL
@@ -45,11 +55,19 @@ plot_dendro <- function(data, tip_var=NA, cluster_vars=NA) {
 }
 
 #Clonal Tree
-plot_clonal_tree <- function(nwk_file, node_groups) {
+plot_clonal_tree <- function(nwk_file, node_groups, x_limits=NA, y_limits=NA) {
   tree <- ape::read.tree(nwk_file)
   tree <- ggtree::groupClade(object=tree, node=node_groups)
   ggtree::ggtree(tree, aes(color=node_groups)) +
     ggtree::geom_nodepoint(aes(size=5, alpha=0.5))
+
+  if(!is.na(x_limits)[1]) {
+    gg_chart <- gg_chart + xlim(x_limits)
+  }
+
+  if(!is.na(y_limits)[1]) {
+    gg_chart <- gg_chart + ylim(y_limits)
+  }
 }
 
 #Standard Genomic Map

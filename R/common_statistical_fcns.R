@@ -32,14 +32,13 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
       theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
   } else if (is.na(y)) {
     gg_chart <-
-      ggplot(data, aes_(x=as.name(x)),
-             aes(y=..count..)) +
+      ggplot(data, aes_string(x=x)) +
       geom_bar() +
       theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
   } else {
     gg_chart <-
-      ggplot(data, aes_(x = as.name(x), y = as.name(y))) +
-      geom_bar(stat="identity") +
+      ggplot(data, aes_string(x = x, y = y)) +
+      geom_col() +
       theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
   }
 
@@ -69,11 +68,11 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
   }
 
   if(!is.na(x_limits)[1]) {
-    gg_chart <- gg_chart + scale_x_discrete(limits = x_limits)
+    gg_chart <- gg_chart + xlim(x_limits)
   }
 
   if(!is.na(y_limits)[1]) {
-    gg_chart <- gg_chart + scale_y_continuous(limits = y_limits)
+    gg_chart <- gg_chart + ylim(y_limits)
   }
 
   gg_chart
@@ -99,9 +98,9 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
 # }
 
 # Line Chart
-# var types: x=C, y=C
+# x and y normally continuous but can have discrete (bivariate)
 plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scale=NA,
-                            x_limits=NA, y_limits=NA) {
+                            x_limits=NA, y_limits=NA, flip_coord=FALSE) {
   if(is.na(group)){
     gg_chart <- ggplot(data, aes_string(x = x, y = y, group = 1)) + geom_line()
   } else {
@@ -121,36 +120,54 @@ plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scal
       # theme(legend.position = "none")
   }
 
+
   if(!is.na(x_limits)[1]) {
-    gg_chart <- gg_chart + scale_x_continuous(limits = x_limits)
+    gg_chart <- gg_chart + xlim(x_limits)
   }
 
   if(!is.na(y_limits)[1]) {
-    gg_chart <- gg_chart + scale_y_continuous(limits = y_limits)
+    gg_chart <- gg_chart + ylim(y_limits)
+  }
+
+  if(flip_coord) {
+    gg_chart <- gg_chart + coord_flip()
   }
 
   gg_chart
 }
 
 # Heatmap
+# x and y always discrete
 #TODO: Discuss what to do for NA values (will just not have a tile right now.)
 plot_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
-                         x_limits=NA, y_limits=NA) {
+                         x_limits=NA, y_limits=NA, flip_coord=FALSE) {
     gg_chart <- ggplot(data, aes_string(x, y, fill = z)) +
       geom_tile() +
       theme(legend.position="bottom")
 
-  #To scale colour (called from many_types_linked and small_multiple)
-  if (!is.na(colour_scale)[1]) {
-    if (colour_var != z && !(is.na(colour_var))) {
-      warning("z is masking link_var because link_var and z have to be the same for a heat_map when linking with colour")
+    #To scale colour (called from many_types_linked and small_multiple)
+    if (!is.na(colour_scale)[1]) {
+      if (colour_var != z && !(is.na(colour_var))) {
+        warning("z is masking link_var because link_var and z have to be the same for a heat_map when linking with colour")
+      }
+      get_palette <- colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))
+      colr_pal <- get_palette(abs(diff(colour_scale)))
+      gg_chart <- gg_chart +
+        scale_fill_gradientn(colours = colr_pal, limits = colour_scale)
+        # theme(legend.position = "none")
     }
-    get_palette <- colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))
-    colr_pal <- get_palette(abs(diff(colour_scale)))
-    gg_chart <- gg_chart +
-      scale_fill_gradientn(colours = colr_pal, limits = colour_scale)
-      # theme(legend.position = "none")
-  }
+
+    if(!is.na(x_limits)[1]) {
+      gg_chart <- gg_chart + xlim(x_limits)
+    }
+
+    if(!is.na(y_limits)[1]) {
+      gg_chart <- gg_chart + ylim(y_limits)
+    }
+
+    if(flip_coord) {
+      gg_chart <- gg_chart + coord_flip()
+    }
 
   gg_chart
 
@@ -192,8 +209,9 @@ plot_divergent_bar_chart <- function(data, title, colour_var=NA, colour_scale=NA
 # Density chart
 #TODO: Test with real dataset to see what you want this to do
 #TODO: allow many_linked with colour_scale and colour_var depending on what you decide with dataset
+#x & y always continuous
 plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
-                               x_limits=NA, y_limits=NA) {
+                               x_limits=NA, y_limits=NA, flip_coord=FALSE) {
   gg_chart <- ggplot(data, aes_string(x=x, y=y) ) +
     stat_density_2d(aes(fill = ..level..), geom = "polygon")
 
@@ -208,13 +226,25 @@ plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA
       # theme(legend.position = "none")
   }
 
+  if(!is.na(x_limits)[1]) {
+    gg_chart <- gg_chart + xlim(x_limits)
+  }
+
+  if(!is.na(y_limits)[1]) {
+    gg_chart <- gg_chart + ylim(y_limits)
+  }
+
+  if(flip_coord) {
+    gg_chart <- gg_chart + coord_flip()
+  }
+
   gg_chart
 }
 
 # Scatter plot
 # TODO: include geom_jitter?
 plot_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
-                         x_limits=NA, y_limits=NA) {
+                         x_limits=NA, y_limits=NA, flip_coord=FALSE) {
   gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
     geom_point()
 
@@ -231,12 +261,23 @@ plot_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
       # theme(legend.position = "none")
   }
 
+  if(!is.na(x_limits)[1]) {
+    gg_chart <- gg_chart + xlim(x_limits)
+  }
+
+  if(!is.na(y_limits)[1]) {
+    gg_chart <- gg_chart + ylim(y_limits)
+  }
+
+  if(flip_coord) {
+    gg_chart <- gg_chart + coord_flip()
+  }
+
   gg_chart
 }
 
 # Pie chart
-plot_pie_chart <- function(data, x, title, colour_var=NA, colour_scale=NA,
-                           x_limits=NA) {
+plot_pie_chart <- function(data, x, title, colour_var=NA, colour_scale=NA) {
 
   #due to summarization step, need to group by the facet too in order for this to work
   #might also want to make these frequencies
@@ -292,7 +333,7 @@ plot_venn <- function(num_circles, area1, area2, area3, cross_area, overlap12, o
 # Histogram
 #TODO: decide to add binwidth... should probably
 plot_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA,
-                           x_limits=NA) {
+                           x_limits=NA, flip_coord=FALSE) {
   gg_chart <- ggplot(data, aes_string(x)) + geom_histogram()
 
   if(!is.na(title)) {
@@ -308,12 +349,20 @@ plot_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA,
       # theme(legend.position = "none")
   }
 
+  if(!is.na(x_limits)[1]) {
+    gg_chart <- gg_chart + xlim(x_limits)
+  }
+
+  if(flip_coord) {
+    gg_chart <- gg_chart + coord_flip()
+  }
+
   gg_chart
 }
 
 # Probability Density Function
 plot_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA,
-                     x_limits=NA) {
+                     x_limits=NA, flip_coord=FALSE) {
   gg_chart <- ggplot(data, aes_string(x)) + geom_density(kernel = "gaussian")
 
   if(!is.na(title)) {
@@ -328,21 +377,25 @@ plot_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA,
       # theme(legend.position = "none")
   }
 
-  gg_chart
-}
-
-# Boxplot
-plot_boxplot <- function(data, x, y, title, flip_coord=F, rm_y_labels=F, rm_x_labels=F,
-                         colour_var=NA, colour_scale=NA,
-                         x_limits=NA, y_limits=NA) {
-  gg_chart <- ggplot(data, aes_string(x,y)) + geom_boxplot()
-
-  if(!is.na(title)) {
-    gg_chart <- gg_chart + ggtitle(title)
+  if(!is.na(x_limits)[1]) {
+    gg_chart <- gg_chart + xlim(x_limits)
   }
 
   if(flip_coord) {
     gg_chart <- gg_chart + coord_flip()
+  }
+
+  gg_chart
+}
+
+# Boxplot
+plot_boxplot <- function(data, x, y, title, rm_y_labels=F, rm_x_labels=F,
+                         colour_var=NA, colour_scale=NA,
+                         x_limits=NA, y_limits=NA, flip_coord=FALSE) {
+  gg_chart <- ggplot(data, aes_string(x,y)) + geom_boxplot()
+
+  if(!is.na(title)) {
+    gg_chart <- gg_chart + ggtitle(title)
   }
 
   if(rm_x_labels) {
@@ -363,12 +416,24 @@ plot_boxplot <- function(data, x, y, title, flip_coord=F, rm_y_labels=F, rm_x_la
       # theme(legend.position = "none")
   }
 
+  if(!is.na(x_limits)[1]) {
+    gg_chart <- gg_chart + xlim(x_limits)
+  }
+
+  if(!is.na(y_limits)[1]) {
+    gg_chart <- gg_chart + ylim(y_limits)
+  }
+
+  if(flip_coord) {
+    gg_chart <- gg_chart + coord_flip()
+  }
+
   gg_chart
 }
 
 # Violin Plot
 plot_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
-                            x_limits=NA, y_limits=NA) {
+                            x_limits=NA, y_limits=NA, flip_coord=FALSE) {
   gg_chart <- ggplot(data, aes_string(x,y)) + geom_violin()
 
   if(!is.na(title)) {
@@ -384,12 +449,24 @@ plot_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
       # theme(legend.position = "none")
   }
 
+  if(!is.na(x_limits)[1]) {
+    gg_chart <- gg_chart + xlim(x_limits)
+  }
+
+  if(!is.na(y_limits)[1]) {
+    gg_chart <- gg_chart + ylim(y_limits)
+  }
+
+  if(flip_coord) {
+    gg_chart <- gg_chart + coord_flip()
+  }
+
   gg_chart
 }
 
 # Swarm Plot
 plot_swarm_plot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
-                            x_limits=NA, y_limits=NA) {
+                            x_limits=NA, y_limits=NA, flip_coord=FALSE) {
   gg_chart <- ggplot(data, aes_string(x, y)) + ggbeeswarm::geom_beeswarm()
 
   if(!is.na(title)) {
@@ -402,6 +479,18 @@ plot_swarm_plot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
     gg_chart <- gg_chart +
       scale_colour_manual(name = colour_var, values = colour_scale)
       # theme(legend.position = "none")
+  }
+
+  if(!is.na(x_limits)[1]) {
+    gg_chart <- gg_chart + xlim(x_limits)
+  }
+
+  if(!is.na(y_limits)[1]) {
+    gg_chart <- gg_chart + ylim(y_limits)
+  }
+
+  if(flip_coord) {
+    gg_chart <- gg_chart + coord_flip()
   }
 
   gg_chart
