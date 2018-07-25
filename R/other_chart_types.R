@@ -1,16 +1,25 @@
 #Helper functions for other chart types
 
 # Tables
-plot_table <- function(data, flip_coord=FALSE, rownames=NA) {
+#x is rows, y is columns
+plot_table <- function(data, flip_coord=FALSE, rownames=NA, x_limits=NA, y_limits=NA) {
 
   if (!is.na(rownames)) {
     data <- as.data.frame(data)
-    rownames(data) <- data[ ,rownames]
+    rownames(data) <- data[ , rownames]
     data[ , rownames] <- NULL
   }
 
   if (flip_coord) {
     data <- t(data)
+  }
+
+  if(!is.na(x_limits)[1]) {
+    #TODO: add the rows to the limits and reorder the rows here
+  }
+
+  if(!is.na(y_limits[1])) {
+
   }
 
   gridExtra::tableGrob(data)
@@ -38,17 +47,19 @@ plot_category_stripe <- function(data, x, category, x_limits=NA) {
 
 #Image
 
-plot_image <- function(path, ...) {
-  img_type <- strsplit(path, '[.]')[[1]]
-  if (img_type == "jpg" || img_type == "jpeg") {
-    jpeg::readJPEG(source=sourcejpeg, ...)
-  }
-  else if (img_type == "png") {
-    png::readPNG(source=sourcepng, ...)
-  }
-  else if (img_type == "pdf") {
-    tm::readPDF(source=sourcepdf, ...)
-  }
+plot_image <- function(path) {
+  cowplot::ggdraw() + cowplot::draw_image(path)
+
+  # img_type <- strsplit(path, '[.]')[[1]]
+  # if (img_type == "jpg" || img_type == "jpeg") {
+  #   jpeg::readJPEG(source=sourcejpeg, ...)
+  # }
+  # else if (img_type == "png") {
+  #   png::readPNG(source=sourcepng, ...)
+  # }
+  # else if (img_type == "pdf") {
+  #   tm::readPDF(source=sourcepdf, ...)
+  # }
 }
 
 # plot_jpeg_image <- function(sourcejpeg) {

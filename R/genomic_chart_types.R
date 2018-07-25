@@ -1,7 +1,7 @@
 # Helper functions for genomic chart types
 
 #Phylogenetic Tree
-plot_phylo_tree <- function(nwk_file, x_limits=NA, y_limits=NA) {
+plot_phylo_tree <- function(nwk_file, x_limits=NA, y_limits=NA, flip_coord=FALSE) {
 
   tree_from_nwk <- ape::read.tree(nwk_file)
   gg_chart <- ggtree::ggtree(tree_from_nwk) + ggtree::geom_treescale()
@@ -12,6 +12,10 @@ plot_phylo_tree <- function(nwk_file, x_limits=NA, y_limits=NA) {
 
   if(!is.na(y_limits)[1]) {
     gg_chart <- gg_chart + ylim(y_limits)
+  }
+
+  if(flip_coord) {
+    gg_chart <- gg_chart + coord_flip()
   }
 
   gg_chart
@@ -55,10 +59,10 @@ plot_dendro <- function(data, tip_var=NA, cluster_vars=NA) {
 }
 
 #Clonal Tree
-plot_clonal_tree <- function(nwk_file, node_groups, x_limits=NA, y_limits=NA) {
+plot_clonal_tree <- function(nwk_file, node_groups, x_limits=NA, y_limits=NA, flip_coord=FALSE) {
   tree <- ape::read.tree(nwk_file)
   tree <- ggtree::groupClade(object=tree, node=node_groups)
-  ggtree::ggtree(tree, aes(color=node_groups)) +
+  gg_chart <- ggtree::ggtree(tree, aes(color=node_groups)) +
     ggtree::geom_nodepoint(aes(size=5, alpha=0.5))
 
   if(!is.na(x_limits)[1]) {
@@ -68,6 +72,12 @@ plot_clonal_tree <- function(nwk_file, node_groups, x_limits=NA, y_limits=NA) {
   if(!is.na(y_limits)[1]) {
     gg_chart <- gg_chart + ylim(y_limits)
   }
+
+  if(flip_coord) {
+    gg_chart <- gg_chart + coord_flip()
+  }
+
+  gg_chart
 }
 
 #Standard Genomic Map

@@ -1,10 +1,12 @@
 #General TODO's
 # Note: more specific TODO's are on appropriate functions
 #TODO: Allow the user to override the defaults (something with ..., although not sure how to do it yet)
-#TODO: MAKE ERROR MESSAGES WHEN THE USER DOENS'T INPUT THINGS THAT ARE ALLOWED. INCLUDING IF THEY HAVEN'T DECLARED THEIR BASE CHARTS YET!!
 #TODO: decide on standard input when using factor(var)... do we include the functionality or does the user have to
 # -- currently the user has to do that for variables like group in line charts, but not for link_var in many types linekd
 #TODO: fix problem with get() where the most recent dataset is used? (see common_stat_examples)
+#TODO: MAKE ERROR MESSAGES WHEN THE USER DOENS'T INPUT THINGS THAT ARE ALLOWED. INCLUDING IF THEY HAVEN'T DECLARED THEIR BASE CHARTS YET!!
+#TODO: Report error messages for data inputs (especially data frame)
+#TODO: Consider data frames with NA rows.
 
 #' Specify requirements to make a base chart
 #'
@@ -13,7 +15,7 @@
 #' @export
 specify_base <- function(chart_type, data, x, y, z, ...) {
   all_chart_types <-  c(#common statistical
-    "bar", "divergent_bar", "line", #"stacked_bar",
+    "bar", "line", #"stacked_bar","divergent_bar",
     "heat_map","heatmap", "density", "scatter", "pie", "venn",
     "histogram","pdf", "boxplot","box_plot","violin", "swarm",
     #relational

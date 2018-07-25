@@ -1,6 +1,6 @@
 #TODO: alphabetize?
 all_chart_types <-  c(#common statistical
-  "bar", "divergent_bar", "line", #"stack_by_bar",
+  "bar", "line", #"stack_by_bar", "divergent_bar",
   "heat_map", "heatmap", "density", "scatter", "pie", "venn",
   "histogram","pdf", "boxplot","box_plot","violin", "swarm",
   #relational
@@ -15,6 +15,13 @@ all_chart_types <-  c(#common statistical
   "phylogenetic_tree", "dendrogram", "clonal_tree",
   "linear_genomic_map", "radial_genomic_map", "alignment"
   ####TODO: include unrooted tree, composition plot, miscellany?, sankey and sequence logo plot!
+)
+
+master_chart_types <- c(
+  "timeline", "histogram", "pdf", "flow_diagram",
+  "stream", "geographic_map", "choropleth", "interior_map",
+  "dendrogram", "phylogenetic_tree", #"alignment", #(alignment is just an image)
+  "clonal_tree", "density_plot" #sequence_logo_plot" #(gel_image is just an image)
 )
 
 #TODO: include unrooted_tree, composition_plot, sankey and miscellany(?)
@@ -129,10 +136,16 @@ get_limits <- function(specified_charts, var_name) {
 #'@export
 plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA, group=NA, title=NA,
                         path, category, cluster_vars=NA, tip_var=NA, comparisons,
+                        #For bar
+                        layout="default", proportional = FALSE, reference_vector, reference_var,
                         #For stream
                         key, value, date,
+                        #For timeline
+                        start=NA, end=NA, names=NA, phase=NA, events=NA,
                         #For table
                         rownames=NA,
+                        #For geographic map
+                        lat_var=NA, lon_var=NA,
                         #FOR COMPOSITE (only implemented for a few chart types)
                         flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
                         #FOR MANY TYPES LINKED
@@ -142,10 +155,12 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
   check_valid_str(chart_type, all_chart_types)
   switch(chart_type,
          #Common Stat Chart Types
-         "bar" = plot_bar_chart(data, x, y, stack_by, title,
-                                flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits),
+         "bar" = plot_bar_chart(data, x, y, stack_by, layout, proportional,
+                                reference_vector, reference_var, title,
+                                flip_coord, rm_y_labels, rm_x_labels,
+                                colour_var, colour_scale, x_limits, y_limits),
          # "stacked_bar" = plot_stacked_bar_chart(data, x, fill, title, colour_var, colour_scale),
-         "divergent_bar" = plot_divergent_bar_chart(data, title, colour_var, colour_scale, x_limits, y_limits),
+         # "divergent_bar" = plot_divergent_bar_chart(data, title, colour_var, colour_scale, x_limits, y_limits),
          "line" = plot_line_chart(data, x, y, group, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
          "heat_map" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
          "heatmap" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
@@ -166,11 +181,11 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
 
          #Temporal
          "stream_graph" = plot_streamgraph(data, key, value, date), #TODO: change param names
-         #"timeline" = plot_timeline(data, stack_by, start, end, names, phase), #TODO: change input for stack_by
+         "timeline" = plot_timeline(data, start, end, names, phase, events),
 
          #Spatial
-         #"geographic_map" = plot_geographic_map(lat, long), #TODO: change input (see examples_obsandGenotype)
-         "choropleth" = plot_choropleth(data, fill), #TODO: change input (see examples_obsandGenotype)
+         "geographic_map" = plot_geographic_map(data, lat_var, long_var),
+         "choropleth" = plot_choropleth(data, lat_var, lon_var, fill, group, flip_coord), #TODO: change input (see examples_obsandGenotype)
          "interior_map" = plot_image(path), #TODO: maybe change if you use the magick package
 
          #Other
@@ -179,9 +194,9 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
          "image" = plot_image(path), #TODO: maybe change if you use the magick package
 
          #genomic
-         "phylogenetic_tree" = plot_phylo_tree(path, x_limits, y_limits), #path is a path to a nwk_file
+         "phylogenetic_tree" = plot_phylo_tree(path, x_limits, y_limits, flip_coord), #path is a path to a nwk_file
          "dendrogram" = plot_dendro(data, tip_var, cluster_vars),
-         "clonal_tree" = plot_clonal_tree(path, group, x_limits, y_limits),
+         "clonal_tree" = plot_clonal_tree(path, group, x_limits, y_limits, flip_coord),
          "linear_genomic_map" = plot_linear_genome_map_from_df(data, comparisons), #TODO:
          "radial_genomic_map" = NULL, #TODO: determine typical input
          "alignment" = plot_image(path) #TODO: will this be a table or an image in most cases?
@@ -239,12 +254,11 @@ plot_small_multiples <- function(chart_type, data, facet_by, x, y=NA, z=NA, fill
   layout_plots(all_plots, labels = "AUTO")
 }
 
-#
 infer_x <- function(chart_args) {
+  #TODO: note dependency on variable names!
 
   #Note: Will never align on y axis of dendrogram
   if (chart_args$chart_type == "dendrogram") {
-    #TODO: Note dependency on tip_var name
     if ("tip_var" %in% names(chart_args)) {
       return(chart_args$tip_var)
     } else {
@@ -252,6 +266,8 @@ infer_x <- function(chart_args) {
       stop("TODO: This is a case where the tip_var is not defined because it is the rownames...")
       # return(rownames(get(as.character(chart_args$data))))
     }
+  } else if (chart_args$chart_type == "choropleth") {
+    return(chart_args$lat_var)
   }
 
   #All other cases
@@ -265,18 +281,19 @@ infer_y <- function(chart_args) {
   if (chart_args$chart_type == "table") {
     #TODO: for now, I am assuming the comp variable is the first column (this can be changed later and reoordered but requires extra checks)
     colnames(get(as.character(chart_args$data)))[1]
+  } else if (chart_args$chart_type == "choropleth") {
+    return(chart_args$lon_var)
+  } else if (chart_args$chart_type == "phylogenetic_tree") {
+    stop("TODO: This is a case where the tip_var is not defined in the data frame from nwk file and so have to have different way of determining if the same var")
   }
   else {
     return(chart_args$y)
   }
 }
 
-#TODO: consider case where there are multiple reorderings (multiple trees or heatmaps!!!)
 get_order <- function(chart_args_list, common_var) {
-  #Using for loop because I want to exit lapply once I find a tree or heatmap
-  # chart_types <- lapply(chart_args_list, function(chart_args) {
-  # })
-  for (chart_args in chart_args_list) {
+
+  get_order_from_chart <- function(chart_args) {
     chart_type <- chart_args$chart_type
 
     #Phylogenetic tree tip ordering - always aligns on the y axis so don't need to know common_var
@@ -303,24 +320,98 @@ get_order <- function(chart_args_list, common_var) {
         data[ , tip_var] <- NULL
       }
 
+      #TODO: What if they are manually clustering or want a different clustering option?
       clust_data <- data %>%
         scale() %>%
         dist() %>%
         hclust(method = "ward.D2")
       clust_dendro <- as.dendrogram(clust_data)
       return(as.vector(ggdendro::dendro_data(clust_dendro)$labels[["label"]]))
+    } else {
+      #Otherwise return the order that is found in the data frame.
+      return(chart_args$data[[common_var]])
     }
-    #TODO: Should we be reordering heatmaps or just the trees?
-    #The heatmap ordering based on common_var
-    # else if (chart_type == "heatmap" || chart_type == "heat_map") {
-    #
-    # }
-
   }
-  #Otherwise return the order that is found in the first chart specified.
-  ref_data <- get(as.character(chart_args_list[[1]]$data))
-  as.vector(ref_data[[common_var]])
+
+  master_ordering <- c()
+
+  for (chart_args in chart_args_list) {
+    chart_type <- chart_args$chart_type
+    if (chart_type %in% master_chart_types) {
+      if (is.null(master_ordering)) {
+        #Set the master ordering to the order of the chart
+        master_ordering <- get_order_from_chart(chart_args)
+      } else {
+        #Does the chart have the same ordering as the master ordering?
+        #Note: This also requires that the ordering has the same length
+        if (!identical(get_order_from_chart(chart_args), master_ordering)) {
+            stop ("These charts are not combinable by composite because both of them
+                  have a fixed ordering that are not the same. Instead, try combining
+                  these charts using many_types_linked.")
+        }
+      }
+    }
+  }
+
+  #If there are no master charts, return the first charts order
+  if (is.null(master_ordering)) {
+    ref_data <- get(as.character(chart_args_list[[1]]$data))
+    master_ordering <- as.vector(ref_data[[common_var]])
+  }
+
+  return(master_ordering)
 }
+
+## OLD FUNCTION FOR get_order
+# #TODO: consider case where there are multiple reorderings (multiple trees or heatmaps!!!)
+# get_order <- function(chart_args_list, common_var) {
+#   #Using for loop because I want to exit lapply once I find a tree or heatmap
+#   # chart_types <- lapply(chart_args_list, function(chart_args) {
+#   # })
+#   for (chart_args in chart_args_list) {
+#     chart_type <- chart_args$chart_type
+#
+#     #Phylogenetic tree tip ordering - always aligns on the y axis so don't need to know common_var
+#     if (chart_type == "phylogenetic_tree") {
+#       #TODO: fortify might be deprecated in the future!!! Find a new fcn for this in in the broom package (wasn't initially easy)
+#       tree_dat  <- fortify(treeio::read.newick(chart_args$path))
+#       tree_tips <- subset(tree_dat, isTip)
+#       return(tree_tips$label[order(tree_tips$y, decreasing=TRUE)])
+#     }
+#     #Dendrogram tree tip ordering - always aligns on the y axis so don't need to know common_var
+#     #TODO: This is repeating some code from plot_dendro - see if there is a way to get the tip var without having to access the data.
+#     else if (chart_type == "dendrogram") {
+#       tip_var <- as.character(chart_args$tip_var)
+#       cluster_vars <- as.character(chart_args$cluster_vars)
+#       data <- get(as.character(chart_args$data))
+#
+#       if (!is.na(tip_var) && !is.na(cluster_vars)) {
+#         data <- unique(data %>%
+#                          group_by_(tip_var) %>%
+#                          select(c(tip_var, cluster_vars)))
+#         #Could set rownames using tibble package instead of base but it's not worth the extra dependency
+#         data <- as.data.frame(data)
+#         rownames(data) <- data[ , tip_var]
+#         data[ , tip_var] <- NULL
+#       }
+#
+#       clust_data <- data %>%
+#         scale() %>%
+#         dist() %>%
+#         hclust(method = "ward.D2")
+#       clust_dendro <- as.dendrogram(clust_data)
+#       return(as.vector(ggdendro::dendro_data(clust_dendro)$labels[["label"]]))
+#     }
+#     #TODO: Should we be reordering heatmaps or just the trees?
+#     #The heatmap ordering based on common_var
+#     # else if (chart_type == "heatmap" || chart_type == "heat_map") {
+#     #
+#     # }
+#   }
+#   #Otherwise return the order that is found in the first chart specified.
+#   ref_data <- get(as.character(chart_args_list[[1]]$data))
+#   as.vector(ref_data[[common_var]])
+# }
 
 #New algorithm developed with Ana to check if composites are combinable:
 #Returns nothing... will return errors for charts that are not combinable.
@@ -354,12 +445,6 @@ check_combinable_composite <- function(chart_args_list) {
       #Do the charts have the same var name for any axes combination?  (x+x, x+y or y+y)
       #If yes, skip
       if (!anyDuplicated(chart_axes)) {
-        #Do the charts have the same data frame?
-        if (chartm$data == chartn$data) {
-          #Do the charts have the same range? if yes, skip
-          #TODO:
-          stop("Haven't implemented this case yet!!! TODO")
-        }
         #Charts have different data frames and don't have any axes combination the same
         stop(paste("Charts",
                    "are not spatially alignable because they do not have the common variable names on their x or y axes.",
@@ -371,6 +456,9 @@ check_combinable_composite <- function(chart_args_list) {
 
 #New algorithm for composites developed with Ana:
 #TODO: remove @export... just used for testing
+#TODO: remove labels that are on the common axis for all charts but the last - will do once we have done some testing as it will make testing easier
+#TODO: some of the chart types would be better off aligning axis directly next to each other (rotate upsidedown) - for example, bar chart and dendrogram... rotate dendrogram so x axis are really close.
+#TODO: move legends so they don't disrupt the alignment in cowplot!!!
 #'@export
 plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
   chart_args_list <- list(...)
@@ -444,12 +532,12 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
 
       #If no, rotate
       if (!is.null(y_arg) && y_arg == common_var) {
-        do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE, y_limits=unlist(limits))))
+        do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE))) #, y_limits=unlist(limits), rm_x_labels=TRUE)))
       }
 
       #If yes, do not rotate
       else {
-        do.call(plot_simple, args = c(chart_args, list(x_limits=unlist(limits))))
+        do.call(plot_simple, args = c(chart_args, list(x_limits=unlist(limits)))) #, rm_x_labels=TRUE)))
       }
       })
 
@@ -463,9 +551,9 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
     lo_plots <- lapply(chart_args_list, function(chart_args) {
       y_arg <- infer_y(chart_args)
       if (!is.null(y_arg) && y_arg == common_var) {
-        do.call(plot_simple, args = c(chart_args, list(y_limits=unlist(limits))))
+        do.call(plot_simple, args = c(chart_args, list(y_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
         } else {
-          do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE, x_limits=unlist(limits))))
+          do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE, x_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
           }
       })
     #Arrange horizontally
@@ -473,10 +561,9 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
   }
   #Other alignments (not implemented overlay)
   #TODO: implement overlay option
-  else {
-    stop('overlay has not been implemented yet!')
+  else if (alignment == 'overlay' || alignment == 'o') {
+    # stop('overlay has not been implemented yet!')
   }
-
 }
 
 #TODO: THIS ASSUMES THAT AT LEAST ONE AXIS IS THE EXACT SAME FOR THE CHARTS BEING COMBINED.
@@ -596,7 +683,7 @@ plot_many_linked <- function(link_var, link_by="colour", ...) {
       do.call(plot_simple, args = c(chart, list(colour_var = link_var, colour_scale = colour_limits)))
     })
 
-    gevitR::layout_plots(plots, labels = "AUTO")
+    layout_plots(plots, labels = "AUTO")
   }
 }
 
@@ -605,13 +692,17 @@ plot_many_linked <- function(link_var, link_by="colour", ...) {
 #'@param chart_list A list of charts
 #'
 #'@export
+#TODO: TEST THESE!!! THESE HAVE NOT BEEN TESTED
+#TODO: Make a list of all of the charts and how they are converted into a grob in a spreadsheet!!!
 layout_plots <- function(chart_list, labels = NULL, shared_legend=FALSE) {
 
   chart_list <- lapply(chart_list, function(chart) {
     if('gg' %in% class(chart)) {
       ggplotify::as.grob(chart)
-    } else {
-      ggplotify::as.grob(chart)
+    } else if ('data.frame' %in% class(chart)){
+      multipanelfigure::capture_base_plot(chart)
+    } else if ('htmlwidget' %in% class(chart)) {
+      grid::grid.grabExpr(print(chart))
     }
   })
 

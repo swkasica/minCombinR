@@ -10,36 +10,105 @@ NULL
 
 #Standard Bar Chart or Stacked Bar Chart (using stack_by)
 #TODO: Do we want option for grouping bars?
-#TODO: Do we want position="fill" or "stacked" stacked bar chart?
+#TODO: Decide on if we should split this into plot_bar and plot_divergent and plot_stacked to make it easier for the user
+
+#TODO: if colour_var, then change stack_by to colour_var and warn user
+#TODO: smart error messages for weird input values
+#TODO: error messages for stack_by and no reference vector
+#TODO: Maybe make this shorter by making generic cases and splitting up ggplot2 functions
+
 #NOTE: I combined this with plot_stacked_bar chart (AP can use stack_by if they want to make a stacked bar chart)
 #var types - x = D, y = C
-plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
+plot_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
+                           proportional=FALSE,
+                           reference_vector, reference_var, title=NA,
                            flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
                            colour_var=NA, colour_scale=NA,
                            x_limits=NA, y_limits=NA) {
 
-  #TODO: Add a colour_var and if it is present, when making the ggplot, stacked or colour with the colour_var
-  #In this case, the programmer can't specify a stack_by and a linking_var.
-  #Most of the time, they really mean to just have a linking_var so this will be the default.
-  if(!is.na(stack_by) && !is.na(colour_var)) {
-    warning("stack_by is masked by link_var in stacked bar chart")
-    gg_chart <- ggplot(data, aes_string(x=x)) +
-      geom_bar(aes_string(fill=colour_var), position="fill") +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-  } else if(!is.na(stack_by) && is.na(colour_var)) {
-    gg_chart <- ggplot(data, aes_string(x=x)) +
-      geom_bar(aes_string(fill=stack_by), position="fill") +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-  } else if (is.na(y)) {
-    gg_chart <-
-      ggplot(data, aes_string(x=x)) +
-      geom_bar() +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+  gg_chart <- if (layout == "divergent") {
+    if (is.na(stack_by)) {
+      #CASE 1: Divergent bar chart (waterfall)
+      #If reference_var and reference_Vector is missing, I assume the data frame values are already set up in the proper format (split into positive and negative values.)
+      if (!missing(reference_var) && !missing(reference_vector)) {
+        data[[y]] <- ifelse(data[[reference_var]] %in% reference_vector, -data[[y]], data[[y]])
+      }
+      data <- dplyr::arrange(data, desc(value))
+      ggchart <- ggplot(data, aes_string(x=x, y=y)) +
+        geom_bar(stat = "identity") +
+        scale_x_discrete(limits = data[[x]])
+      # coord_cartesian(ylim = c(-40, 40))
+      # scale_y_continuous(expression(log[10](italic("LDA score"))),
+      #                  breaks = -6:6, limits = c(-6, 6)) +
+    } else {
+      if (proportional == TRUE) {
+        # CASE 7: Stacked divergent proportional bar chart
+        if (missing(reference_vector)) {
+          stop("Missing required input: reference_vector. This is required when specifying a bar chart that is stacked,
+               divergent and proportional")
+        }
+        ggchart <- ggplot(data,
+                          aes_string(x = x,
+                                     y = ifelse(data[[stack_by]] %in%
+                                                  reference_vector,
+                                                -data[[y]],
+                                                data[[y]]),
+                                     fill = stack_by)) +
+          geom_col(position="fill") +
+          coord_flip()
+        } else {
+          #CASE 2: Stacked divergent bar
+          if (missing(reference_vector)) {
+            stop("Missing required input: reference_vector. This is required when specifying a bar chart that is stacked and
+                 divergent")
+          }
+          ggchart <- ggplot(data,
+                            aes_string(x = x,
+                                       y = ifelse(data[[stack_by]] %in%
+                                                    reference_vector,
+                                                  -data[[y]],
+                                                  data[[y]]),
+                                       fill = stack_by)) +
+            geom_col() +
+            coord_flip()
+          }
+    }
+  } else if (layout == "default") {
+
+    if (is.na(y) && is.na(stack_by)) {
+      #CASE 3: Bar Chart with y as count (geom_bar)
+      gg_chart <-
+        ggplot(data, aes_string(x=x)) +
+        geom_bar()
+    } else {
+      if (isTRUE(proportional) | !is.na(y) & y==1) {
+        #CASE 6: Stacked proportional bar chart
+        gg_chart <- ggplot(data, aes_string(x=x, y=1, fill=stack_by)) +
+          geom_bar(stat="identity", position="fill") +
+          scale_y_continuous(labels = scales::percent_format())
+      } else {
+        if(!is.na(stack_by)) {
+          if (is.na(y) | y==1) {
+            #CASE 8: Stacked bar chart with fill as stack_by and y as count
+            gg_chart <- ggplot(data, aes_string(x=x)) +
+              geom_bar(aes_string(fill=stack_by))
+          } else {
+            #CASE 5: Stacked bar chart with fill as stack_by
+            gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
+              geom_col(aes_string(fill=stack_by))
+          }
+        } else {
+          #CASE 4: Bar Chart (geom_col)
+          gg_chart <-
+            ggplot(data, aes_string(x = x, y = y)) +
+            geom_col()
+            # theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+        }
+      }
+    }
   } else {
-    gg_chart <-
-      ggplot(data, aes_string(x = x, y = y)) +
-      geom_col() +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+    #CASE when divergent is not TRUE or FALSE (false is default)
+    stop("When specifying a bar chart, layout input must be: 'default' or 'divergent'.")
   }
 
   if(!is.na(title)) {
@@ -64,7 +133,7 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
     gg_chart <- gg_chart %+% aes_string(fill = colour_var)
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
-      # theme(legend.position = "none")
+    # theme(legend.position = "none")
   }
 
   if(!is.na(x_limits)[1]) {
@@ -74,9 +143,76 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
   if(!is.na(y_limits)[1]) {
     gg_chart <- gg_chart + ylim(y_limits)
   }
-
   gg_chart
 }
+
+
+
+#BELOW IS THE OLD BAR CHART BEFORE ADDING DIVERGENT!!!
+# plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
+#                            flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
+#                            colour_var=NA, colour_scale=NA,
+#                            x_limits=NA, y_limits=NA) {
+#
+#   #TODO: Add a colour_var and if it is present, when making the ggplot, stacked or colour with the colour_var
+#   #In this case, the programmer can't specify a stack_by and a linking_var.
+#   #Most of the time, they really mean to just have a linking_var so this will be the default.
+#   if(!is.na(stack_by) && !is.na(colour_var)) {
+#     warning("stack_by is masked by link_var in stacked bar chart")
+#     gg_chart <- ggplot(data, aes_string(x=x)) +
+#       geom_bar(aes_string(fill=colour_var), position="fill") +
+#       theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+#   } else if(!is.na(stack_by) && is.na(colour_var)) {
+#     gg_chart <- ggplot(data, aes_string(x=x)) +
+#       geom_bar(aes_string(fill=stack_by), position="fill") +
+#       theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+#   } else if (is.na(y)) {
+#     gg_chart <-
+#       ggplot(data, aes_string(x=x)) +
+#       geom_bar() +
+#       theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+#   } else {
+#     gg_chart <-
+#       ggplot(data, aes_string(x = x, y = y)) +
+#       geom_col() +
+#       theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+#   }
+#
+#   if(!is.na(title)) {
+#     gg_chart <- gg_chart + ggtitle(title)
+#   }
+#
+#   if(flip_coord) {
+#     gg_chart <- gg_chart + coord_flip()
+#   }
+#
+#   if(rm_x_labels) {
+#     gg_chart <- gg_chart +
+#       theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
+#   }
+#
+#   if(rm_y_labels) {
+#     gg_chart <- gg_chart +
+#       theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
+#   }
+#
+#   if(!is.na(colour_scale)[1]) {
+#     gg_chart <- gg_chart %+% aes_string(fill = colour_var)
+#     gg_chart <- gg_chart +
+#       scale_fill_manual(name = colour_var, values = colour_scale)
+#       # theme(legend.position = "none")
+#   }
+#
+#   if(!is.na(x_limits)[1]) {
+#     gg_chart <- gg_chart + xlim(x_limits)
+#   }
+#
+#   if(!is.na(y_limits)[1]) {
+#     gg_chart <- gg_chart + ylim(y_limits)
+#   }
+#
+#   gg_chart
+# }
 
 # Note- is now part of plot_bar_chart
 # Stacked Bar chart
@@ -100,7 +236,8 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
 # Line Chart
 # x and y normally continuous but can have discrete (bivariate)
 plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scale=NA,
-                            x_limits=NA, y_limits=NA, flip_coord=FALSE) {
+                            x_limits=NA, y_limits=NA, flip_coord=FALSE,
+                            rm_x_labels=FALSE, rm_y_labels=FALSE) {
   if(is.na(group)){
     gg_chart <- ggplot(data, aes_string(x = x, y = y, group = 1)) + geom_line()
   } else {
@@ -133,6 +270,17 @@ plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scal
     gg_chart <- gg_chart + coord_flip()
   }
 
+
+  if(rm_x_labels) {
+    gg_chart <- gg_chart +
+      theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  }
+
+  if(rm_y_labels) {
+    gg_chart <- gg_chart +
+      theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
+  }
+
   gg_chart
 }
 
@@ -140,7 +288,8 @@ plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scal
 # x and y always discrete
 #TODO: Discuss what to do for NA values (will just not have a tile right now.)
 plot_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
-                         x_limits=NA, y_limits=NA, flip_coord=FALSE) {
+                         x_limits=NA, y_limits=NA, flip_coord=FALSE,
+                         rm_x_labels=FALSE, rm_y_labels=FALSE) {
     gg_chart <- ggplot(data, aes_string(x, y, fill = z)) +
       geom_tile() +
       theme(legend.position="bottom")
@@ -167,6 +316,16 @@ plot_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
 
     if(flip_coord) {
       gg_chart <- gg_chart + coord_flip()
+    }
+
+    if(rm_x_labels) {
+      gg_chart <- gg_chart +
+        theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
+    }
+
+    if(rm_y_labels) {
+      gg_chart <- gg_chart +
+        theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
     }
 
   gg_chart
@@ -196,29 +355,29 @@ plot_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
 
 }
 
-# Divergent Bar chart
-# Note - bar chart might not be categorical in all cases, can also be a continous value
-#        consider expanding functionality.
-plot_divergent_bar_chart <- function(data, title, colour_var=NA, colour_scale=NA) {
-  #TODO: ask Ana is she has time to change this or if I should
-  #TODO: add title option
-  likert_data <- likert::likert(data)
-  plot(likert_data)
-}
+# # Divergent Bar chart
+# # Note - bar chart might not be categorical in all cases, can also be a continous value
+# #        consider expanding functionality.
+# plot_divergent_bar_chart <- function(data, title, colour_var=NA, colour_scale=NA) {
+#   #TODO: ask Ana is she has time to change this or if I should
+#   #TODO: add title option
+#   likert_data <- likert::likert(data)
+#   plot(likert_data)
+# }
 
 # Density chart
 #TODO: Test with real dataset to see what you want this to do
 #TODO: allow many_linked with colour_scale and colour_var depending on what you decide with dataset
 #x & y always continuous
 plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
-                               x_limits=NA, y_limits=NA, flip_coord=FALSE) {
+                               x_limits=NA, y_limits=NA, flip_coord=FALSE,
+                               rm_x_labels=FALSE, rm_y_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x=x, y=y) ) +
     stat_density_2d(aes(fill = ..level..), geom = "polygon")
 
   if(!is.na(title)) {
     gg_chart <- gg_chart + ggtitle(title)
   }
-
 
   if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
@@ -238,13 +397,24 @@ plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA
     gg_chart <- gg_chart + coord_flip()
   }
 
+  if(rm_x_labels) {
+    gg_chart <- gg_chart +
+      theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  }
+
+  if(rm_y_labels) {
+    gg_chart <- gg_chart +
+      theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
+  }
+
   gg_chart
 }
 
 # Scatter plot
 # TODO: include geom_jitter?
 plot_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
-                         x_limits=NA, y_limits=NA, flip_coord=FALSE) {
+                         x_limits=NA, y_limits=NA, flip_coord=FALSE,
+                         rm_x_labels=FALSE, rm_y_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
     geom_point()
 
@@ -271,6 +441,16 @@ plot_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
 
   if(flip_coord) {
     gg_chart <- gg_chart + coord_flip()
+  }
+
+  if(rm_x_labels) {
+    gg_chart <- gg_chart +
+      theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  }
+
+  if(rm_y_labels) {
+    gg_chart <- gg_chart +
+      theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
   }
 
   gg_chart
@@ -333,7 +513,7 @@ plot_venn <- function(num_circles, area1, area2, area3, cross_area, overlap12, o
 # Histogram
 #TODO: decide to add binwidth... should probably
 plot_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA,
-                           x_limits=NA, flip_coord=FALSE) {
+                           x_limits=NA, flip_coord=FALSE, rm_x_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x)) + geom_histogram()
 
   if(!is.na(title)) {
@@ -357,12 +537,17 @@ plot_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA,
     gg_chart <- gg_chart + coord_flip()
   }
 
+  if(rm_x_labels) {
+    gg_chart <- gg_chart +
+      theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  }
+
   gg_chart
 }
 
 # Probability Density Function
 plot_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA,
-                     x_limits=NA, flip_coord=FALSE) {
+                     x_limits=NA, flip_coord=FALSE, rm_x_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x)) + geom_density(kernel = "gaussian")
 
   if(!is.na(title)) {
@@ -383,6 +568,10 @@ plot_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA,
 
   if(flip_coord) {
     gg_chart <- gg_chart + coord_flip()
+  }
+  if(rm_x_labels) {
+    gg_chart <- gg_chart +
+      theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
   }
 
   gg_chart
@@ -433,7 +622,8 @@ plot_boxplot <- function(data, x, y, title, rm_y_labels=F, rm_x_labels=F,
 
 # Violin Plot
 plot_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
-                            x_limits=NA, y_limits=NA, flip_coord=FALSE) {
+                            x_limits=NA, y_limits=NA, flip_coord=FALSE,
+                            rm_x_labels=FALSE, rm_y_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x,y)) + geom_violin()
 
   if(!is.na(title)) {
@@ -461,17 +651,29 @@ plot_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
     gg_chart <- gg_chart + coord_flip()
   }
 
+  if(rm_x_labels) {
+    gg_chart <- gg_chart +
+      theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  }
+
+  if(rm_y_labels) {
+    gg_chart <- gg_chart +
+      theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
+  }
+
   gg_chart
 }
 
 # Swarm Plot
 plot_swarm_plot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
-                            x_limits=NA, y_limits=NA, flip_coord=FALSE) {
+                            x_limits=NA, y_limits=NA, flip_coord=FALSE,
+                            rm_x_labels=FALSE, rm_y_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x, y)) + ggbeeswarm::geom_beeswarm()
 
   if(!is.na(title)) {
     gg_chart <- gg_chart + ggtitle(title)
   }
+
 
   if(!is.na(colour_scale)[1]) {
     #Add colour variable
@@ -491,6 +693,16 @@ plot_swarm_plot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
 
   if(flip_coord) {
     gg_chart <- gg_chart + coord_flip()
+  }
+
+  if(rm_x_labels) {
+    gg_chart <- gg_chart +
+      theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  }
+
+  if(rm_y_labels) {
+    gg_chart <- gg_chart +
+      theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
   }
 
   gg_chart
