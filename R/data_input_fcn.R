@@ -86,25 +86,45 @@ input_image<-function(file = NA,desc = NA,...){
 
   #just return the image
   warning("To use this image, please be sure to have separate file that links the image to data in pixel space. If you would like to CREATE an annotation file, run the 'annotate_image' command.")
-  return(img)
+  return(list(img=img,imgDetails = imgDetails))
 
 }
 
 #helper method to annotate FEATURES within an image
-annotate_image<-function(img=NULL, outfile = NULL){
+annotate_image<-function(img=NULL, imgDetails = NULL, outfile = NULL){
   # If user does not provide a file name, make one up
   if(is.null(outfile)){
     outfile="annotated_image_file.csv"
   }
+
+  annote_dat<-runApp(annotate_image_app(img,imgDetails))
+
+  #cleaning up the annotatation data
+  annote_dat<-data.frame(elemID =annote_dat[,1],
+                 x = as.numeric(annote_dat[,2]),
+                 y = as.numeric(annote_dat[,3]),
+                 xmax = as.numeric(annote_dat[,4]),
+                 ymax = as.numeric(annote_dat[,5]),
+                 element_name = annote_dat[,6],
+                 type = annote_dat[,7],
+                 stringsAsFactors = FALSE)
+
+
+  return(annote_dat)
 }
 
 #might go elsewhere, but essentially, calls a shinyapp like a function to allow a user to annotate their image
 #and create the image file
+#An important detail : all the spatial mappings are depend on OUR chioce of how to render the image
+#So it's based on assuming 1000 pixel width. The transformations are meaningless if the image is resized.
+
 annotate_image_app<-function(img,imgDetails){
   require(shiny)
-  require(cowplot)
   require(ggplot2)
   require(DT)
+  require(grid)
+
+  annotDat<-c() #global variable needed for return value on session end
 
   shiny::shinyApp(
     ui = fluidPage(
@@ -113,7 +133,7 @@ annotate_image_app<-function(img,imgDetails){
       br(),
       fluidRow(
         column(6,
-               plotOutput("testPlot",click = "plot_click",height="1000px")),
+               plotOutput("testPlot",dblclick = "plot_click",brush = "plot_brush",height="1000px")),
         column(6,
                textInput(inputId = "elementID",label="Element Name",
                          placeholder = "Add name here, then click on plot"),
@@ -121,43 +141,111 @@ annotate_image_app<-function(img,imgDetails){
       )
     ),
     server = function(input,output,session){
-      session$onSessionEnded(stopApp) #kill the app when the browser is closed
+      #when the user closes the browser the app stops running
+      #and passes a dataframe of the annotations the annote_image function
+      session$onSessionEnded(function(){stopApp(annotDat)})
 
       #reactivedata
-      values <- reactiveValues(df_data = NULL)
+      values <- reactiveValues(df_data = NULL,
+                               pointObj = 0,
+                               shapeObj = 0)
+
+      imgBase<- reactive({
+        imgRaster <- rasterGrob(img, width=unit(1,"npc"), height=unit(1,"npc"), interpolate = TRUE)
+      ggplot()+
+        xlim(c(0,imgDetails$width))+
+        ylim(c(0,imgDetails$height))+
+        annotation_custom(imgRaster, -Inf, Inf, -Inf, Inf) +
+        theme_bw()
+      })
 
       output$testPlot<-renderPlot({
         #this image raster code allows it to be automatically resized according to display window that the plot is rendered into
-        imgRaster <- rasterGrob(img, width=unit(1,"npc"), height=unit(1,"npc"), interpolate = TRUE)
-        ggplot()+
-          xlim(c(0,imgDetails$width))+
-          ylim(c(0,imgDetails$height))+
-          annotation_custom(imgRaster, -Inf, Inf, -Inf, Inf) +
-          theme_bw()
+        p<-imgBase()
+        if(!is.null(values$df_data)){
+          df<-data.frame(elemID =values$df_data[,1],
+                         x = as.numeric(values$df_data[,2]),
+                         y = as.numeric(values$df_data[,3]),
+                         xmax = as.numeric(values$df_data[,4]),
+                         ymax = as.numeric(values$df_data[,5]),
+                         element_name = values$df_data[,6],
+                         type = values$df_data[,7],
+                         stringsAsFactors = FALSE)
+
+          df_point <- dplyr::filter(df,type=="point")
+          df_shape <- dplyr::filter(df,type=="square")
+
+          p<- p +
+            geom_point(data = df_point,aes(x =x,y=y),colour="red",size=2)+
+            geom_rect(data = df_shape,aes(xmin=x,ymin=y,xmax=xmax,ymax = ymax,group=elemID),alpha = 0.2,colour="blue")+
+            theme_bw()
+        }
+
+        p
       })
 
+      #Table output of save elements
       output$elementTable<-renderDataTable({
         if(is.null(values$df_data))
           return(NULL)
 
-        values$df_data
+        df<-data.frame(elemID =values$df_data[,1],
+                       x = as.numeric(values$df_data[,2]),
+                       y = as.numeric(values$df_data[,3]),
+                       xmax = as.numeric(values$df_data[,4]),
+                       ymax = as.numeric(values$df_data[,5]),
+                       element_name = values$df_data[,6],
+                       type = values$df_data[,7],
+                       stringsAsFactors = FALSE)
+
+        df
       },editable = T)
 
+
+      #Add plot shapes
       observeEvent(input$plot_click,{
+        type="point"
+        elemID<-paste0(type,values$pointObj)
+        values$pointObj<-values$pointObj+1
+
         if(!input$elementID==""){
-          values$df_data<-rbind(values$df_data,c(input$plot_click$x,input$plot_click$y,input$elementID))
+          values$df_data<-rbind(values$df_data,c(elemID,input$plot_click$x,input$plot_click$y,NA,NA,input$elementID,type))
           updateTextInput(session,"elementID",value="")
         }else{
-          values$df_data<-rbind(values$df_data,c(input$plot_click$x,input$plot_click$y,"ADD ELEMENT ID"))
+          values$df_data<-rbind(values$df_data,c(elemID,input$plot_click$x,input$plot_click$y,NA,NA,"ADD ELEMENT ID",type))
         }
 
-        observeEvent(input$elementTable_cell_edit,{
-          changeSite<-input$elementTable_cell_edit
-          values$df_data[changeSite$row,changeSite$col+1]<-changeSite$value
-        })
+        annotDat<<-values$df_data
+
+      })
+
+      #Add square shapes
+      observeEvent(input$plot_brush,{
+        type="square"
+        elemID<-paste0(type,values$shapeObj)
+        values$shapeObj<-values$shapeObj+1
+        if(!input$elementID==""){
+          values$df_data<-rbind(values$df_data,c(elemID,input$plot_brush$xmin,input$plot_brush$ymin,input$plot_brush$xmax,input$plot_brush$ymax,input$elementID,type))
+          updateTextInput(session,"elementID",value="")
+        }else{
+          values$df_data<-rbind(values$df_data,c(elemID,input$plot_brush$xmin,input$plot_brush$ymin,input$plot_brush$xmax,input$plot_brush$ymax,"ADD ELEMENT ID",type))
+        }
+
+        annotDat<<-values$df_data
+
+        session$resetBrush("plot_brush")
+      })
+
+      #observe and keep edits user makes to cell
+      observeEvent(input$elementTable_cell_edit,{
+        changeSite<-input$elementTable_cell_edit
+        values$df_data[changeSite$row,changeSite$col+1]<-changeSite$value
+
+        annotDat<<-values$df_data
       })
 
     }
   )
+
 }
 
