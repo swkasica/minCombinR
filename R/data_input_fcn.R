@@ -4,11 +4,13 @@ input_data<-function(file  = NA, dataType = NA, desc = NA, ...){
   if(!(dataType %in% c("tree","table","dna","spatial","image")))
     stop("Data type is not supported. Please choose one of : tree, table, dna, spatial, image. Use ?input_data to learn more about the different input types.")
 
+  print(as.list(match.call()))
+
   switch(dataType,
          "table" = input_table(file,desc,...),
          "tree" = input_phyloTree(file,desc,...) ,
          "dna" = input_dna(file,desc,...),
-         "spatial" = input_spatial(file,desc,...),
+         "spatial" = input_spatial(file,desc,proj4String,...),
          "image" = input_image(file,desc,...))
 }
 
@@ -25,8 +27,20 @@ input_dna<-function(file=NA,desc = NA,...){
 }
 
 #Helpfer function : input spatial data
-input_spatial<-function(file=NA,desc = NA,...){
-  print("I will help you load in some spatial data")
+input_spatial<-function(file=NA,desc = NA,proj4string = NA,...){
+
+  if(is.na(proj4string))
+    stop("Please specify a proj4String")
+
+  if(!stringr::str_detect(file,"shp$")){
+    stop("Currently, the input file only loads shapefiles")
+  }
+
+  shapefileAdmin1 <- maptools::readShapeSpatial(file, proj4string = sp::CRS(proj4string))
+  admin1Poly<-ggplot2::fortify(shapefileAdmin1)
+
+  return(admin1Poly)
+
 }
 
 #Helpfer function: input tree
@@ -40,9 +54,9 @@ input_spatial<-function(file=NA,desc = NA,...){
 #' @import stringr
 #'
 #' @examples
-input_phyloTree<-function(file = NA,desc = NA,...){
+input_phyloTree<-function(file = NA,sepLabel = NA, desc = NA,...){
   #Make sure that tree has the right format to load
-  if(!stringr::str_detect(file,"tree$|nwk$|tre$|nexus$")){
+  if(!stringr::str_detect(file,"tree$|nwk$|tre$|newick$|nexus$")){
     stop("Phylogenetic tree file cannot be loaded. Please ensure that your tree has a .tree, .tre, .nwk, or .nexus format.")
   }
 
@@ -50,8 +64,21 @@ input_phyloTree<-function(file = NA,desc = NA,...){
   tree<-tryCatch(treeio::read.tree(file=file,...),
                  error = function(e) stop("Could not load tree."))
 
-  #return the tree to the user
-  return(tree)
+  if(!is.na(sepLabel)){
+    #if it is a special character add escape
+    if(grepl('[[:punct:]]', sepLabel))
+      sepLabel<-paste0("\\",sepLabel)
+
+    #Think more about how you want to handle the error messages
+    tipDat<-tryCatch(do.call(rbind,strsplit(tree$tip.label,sepLabel)),
+                     error = function(e) return(NULL))
+  }else{
+    tipDat<-NULL
+  }
+
+  #return the tree and parsed tip data (if that's what the user wants)
+  #Is there more I should get out of a tree?
+  return(list(tree=tree,nodeDat = tipDat))
 }
 
 #Helpder function : input_image
