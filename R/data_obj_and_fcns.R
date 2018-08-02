@@ -40,3 +40,18 @@ setMethod("addDataSource",
             }
             object@data[[type]]<-newData
 })
+
+#Method that extracts data list
+setGeneric(
+  "getAllData",
+  function(object){
+    standardGeneric("getAllData")
+  }
+)
+
+setMethod("getAllData",
+          signature("gevitDataObj"),
+          function(object){
+            return(object@data)
+          }
+)

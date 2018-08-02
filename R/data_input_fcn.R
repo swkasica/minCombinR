@@ -1,5 +1,5 @@
 #Generic input function for inputing data, helper functions are in the back
-input_data<-function(file  = NA, dataType = NA, desc = NA, ...){
+input_data<-function(file  = NA, dataType = NA, desc = NA,...){
   #Only supports specific data types
   if(!(dataType %in% c("tree","table","dna","spatial","image")))
     stop("Data type is not supported. Please choose one of : tree, table, dna, spatial, image. Use ?input_data to learn more about the different input types.")
@@ -16,25 +16,201 @@ input_data<-function(file  = NA, dataType = NA, desc = NA, ...){
 
 
 #Helper function: inputs tables
-#TO DO: set up object return
 input_table<-function(file=NA,stringsAsFactors = FALSE,desc=NA,asObj=TRUE,...){
   #autodetect file type
-  #basic, assumes CSV
-  dat<-read.csv(file=file,stringsAsFactors = stringsAsFactors,header=TRUE)
+  if(stringr::str_detect(file,"xls$|xlsx$")){
+    dat<-readxl::read_excel(path=file,...)
+  }else if(stringr::str_detect(file,"csv$")){
+    dat<-read.csv(file=file,stringsAsFactors = stringsAsFactors,header=TRUE,...)
+  }else if(stringr::str_detect(file,"tsv$")){
+    dat<-read.table(file=file,stringsAsFactors = stringsAsFactors,header=TRUE,sep="\t",...)
+  }else{
+    stop("GEViT currently only supports xls,xlsx,csv,and tsv table input formats.")
+  }
 
-  return(dat)
+  if(asObj){
+    objDat<-new("gevitDataObj",
+                type = "table",
+                source = file,
+                data = list(table = dat))
+    return(objDat)
+  }else{
+    return(dat)
+  }
 }
 
 #Helper function : input dna
-input_dna<-function(file=NA,desc = NA,...){
-  print("I will help you load in some DNA")
+input_dna<-function(file=NA,desc = NA,asObj=TRUE,fileType=NA,...){
+  #check to see what kinds of files the user has
+  if(dir.exists(file)){
+    #actions for a directory
+    fileList<-list.files(file,full.names=TRUE)
+
+    #identify file formats
+    fileType<-sapply(fileList,function(x){
+      dna_detectFileType(x)
+    })
+
+    if(sum(is.na(fileType)) == length(fileType)){
+      stop("There are no vcf or fasta files to upload in this directory.")
+    }
+
+    #quick check on file num and size - warn user if too many files or too large
+    fileInfo<-as.data.frame(t(sapply(fileList,file.info)),stringsAsFactors = FALSE)
+
+    #warn if it looks like all files will take up 4 gigs of RAM or more
+    totalFileSizeEst<-sum(as.numeric(fileInfo$size))/(1024^3) #convert bytes to gigs
+    scalingFactor <- 2 #seems reasonable, but sometimes it's as much as 10!
+
+    if(totalFileSizeEst*scalingFactor>4){
+      warning("Current input files likely to exceed 4 gigs of RAM.")
+    }
+
+    #now call yo-self!
+    #put all individual files into a single DNA bin object
+    outInfo<-apply(cbind(fileList,fileType),1,function(x){
+      input_dna(file=x[1],fileType=x[2],asObj=FALSE)
+    }) %>%
+      data.table::rbindlist() %>%
+      toDNABIN()
+
+    objDat<-new("gevitDataObj",
+                type = "dna",
+                source = fileList,
+                data = list(dnaBin=outInfo))
+
+    return(objDat)
+  }else{
+    #actions for a single file
+    if(is.na(fileType)){
+      fileType<-dna_detectFileType(file)
+    }
+
+    if(is.na(fileType))
+      stop("Only VCF and FASTA files are supported at this time")
+
+    #run approperiate input function given the file type
+    output<-switch(fileType,
+           "vcf" = input_vcf(file,format=NA,...),
+           "fasta" = input_fasta(file,format=NA,...))
+
+
+    if(asObj){
+      if(fileType == "fasta"){
+        output<-toDNABIN(output)
+      }else if(fileType == "vcf"){
+        output<-toDNABIN(output)
+      }
+
+      objDat<-new("gevitDataObj",
+                  type = "dna",
+                  source = file,
+                  data = list(dnaBin=output))
+    }else{
+      return(output)
+    }
+  }
+}
+
+#Helper function to detect file types for DNA input
+dna_detectFileType<-function(file){
+  #autodetect file type
+  if(stringr::str_detect(file,".vcf$|.vcf.gz$")){
+    return("vcf")
+  }else if(stringr::str_detect(file,".fasta$")){
+    return("fasta")
+  }else{
+    return(NA)
+  }
+}
+
+#helper function to create a DNA bin object
+toDNABIN<-function(dat = NULL){
+  #Likely a matrix
+  if(ncol(dat) >2){
+    #generate alignment
+    refSeq<-dplyr::distinct(dat,CHROM,POS,REF)
+    grp<-unique(dat$SAMPID)
+    mat<-matrix(".",length(grp),nrow(refSeq))
+
+    for(i in 1:length(grp)){
+      seq<-refSeq$REF
+      tmp<-dplyr::filter(dat,SAMPID == grp[i])
+      idx<-match(tmp$POS,refSeq$POS)
+
+      seq[idx]<-tmp$ALT
+      mat[i,]<-seq
+    }
+    rownames(mat)<-grp
+    colnames(mat)<-paste(refSeq$CHROM,refSeq$POS,sep=":")
+
+    #return DNA bin object
+    return(ape::as.DNAbin(mat))
+  }else if(ncol(dat)==2){
+    #likely fasta string
+    samps<-as.character(dat$seq)
+    names(samps)<-dat$ID
+    return(as.DNAbin.DNAStringSet(samps))
+  }
+
+}
+
+#Helper function to input dna, which loads VCF data
+#Initially, used VCFR because it's got a lot going on
+#and data table was more general and versitile
+#NOTE: ASSUMES ONE SAMPLE PER VCF
+input_vcf<-function(file=NA,asObj=TRUE,filter=NA,...){
+  #Read with data.table, rather than vcfR
+  #vcfFile<-vcfR::read.vcfR(vcfFile)
+  if(stringr::str_detect(file,".vcf.gz$")){
+    tmp<-data.table::fread(paste0('zcat < ',file),skip="#")
+  }else{
+    tmp<-data.table::fread(file,skip="#")
+  }
+  colnames(tmp)<-gsub("#","",colnames(tmp))
+  tmp$SAMPID<-rep(basename(file),nrow(tmp))
+
+  #Filter the sequences if needed or if very large file (last part is TO DO)
+  if(!is.na(filter)){
+    classFilter<-class(filter)
+    if(classFilter == "character"){
+      #if character, filter all items that contain the word (i.e. PASS)
+      print("Implement me")
+    }else if(classFilter == "logical"){
+      #if boolean, deploy our own basic one, then filter with word PASS
+      print("Implemented me")
+    }else{
+      warning("Input to filter is not currently supported! Data is not filtered.")
+    }
+  }
+
+  return(tmp[,c("SAMPID","CHROM","POS","REF","ALT"),on=c("ID")])
+}
+
+input_fasta<-function(file=NA,...){
+  if(stringr::str_detect(file,".fasta.gz$")){
+    tmp<-data.table::fread(paste0('zcat < ',file),skip="#")
+  }else{
+    tmp<-data.table::fread(file,stringsAsFactors = FALSE,header = FALSE)
+  }
+  #tmp<-ape::read.FASTA(file=file,type="DNA")
+ idxSamp<-which(apply(tmp,1,function(x){grepl(">",x)}))
+ samps<-c()
+ for(i in 1:length(idxSamp)){
+  start = idxSamp[i]+1
+  end<-ifelse(i == length(idxSamp),nrow(tmp),idxSamp[i+1]-1)
+  samps<-rbind(samps,tmp[start:end,paste0(V1,collapse="")])
+ }
+  names(samps)<-gsub(">","",tmp[idxSamp,c(V1)])
+  #tst<-as.DNAbin.DNAStringSet(samps)
+  return(data.frame(seq=samps,ID=names(samps)))
 }
 
 #Helpfer function : input spatial data
 input_spatial<-function(file=NA,desc = NA,...){
 
   if(!stringr::str_detect(file,"shp$")){
-    stop("Currently, the input file only loads shapefiles. Is your map an image file? Please choose set type to 'image' in order to load it properly")
+    stop("Currently, the input file only loads shapefiles. Is your map an image file? Please choose set dataType to 'image' in order to load it properly")
   }
 
   nc <- sf::st_read(file, quiet = TRUE)
@@ -43,14 +219,15 @@ input_spatial<-function(file=NA,desc = NA,...){
   #doesn't alway work well
   nc<- sf::st_transform(nc, "+init=epsg:3857")
 
-  objDat<-new("gevitDataObj",
-              type = "spatial",
-              source = file,
-              data = list(geometry=nc)
-  )
-
-  return(objDat)
-
+  if(asObj){
+    objDat<-new("gevitDataObj",
+                type = "spatial",
+                source = file,
+                data = list(geometry=nc))
+    return(objDat)
+  }else{
+    return(nc)
+  }
 }
 
 #Helpfer function: input tree
@@ -61,10 +238,9 @@ input_spatial<-function(file=NA,desc = NA,...){
 #' @param ...
 #'
 #' @return a phylo tree object
-#' @import stringr
 #'
 #' @examples
-input_phyloTree<-function(file = NA, desc = NA,sepLabel = NA,metadata=NULL,...){
+input_phyloTree<-function(file = NA, desc = NA,sepLabel = NA,metadataFile=NULL,asObj=TRUE,...){
   #Make sure that tree has the right format to load
   if(!stringr::str_detect(file,"tree$|nwk$|tre$|newick$|nexus$")){
     stop("Phylogenetic tree file cannot be loaded. Please ensure that your tree has a .tree, .tre, .nwk, or .nexus format.")
@@ -88,10 +264,10 @@ input_phyloTree<-function(file = NA, desc = NA,sepLabel = NA,metadata=NULL,...){
   }
 
   #if the user added metadata load too
-  if(!is.null(metadata)){
-    metadata<-input_table(file = metadata,asObj=FALSE)
+  if(!is.null(metadataFile)){
+    metadata<-input_table(file = metadataFile,asObj=FALSE)
 
-    #quick scan for column that matches node labels
+    #quick scan for column that matches node labels to make it easier to link data later
     tipLab<-tree$tip.label
     containsLabs<-apply(metadata,2,function(x){sum(tipLab %in% x)})
     if(max(containsLabs) == 0){
@@ -105,24 +281,28 @@ input_phyloTree<-function(file = NA, desc = NA,sepLabel = NA,metadata=NULL,...){
   #return the tree and parsed tip data (if that's what the user wants)
   #Is there more I should get out of a tree?
 
-  objDat<-new("gevitDataObj",
-              type = "tree",
-              source = file,
-              data = list(tree=tree)
-  )
+  if(asObj){
+    objDat<-new("gevitDataObj",
+                type = "tree",
+                source = file,
+                data = list(tree=tree)
+    )
 
-  if(!is.null(tipDat))
-    objDat@data$tipData<-tipDat
+    if(!is.null(tipDat))
+      objDat@data$tipData<-tipDat
 
-  if(!is.null(metadata))
-    objDat@data$metadata<-metadata
+    if(!is.null(metadata)){
+      objDat@source<-c(objDat@source,metadataFile)
+      objDat@data$metadata<-metadata
 
-  if(!is.null(linkVar))
-    objDat@data$linkVar<-linkVar
+      objDat@data$linkVar<-linkVar
+    }
 
-  return(objDat)
 
-  #return(list(tree=tree,nodeDat = tipDat))
+    return(objDat)
+  }else{
+    return(list(tree=tree,nodeDat = tipDat,metadata = metadata))
+  }
 }
 
 #Helpder function : input_image
@@ -133,9 +313,8 @@ input_phyloTree<-function(file = NA, desc = NA,sepLabel = NA,metadata=NULL,...){
 #' @param ...
 #'
 #' @return
-#' @import magick
 #' @examples
-input_image<-function(file = NA,desc = NA,...){
+input_image<-function(file = NA,desc = NA,asObj=TRUE,...){
   img<-magick::image_read(path=file)
 
   #all images get resized so that they are mangeable to work with
@@ -158,13 +337,17 @@ input_image<-function(file = NA,desc = NA,...){
   #just return the image
   warning("To use this image, please be sure to have separate file that links the image to data in pixel space. If you would like to CREATE an annotation file, run the 'annotate_image' command.")
 
-  objDat<-new("gevitDataObj",
-            type = "image",
-            source = file,
-            data = list(img=img,imgDetails = imgDetails)
-           )
+  if(asObj){
+    objDat<-new("gevitDataObj",
+              type = "image",
+              source = file,
+              data = list(img=img,imgDetails = imgDetails)
+             )
 
-  return(objDat)
+    return(objDat)
+  }else{
+    return(list(img=img,imgDetails = imgDetails))
+  }
 }
 
 #helper method to annotate FEATURES within an image

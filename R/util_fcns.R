@@ -3,6 +3,15 @@
 #An important detail : all the spatial mappings are depend on OUR chioce of how to render the image
 #So it's based on assuming 1000 pixel width. The transformations are meaningless if the image is resized.
 #NOTE : CURRENTLY ONLY TESTED ON IMAGE DATA, BUT EXPECTED TO BECOME MORE GENERIC IN THE FUTURE
+#' Title
+#'
+#' @param img
+#' @param imgDetails
+#'
+#' @return
+#' @export
+#'
+#' @examples
 annotate_app<-function(img,imgDetails){
   require(shiny)
   require(ggplot2)
@@ -12,15 +21,15 @@ annotate_app<-function(img,imgDetails){
   annotDat<-c() #global variable needed for return value on session end
 
   shiny::shinyApp(
-    ui = fluidPage(
-      h1("Welcome to annotator"),
-      p("Here's what you can do. Click on the button to start annotating items on your image. Complex polygons are not currently supported, so please pick the centriod (i.e middle of a room) or some other landmark to annotate data"),
-      br(),
-      fluidRow(
-        column(6,
-               plotOutput("testPlot",dblclick = "plot_click",brush = "plot_brush",height="1000px")),
-        column(6,
-               textInput(inputId = "elementID",label="Element Name",
+    ui = shiny::fluidPage(
+      shiny::h1("Welcome to annotator"),
+      shiny::p("Here's what you can do. Click on the button to start annotating items on your image. Complex polygons are not currently supported, so please pick the centriod (i.e middle of a room) or some other landmark to annotate data"),
+      shiny::br(),
+      shiny::fluidRow(
+        shiny::column(6,
+               shiny::plotOutput("testPlot",dblclick = "plot_click",brush = "plot_brush",height="1000px")),
+        shiny::column(6,
+               shiny::textInput(inputId = "elementID",label="Element Name",
                          placeholder = "Add name here, then click on plot"),
                DT::dataTableOutput("elementTable",width="80%"))
       )
@@ -132,4 +141,16 @@ annotate_app<-function(img,imgDetails){
     }
   )
 
+}
+
+#---------------------------------------------------
+# Data conversion functions specific to dna inputs
+#---------------------------------------------------
+
+readVCF<-function(file = NULL){
+  print("READ VCF")
+}
+
+convAlignMat<-function(files=NULL){
+  print("ALGIN")
 }
