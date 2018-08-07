@@ -129,7 +129,7 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
       theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
   }
 
-  if(!is.na(colour_scale)[1]) {
+  if(!is.na(colour_scale)[1] && !is.na(colour_var)) {
     gg_chart <- gg_chart %+% aes_string(fill = colour_var)
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
@@ -248,7 +248,7 @@ plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scal
     gg_chart <- gg_chart + ggtitle(title)
   }
 
-  if(!is.na(colour_scale)[1]) {
+  if(!is.na(colour_scale)[1] && !is.na(colour_var)) {
     #Add colour variable
     gg_chart <- gg_chart %+% aes_string(colour = colour_var)
     #Scale colour variable
@@ -415,6 +415,7 @@ plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA
 plot_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
                          x_limits=NA, y_limits=NA, flip_coord=FALSE,
                          rm_x_labels=FALSE, rm_y_labels=FALSE) {
+
   gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
     geom_point()
 

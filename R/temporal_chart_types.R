@@ -23,15 +23,18 @@ plot_streamgraph <- function(data, key, value, date) {
 #The algorithm will make an annotated timeline if the data provided has a start, end and phase column or the start, end and phase paramaters are provided.
 #Otherwise, the algorithm will create a stacked version.
 #TODO: Are there better names for any of these inputs?
-plot_timeline <- function(data, start=NA, end=NA, names=NA, phase=NA, events=NA) {
+plot_timeline <- function(data, start=NA, end=NA, names=NA, events=NA, colour_var=NA, colour_scale=NA) {
+
 
   if(!is.na(start) && !is.na(end) && !is.na(phase) && !is.na(names)) {
     #Stacked
-    timelineS::timelineG(data, y, start = start, end = end, names = names, phase = phase)
+    timelineS::timelineG(data, y, start = start, end = end, names = names)
   } else {
     #Annotated
     timelineS::timelineS(data, labels = data[[events]])
   }
+
+  #PHASE in timelineG will stack
 
   #TODO: some sort of autocomplete where the user doesn't have to specify start, end, names and phase if they have those names already
   #If this is the case, then I will probably need to include another var input to determine which timeline type to render

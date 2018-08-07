@@ -43,7 +43,7 @@ specify_base <- function(chart_type, data, x, y, z, ...) {
 #'
 #' #'
 #' @export
-specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_by="colour",
+specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_mark_type="default",
                           alignment = NA, common_var=NA, order=NA) {
   lo_specs <- list(...)
   names_prefix <- "base"
@@ -54,11 +54,18 @@ specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_by="co
   if (combo_type == "small_multiple") {
     lo_specs <- c(lo_specs, facet_by = facet_by)
   } else if (combo_type == "many_types_linked") {
-    lo_specs <- c(link_var = link_var, link_by = link_by, lo_specs)
+    lo_specs <- c(link_var = link_var, link_mark_type = link_mark_type, lo_specs)
   } else if (combo_type == "composite") {
     lo_specs <- c(alignment = alignment, common_var = common_var, order = order, lo_specs)
   }
   return(lo_specs)
+}
+
+#' Specify a reencoded mark
+#' @param mark_type A string that specifies the type of mark to reencode. default depends on the type of chart. Possible strings include: 'default', 'area', 'line', 'point' and 'text'
+#' @param channel_type A string that specifies the type of channel to reencode. Default is 'colour'. Possible strings include: 'colour' , size', 'shape', 'texture', 'font_face'
+specify_reencodement <- function(base_specification, mark_type='default', channel='colour') {
+
 }
 
 #TODO: decide on shorter names for chart_types and combinations (ex. "many_types_linked" --> "linked")
@@ -76,7 +83,7 @@ plot <- function(specs) {
     # return(do.call(plot_simple, spec_list))
   }
 
-  #TODO: Do for all combination types
+  #TODO: clean
   else {
     #Found a better way to do this so commented out but may be useful later.
     #Find all combinations (currently only allowed one combo type so commented out)
@@ -106,7 +113,7 @@ plot <- function(specs) {
         x[[1]] <- NULL
         as.list(x)
       })
-      return(do.call(plot_many_linked, c(link_var = specs$link_var, link_by = specs$link_by, base_specs)))
+      return(do.call(plot_many_linked, c(link_var = specs$link_var, link_mark_type = specs$link_mark_type, base_specs)))
     }
 
     if (specs$combo_type == "composite") {

@@ -14,7 +14,7 @@ plot_choropleth <- function(data, lat_var, long_var, fill, group, flip_coord=FAL
 
   ggchart <- ggplot() +
     geom_polygon(data = data,
-                 aes_string(x = lat_var, y = lon_var, group = group, fill = fill),
+                 aes_string(x = lat_var, y = long_var, group = group, fill = fill),
                  color = "black", size = 0.25) +
     coord_map()
 
