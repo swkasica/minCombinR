@@ -38,4 +38,5 @@ Imports:
     RCircos,
     RColorBrewer,
     reshape2,
-    VennDiagram
+    VennDiagram,
+    data.table, DT, magick, readxl, scales, sf, shiny, stringr, tidyr, treeio

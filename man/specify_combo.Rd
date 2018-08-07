@@ -5,7 +5,8 @@
 \title{Specify a combination}
 \usage{
 specify_combo(combo_type, ..., facet_by = NA, link_var = NA,
-  link_by = "colour", alignment = NA, common_var = NA, order = NA)
+  link_mark_type = "default", alignment = NA, common_var = NA,
+  order = NA)
 }
 \description{
 #'
