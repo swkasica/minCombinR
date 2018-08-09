@@ -6,7 +6,7 @@
 #TODO: Have a conversation about this chart... streamgraph is not on cran yet, which might affect our package getting onto cran
 plot_streamgraph <- function(data, key, value, date) {
   # data <- dplyr::rename(data, key = key, value = value, date = date)
-  stream_chart <- streamgraph(data = data, key = key, value = value, date = date, interactive = FALSE)
+  stream_chart <- streamgraph::streamgraph(data = data, key = key, value = value, date = date, interactive = FALSE)
   stream_chart
 }
 
@@ -25,15 +25,6 @@ plot_streamgraph <- function(data, key, value, date) {
 #TODO: Are there better names for any of these inputs?
 plot_timeline <- function(data, start=NA, end=NA, names=NA, events=NA, colour_var=NA, colour_scale=NA) {
 
-
-  if(!is.na(start) && !is.na(end) && !is.na(phase) && !is.na(names)) {
-    #Stacked
-    timelineS::timelineG(data, y, start = start, end = end, names = names)
-  } else {
-    #Annotated
-    timelineS::timelineS(data, labels = data[[events]])
-  }
-
   #PHASE in timelineG will stack
 
   #TODO: some sort of autocomplete where the user doesn't have to specify start, end, names and phase if they have those names already
@@ -44,6 +35,14 @@ plot_timeline <- function(data, start=NA, end=NA, names=NA, events=NA, colour_va
   #}
   #TODO: some sort of autocomplete where the user doesn't have to specify events.
 
+
+  if(!is.na(start) && !is.na(end) && !is.na(names)) {
+    #Stacked
+    timelineS::timelineG(data, start = start, end = end, names = names)
+  } else {
+    #Annotated
+    timelineS::timelineS(data, labels = data[[events]])
+  }
 }
 
 #Stacked Timeline

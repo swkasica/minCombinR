@@ -19,7 +19,7 @@ plot_table <- function(data, flip_coord=FALSE, rownames=NA, x_limits=NA, y_limit
   }
 
   if(!is.na(y_limits[1])) {
-
+    #TODO!!!
   }
 
   gridExtra::tableGrob(data)

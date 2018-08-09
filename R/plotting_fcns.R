@@ -105,6 +105,8 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                         rownames=NA,
                         #For geographic map
                         lat_var=NA, long_var=NA,
+                        #For node link
+                        directed=FALSE,
                         #FOR COMPOSITE (only implemented for a few chart types)
                         flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
                         #FOR MANY TYPES LINKED
@@ -128,8 +130,8 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
          "pie" = plot_pie_chart(data, x, title, colour_var, colour_scale),
          "histogram" = plot_histogram(data, x, title, colour_var, colour_scale, x_limits),
          "pdf" = plot_pdf(data, x, title, colour_var, colour_scale, x_limits, flip_coord),
-         "boxplot" = plot_boxplot(data, x, y, title, flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "box_plot" = plot_boxplot(data, x, y, title, flip_coord, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "boxplot" = plot_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "box_plot" = plot_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
          "violin" = plot_violinplot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
          "swarm" = plot_swarm_plot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
 
@@ -139,7 +141,7 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
          "flow_diagram" = plot_flow_diagram(data), #TODO
 
          #Temporal
-         "stream_graph" = plot_streamgraph(data, key, value, date), #TODO: change param names
+         "stream" = plot_streamgraph(data, key, value, date), #TODO: change param names
          "timeline" = plot_timeline(data, start, end, names, events, colour_var, colour_scale),
 
          #Spatial
@@ -212,6 +214,7 @@ plot_small_multiples <- function(chart_type, data, facet_by, x, y=NA, z=NA, fill
   layout_plots(all_plots, labels = "AUTO")
 }
 
+#Gets the values of the x axis from the chart in the chart_args input.
 infer_x <- function(chart_args) {
   #TODO: note dependency on variable names!
 
@@ -239,6 +242,7 @@ infer_x <- function(chart_args) {
 
 }
 
+#Gets the values of the y axis
 infer_y <- function(chart_args) {
   if (chart_args$chart_type == "table") {
     #TODO: for now, I am assuming the comp variable is the first column (this can be changed later and reoordered but requires extra checks)
@@ -368,7 +372,6 @@ check_combinable_composite <- function(chart_args_list) {
 }
 
 #TODO: remove labels that are on the common axis for all charts but the last - will do once we have done some testing as it will make testing easier
-#TODO: some of the chart types would be better off aligning axis directly next to each other (rotate upsidedown) - for example, bar chart and dendrogram... rotate dendrogram so x axis are really close.
 #TODO: move legends so they don't disrupt the alignment in cowplot!!!
 plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
   chart_args_list <- list(...)
@@ -376,8 +379,7 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
   #Charts are spatially alignable if it passes through here (otherwise will report error and stop)
   check_combinable_composite(chart_args_list)
 
-  #For now, I am assuming all of the charts have an x and y variable as input
-  #TODO: infer the x and y variables from charts that have a different name for these!
+  #TODO: finish the infer functions for the charts in composite_todo
   all_x_vars <- unlist(sapply(chart_args_list, function(chart_args) {infer_x(chart_args)}))
   all_y_vars <- unlist(sapply(chart_args_list, function(chart_args) {infer_y(chart_args)}))
 
@@ -385,6 +387,7 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
   all_vars[sapply(all_vars, is.null)] <- NULL
 
   #Determine the common variable name if not already specified
+  #TODO: return an error if there is no common_var
   if (is.na(common_var)) {
     common_var <- names(table(all_vars)[table(all_vars) > (length(chart_args_list) - 1)])[1] #If there is more than one common_var, then just combine on the first one (x).
   }
@@ -398,7 +401,7 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
   #Set the global limits
   limits <- get_limits(chart_args_list, common_var)
 
-  #TODO: put the below if statement into get_order() function!!
+  #TODO: ?? put the below if statement into get_order() function!!
   #Make sure all categorical variables have the same order for the common_var
   if (!is.numeric(limits)) {
     #If order is not specified by user

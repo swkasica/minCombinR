@@ -50,12 +50,11 @@ plot_dendro <- function(data, tip_var=NA, cluster_vars=NA) {
 
   #This package is mainly used to get the data from a dendrogram
   # I could probably just use ggplot here using geom_segment and geom_text
-  ggdendro::ggdendrogram(clust_dendro)
+  # ggdendro::ggdendrogram(clust_dendro)
 
-  # # par(mar=c(7,3,1,1))  # move bottom margin to have the complete label
-  # # plot(dend)
-  # ggraph::ggraph(clust_dendro, layout='dendrogram') +
-  #   ggraph::geom_edge_elbow()
+  ddata <- ggdendro::dendro_data(clust_dendro, type = "rectangle")
+  dendro_chart <- ggplot(ggdendro::segment(ddata)) + geom_segment(aes(x=x,y=y,xend=xend,yend=yend))
+  dendro_chart
 }
 
 #Clonal Tree
