@@ -10,16 +10,16 @@ NULL
 
 #Standard Bar Chart or Stacked Bar Chart (using stack_by)
 #TODO: Do we want option for grouping bars?
-#TODO: Decide on if we should split this into plot_bar and plot_divergent and plot_stacked to make it easier for the user
+#TODO: Decide on if we should split this into render_bar and render_divergent and render_stacked to make it easier for the user
 
 #TODO: if colour_var, then change stack_by to colour_var and warn user
 #TODO: smart error messages for weird input values
 #TODO: error messages for stack_by and no reference vector
 #TODO: Maybe make this shorter by making generic cases and splitting up ggplot2 functions
 
-#NOTE: I combined this with plot_stacked_bar chart (AP can use stack_by if they want to make a stacked bar chart)
+#NOTE: I combined this with render_stacked_bar chart (AP can use stack_by if they want to make a stacked bar chart)
 #var types - x = D, y = C
-plot_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
+render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
                            proportional=FALSE,
                            reference_vector, reference_var, title=NA,
                            flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
@@ -149,7 +149,7 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
 
 
 #BELOW IS THE OLD BAR CHART BEFORE ADDING DIVERGENT!!!
-# plot_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
+# render_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
 #                            flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
 #                            colour_var=NA, colour_scale=NA,
 #                            x_limits=NA, y_limits=NA) {
@@ -214,9 +214,9 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
 #   gg_chart
 # }
 
-# Note- is now part of plot_bar_chart
+# Note- is now part of render_bar_chart
 # Stacked Bar chart
-# plot_stacked_bar_chart <- function(data, x, fill=NA, title=NA, colour_var=NA, colour_scale=NA) {
+# render_stacked_bar_chart <- function(data, x, fill=NA, title=NA, colour_var=NA, colour_scale=NA) {
 
 #   gg_chart <- ggplot(data, aes_string(x=x)) +
 #     geom_bar(aes_string(fill=fill), position="fill")
@@ -235,7 +235,7 @@ plot_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
 
 # Line Chart
 # x and y normally continuous but can have discrete (bivariate)
-plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scale=NA,
+render_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scale=NA,
                             x_limits=NA, y_limits=NA, flip_coord=FALSE,
                             rm_x_labels=FALSE, rm_y_labels=FALSE) {
   if(is.na(group)){
@@ -287,7 +287,7 @@ plot_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scal
 # Heatmap
 # x and y always discrete
 #TODO: Discuss what to do for NA values (will just not have a tile right now.)
-plot_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
+render_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
                          x_limits=NA, y_limits=NA, flip_coord=FALSE,
                          rm_x_labels=FALSE, rm_y_labels=FALSE) {
     gg_chart <- ggplot(data, aes_string(x, y, fill = z)) +
@@ -358,7 +358,7 @@ plot_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
 # # Divergent Bar chart
 # # Note - bar chart might not be categorical in all cases, can also be a continous value
 # #        consider expanding functionality.
-# plot_divergent_bar_chart <- function(data, title, colour_var=NA, colour_scale=NA) {
+# render_divergent_bar_chart <- function(data, title, colour_var=NA, colour_scale=NA) {
 #   #TODO: ask Ana is she has time to change this or if I should
 #   #TODO: add title option
 #   likert_data <- likert::likert(data)
@@ -369,7 +369,7 @@ plot_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
 #TODO: Test with real dataset to see what you want this to do
 #TODO: allow many_linked with colour_scale and colour_var depending on what you decide with dataset
 #x & y always continuous
-plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
+render_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
                                x_limits=NA, y_limits=NA, flip_coord=FALSE,
                                rm_x_labels=FALSE, rm_y_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x=x, y=y) ) +
@@ -412,7 +412,7 @@ plot_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA
 
 # Scatter plot
 # TODO: include geom_jitter?
-plot_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
+render_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
                          x_limits=NA, y_limits=NA, flip_coord=FALSE,
                          rm_x_labels=FALSE, rm_y_labels=FALSE) {
 
@@ -458,7 +458,7 @@ plot_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
 }
 
 # Pie chart
-plot_pie_chart <- function(data, x, title, colour_var=NA, colour_scale=NA) {
+render_pie_chart <- function(data, x, title, colour_var=NA, colour_scale=NA) {
 
   #due to summarization step, need to group by the facet too in order for this to work
   #might also want to make these frequencies
@@ -498,7 +498,7 @@ plot_pie_chart <- function(data, x, title, colour_var=NA, colour_scale=NA) {
 # Venn Diagrams
 # TODO: change input to (data, category, scope) [see examples_obsandGenotype]
 # TODO: show Ana changed input and then implement for 3 circles
-plot_venn <- function(num_circles, area1, area2, area3, cross_area, overlap12, overlap23, overlap13, overlap123, category_names) {
+render_venn <- function(num_circles, area1, area2, area3, cross_area, overlap12, overlap23, overlap13, overlap123, category_names) {
   if (num_circles == 2) {
     grid::grid.newpage()
     VennDiagram::draw.pairwise.venn(area1, area2, cross_area, category_names)
@@ -513,7 +513,7 @@ plot_venn <- function(num_circles, area1, area2, area3, cross_area, overlap12, o
 
 # Histogram
 #TODO: decide to add binwidth... should probably
-plot_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA,
+render_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA,
                            x_limits=NA, flip_coord=FALSE, rm_x_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x)) + geom_histogram()
 
@@ -547,7 +547,7 @@ plot_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA,
 }
 
 # Probability Density Function
-plot_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA,
+render_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA,
                      x_limits=NA, flip_coord=FALSE, rm_x_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x)) + geom_density(kernel = "gaussian")
 
@@ -579,7 +579,7 @@ plot_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA,
 }
 
 # Boxplot
-plot_boxplot <- function(data, x, y, title, rm_y_labels=F, rm_x_labels=F,
+render_boxplot <- function(data, x, y, title, rm_y_labels=F, rm_x_labels=F,
                          colour_var=NA, colour_scale=NA,
                          x_limits=NA, y_limits=NA, flip_coord=FALSE) {
   gg_chart <- ggplot(data, aes_string(x,y)) + geom_boxplot()
@@ -622,7 +622,7 @@ plot_boxplot <- function(data, x, y, title, rm_y_labels=F, rm_x_labels=F,
 }
 
 # Violin Plot
-plot_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
+render_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
                             x_limits=NA, y_limits=NA, flip_coord=FALSE,
                             rm_x_labels=FALSE, rm_y_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x,y)) + geom_violin()
@@ -666,7 +666,7 @@ plot_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
 }
 
 # Swarm Plot
-plot_swarm_plot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
+render_swarm_plot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
                             x_limits=NA, y_limits=NA, flip_coord=FALSE,
                             rm_x_labels=FALSE, rm_y_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x, y)) + ggbeeswarm::geom_beeswarm()

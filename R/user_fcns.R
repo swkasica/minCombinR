@@ -79,7 +79,7 @@ plot <- function(specs) {
     spec_list <- as.list(specs)
     spec_list <- spec_list[spec_list != "specify_base"]
     spec_plot <- do.call(plot_simple, spec_list)
-    return(layout_plots(list(spec_plot)))
+    return(arrange_plots(list(spec_plot)))
     # return(do.call(plot_simple, spec_list))
   }
 

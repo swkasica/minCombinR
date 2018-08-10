@@ -2,7 +2,7 @@
 
 # Tables
 #x is rows, y is columns
-plot_table <- function(data, flip_coord=FALSE, rownames=NA, x_limits=NA, y_limits=NA) {
+render_table <- function(data, flip_coord=FALSE, rownames=NA, x_limits=NA, y_limits=NA) {
 
   if (!is.na(rownames)) {
     data <- as.data.frame(data)
@@ -26,7 +26,7 @@ plot_table <- function(data, flip_coord=FALSE, rownames=NA, x_limits=NA, y_limit
 }
 
 #Category Stripe
-plot_category_stripe <- function(data, x, category, x_limits=NA) {
+render_category_stripe <- function(data, x, category, x_limits=NA) {
   gg_chart <- ggplot(data, aes_string(x=x, y=shQuote("categories"), fill=category)) +
     geom_bin2d() +
     theme(axis.title.y = element_blank(),
@@ -47,7 +47,7 @@ plot_category_stripe <- function(data, x, category, x_limits=NA) {
 
 #Image
 
-plot_image <- function(path) {
+render_image <- function(path) {
   cowplot::ggdraw() + cowplot::draw_image(path)
 
   # img_type <- strsplit(path, '[.]')[[1]]
@@ -62,15 +62,15 @@ plot_image <- function(path) {
   # }
 }
 
-# plot_jpeg_image <- function(sourcejpeg) {
+# render_jpeg_image <- function(sourcejpeg) {
 #   jpeg::readJPEG(source=sourcejpeg)
 # }
 #
-# plot_png_image <- function(sourcepng) {
+# render_png_image <- function(sourcepng) {
 #   png::readPNG(source=sourcepng)
 # }
 #
-# plot_pdf_image <- function(sourcepdf) {
+# render_pdf_image <- function(sourcepdf) {
 #   tm::readPDF(source=sourcepdf)
 # }
 

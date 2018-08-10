@@ -1,7 +1,7 @@
 #Helper functions for spatial chart types
 
 #Choropleth
-plot_choropleth <- function(data, lat_var, long_var, fill, group, flip_coord=FALSE) {
+render_choropleth <- function(data, lat_var, long_var, fill, group, flip_coord=FALSE) {
 
   # #Group is required to make the choropleth without gaps.
 
@@ -30,7 +30,7 @@ plot_choropleth <- function(data, lat_var, long_var, fill, group, flip_coord=FAL
 # TODO: data frame with lat and lon
 #    Involves: Setting the view in leaflet to view all points and plotting all points (easy to do)
 #path is a path to a rds file.
-plot_geographic_map <- function(data, lat_var, long_var) {
+render_geographic_map <- function(data, lat_var, long_var) {
 
   dat <- dplyr::rename(data, lat_var = "Lat", long_var = "Long")
   leaflet(dat) %>%

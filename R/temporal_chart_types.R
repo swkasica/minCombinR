@@ -4,7 +4,7 @@
 #Streamgraph
 #Note: Can make using ggplot's geom_area but I don't like the look.
 #TODO: Have a conversation about this chart... streamgraph is not on cran yet, which might affect our package getting onto cran
-plot_streamgraph <- function(data, key, value, date) {
+render_streamgraph <- function(data, key, value, date) {
   # data <- dplyr::rename(data, key = key, value = value, date = date)
   stream_chart <- streamgraph::streamgraph(data = data, key = key, value = value, date = date, interactive = FALSE)
   stream_chart
@@ -23,7 +23,7 @@ plot_streamgraph <- function(data, key, value, date) {
 #The algorithm will make an annotated timeline if the data provided has a start, end and phase column or the start, end and phase paramaters are provided.
 #Otherwise, the algorithm will create a stacked version.
 #TODO: Are there better names for any of these inputs?
-plot_timeline <- function(data, start=NA, end=NA, names=NA, events=NA, colour_var=NA, colour_scale=NA) {
+render_timeline <- function(data, start=NA, end=NA, names=NA, events=NA, colour_var=NA, colour_scale=NA) {
 
   #PHASE in timelineG will stack
 
@@ -47,6 +47,6 @@ plot_timeline <- function(data, start=NA, end=NA, names=NA, events=NA, colour_va
 
 #Stacked Timeline
 #TODO: Obtain data to inform decision on input values
-# plot_stacked_timeline <- function(data, start, end, names, phase) {
+# render_stacked_timeline <- function(data, start, end, names, phase) {
 #   timelineS::timelineG(data, start = start, end = end, names = names, phase = phase)
 # }

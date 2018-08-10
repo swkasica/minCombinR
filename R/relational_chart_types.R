@@ -1,7 +1,7 @@
 #Helper functions for relational chart types
 
 #Node link
-plot_node_link <- function(data, directed=FALSE) {
+render_node_link <- function(data, directed=FALSE) {
   my_graph=igraph::graph_from_data_frame(d=data, directed=directed)
   ggraph::ggraph(my_graph) + ggraph::geom_edge_link() + ggraph::geom_node_point()
 }
@@ -12,7 +12,7 @@ plot_node_link <- function(data, directed=FALSE) {
 #Use RCircos... and consider Sankey diagram
 #'@param colour_scale A vector of colors with named values
 #'@param colour_mark_type A character indicating the type of mark to colour, can be one of: "default" (outside grid) or "links"
-plot_flow_diagram <- function(data, colour_scale=NA, colour_mark_type=NA) {
+render_flow_diagram <- function(data, colour_scale=NA, colour_mark_type=NA) {
 
   #TODO: This is an exception where the colour_scale has to have the grid or link values
   #Many typed linked options

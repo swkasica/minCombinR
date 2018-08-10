@@ -85,7 +85,7 @@ get_limits <- function(specified_charts, var_name) {
 
 #'Plot a base chart type
 #'
-#'This function will create a single chart object that can be passed into layout_charts() to layout.
+#'This function will create a single chart object that can be passed into render_charts() to render.
 #'
 #'See alternative documentation for input and return values
 #'See alternative documentation for examples
@@ -116,51 +116,51 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
   check_valid_str(chart_type, all_chart_types)
   switch(chart_type,
          #Common Stat Chart Types
-         "bar" = plot_bar_chart(data, x, y, stack_by, layout, proportional,
+         "bar" = render_bar_chart(data, x, y, stack_by, layout, proportional,
                                 reference_vector, reference_var, title,
                                 flip_coord, rm_y_labels, rm_x_labels,
                                 colour_var, colour_scale, x_limits, y_limits),
-         # "stacked_bar" = plot_stacked_bar_chart(data, x, fill, title, colour_var, colour_scale),
-         # "divergent_bar" = plot_divergent_bar_chart(data, title, colour_var, colour_scale, x_limits, y_limits),
-         "line" = plot_line_chart(data, x, y, group, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "heat_map" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "heatmap" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "density" = plot_density_chart(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "scatter" = plot_scatter(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "pie" = plot_pie_chart(data, x, title, colour_var, colour_scale),
-         "histogram" = plot_histogram(data, x, title, colour_var, colour_scale, x_limits),
-         "pdf" = plot_pdf(data, x, title, colour_var, colour_scale, x_limits, flip_coord),
-         "boxplot" = plot_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "box_plot" = plot_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "violin" = plot_violinplot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "swarm" = plot_swarm_plot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         # "stacked_bar" = render_stacked_bar_chart(data, x, fill, title, colour_var, colour_scale),
+         # "divergent_bar" = render_divergent_bar_chart(data, title, colour_var, colour_scale, x_limits, y_limits),
+         "line" = render_line_chart(data, x, y, group, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "heat_map" = render_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "heatmap" = render_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "density" = render_density_chart(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "scatter" = render_scatter(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "pie" = render_pie_chart(data, x, title, colour_var, colour_scale),
+         "histogram" = render_histogram(data, x, title, colour_var, colour_scale, x_limits),
+         "pdf" = render_pdf(data, x, title, colour_var, colour_scale, x_limits, flip_coord),
+         "boxplot" = render_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "box_plot" = render_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "violin" = render_violinplot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "swarm" = render_swarm_plot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
 
         #TODO: many types linked and composite for non-common_stat_chart_types (and non ggplot2)
          #Relational
-         "node_link" = plot_node_link(data, directed),
-         "flow_diagram" = plot_flow_diagram(data), #TODO
+         "node_link" = render_node_link(data, directed),
+         "flow_diagram" = render_flow_diagram(data), #TODO
 
          #Temporal
-         "stream" = plot_streamgraph(data, key, value, date), #TODO: change param names
-         "timeline" = plot_timeline(data, start, end, names, events, colour_var, colour_scale),
+         "stream" = render_streamgraph(data, key, value, date), #TODO: change param names
+         "timeline" = render_timeline(data, start, end, names, events, colour_var, colour_scale),
 
          #Spatial
-         "geographic_map" = plot_geographic_map(data, lat_var, long_var),
-         "choropleth" = plot_choropleth(data, lat_var, long_var, fill, group, flip_coord), #TODO: change input (see examples_obsandGenotype)
-         "interior_map" = plot_image(path), #TODO: maybe change if you use the magick package
+         "geographic_map" = render_geographic_map(data, lat_var, long_var),
+         "choropleth" = render_choropleth(data, lat_var, long_var, fill, group, flip_coord), #TODO: change input (see examples_obsandGenotype)
+         "interior_map" = render_image(path), #TODO: maybe change if you use the magick package
 
          #Other
-         "table" = plot_table(data, flip_coord, rownames),
-         "category_stripe" = plot_category_stripe(data, x, category, x_limits),
-         "image" = plot_image(path), #TODO: maybe change if you use the magick package
+         "table" = render_table(data, flip_coord, rownames),
+         "category_stripe" = render_category_stripe(data, x, category, x_limits),
+         "image" = render_image(path), #TODO: maybe change if you use the magick package
 
          #genomic
-         "phylogenetic_tree" = plot_phylo_tree(path, x_limits, y_limits, flip_coord), #path is a path to a nwk_file
-         "dendrogram" = plot_dendro(data, tip_var, cluster_vars),
-         "clonal_tree" = plot_clonal_tree(path, group, x_limits, y_limits, flip_coord),
-         "linear_genomic_map" = plot_linear_genome_map_from_df(data, comparisons), #TODO:
+         "phylogenetic_tree" = render_phylo_tree(path, x_limits, y_limits, flip_coord), #path is a path to a nwk_file
+         "dendrogram" = render_dendro(data, tip_var, cluster_vars),
+         "clonal_tree" = render_clonal_tree(path, group, x_limits, y_limits, flip_coord),
+         "linear_genomic_map" = render_linear_genome_map_from_df(data, comparisons), #TODO:
          "radial_genomic_map" = NULL, #TODO: determine typical input
-         "alignment" = plot_image(path) #TODO: will this be a table or an image in most cases?
+         "alignment" = render_image(path) #TODO: will this be a table or an image in most cases?
          )
 }
 
@@ -172,7 +172,7 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
 plot_many_types_general <- function(...) {
   args_list <- list(...)
   all_plots <- lapply(args_list, function(x) {do.call(plot_simple, x)})
-  layout_plots(all_plots, labels = "AUTO")
+  arrange_plots(all_plots, labels = "AUTO")
 }
 
 #TODO: Make the same x-axis and y-axis ranges.
@@ -211,7 +211,7 @@ plot_small_multiples <- function(chart_type, data, facet_by, x, y=NA, z=NA, fill
                                                             fill = fill,
                                                             group = group,
                                                             x_limits = x_limits))
-  layout_plots(all_plots, labels = "AUTO")
+  arrange_plots(all_plots, labels = "AUTO")
 }
 
 #Gets the values of the x axis from the chart in the chart_args input.
@@ -272,7 +272,7 @@ get_order <- function(chart_args_list, common_var) {
       return(tree_tips$label[order(tree_tips$y, decreasing=TRUE)])
     }
     #Dendrogram tree tip ordering - always aligns on the y axis so don't need to know common_var
-    #TODO: This is repeating some code from plot_dendro - see if there is a way to get the tip var without having to access the data.
+    #TODO: This is repeating some code from render_dendro - see if there is a way to get the tip var without having to access the data.
     else if (chart_type == "dendrogram") {
       tip_var <- as.character(chart_args$tip_var)
       cluster_vars <- as.character(chart_args$cluster_vars)
@@ -492,15 +492,15 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
 #   switch(chart_type,
 #          #Common Stat Chart Types
 #          "bar" = geom_bar(stat = "identity"), #TODO:assuming no stacked bar for now
-#          # "divergent_bar" = plot_divergent_bar_chart(data, title, colour_var, colour_scale),
+#          # "divergent_bar" = render_divergent_bar_chart(data, title, colour_var, colour_scale),
 #          "line" = geom_line(), #TODO: assuming no groups
-#          # "heat_map" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale),
-#          # "heatmap" = plot_heatmap(data, x, y, z, title, colour_var, colour_scale),
+#          # "heat_map" = render_heatmap(data, x, y, z, title, colour_var, colour_scale),
+#          # "heatmap" = render_heatmap(data, x, y, z, title, colour_var, colour_scale),
 #          "density" = stat_density_2d(aes(fill = ..level..), geom = "polygon"),
 #          "scatter" = geom_point(),
-#          # "pie" = plot_pie_chart(data, x, title, colour_var, colour_scale),
+#          # "pie" = render_pie_chart(data, x, title, colour_var, colour_scale),
 #          # "histogram" = geom_histogram(), #TODO: Note: histogram doesn't have y axis in data (is computed)
-#          # "pdf" = plot_pdf(data, x, title, colour_var, colour_scale),
+#          # "pdf" = render_pdf(data, x, title, colour_var, colour_scale),
 #          "boxplot" = geom_boxplot(),
 #          "box_plot" = geom_boxplot(),
 #          "violin" = geom_violin(),
@@ -537,17 +537,17 @@ plot_many_linked <- function(link_var, link_mark_type="default", ...) {
                                               colour_mark_type = link_mark_type)))
   })
 
-  layout_plots(plots, labels = "AUTO")
+  arrange_plots(plots, labels = "AUTO")
 }
 
-#'Layout plots
+#'render plots
 #'
 #'@param chart_list A list of charts
 #'
 #'@export
 #TODO: TEST THESE!!! THESE HAVE NOT BEEN TESTED
 #TODO: Make a list of all of the charts and how they are converted into a grob in a spreadsheet!!!
-layout_plots <- function(chart_list, labels = NULL, shared_legend=FALSE) {
+arrange_plots <- function(chart_list, labels = NULL, shared_legend=FALSE) {
 
   chart_list <- lapply(chart_list, function(chart) {
     if('gg' %in% class(chart)) {

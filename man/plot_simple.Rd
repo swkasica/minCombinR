@@ -14,7 +14,7 @@ plot_simple(chart_type, data, x = NA, y = NA, z = NA, stack_by = NA,
   link_mark_type = NA, x_limits = NA, y_limits = NA)
 }
 \description{
-This function will create a single chart object that can be passed into layout_charts() to layout.
+This function will create a single chart object that can be passed into render_charts() to render.
 }
 \details{
 See alternative documentation for input and return values

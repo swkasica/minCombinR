@@ -1,7 +1,7 @@
 # Helper functions for genomic chart types
 
 #Phylogenetic Tree
-plot_phylo_tree <- function(nwk_file, x_limits=NA, y_limits=NA, flip_coord=FALSE) {
+render_phylo_tree <- function(nwk_file, x_limits=NA, y_limits=NA, flip_coord=FALSE) {
 
   tree_from_nwk <- ape::read.tree(nwk_file)
   gg_chart <- ggtree::ggtree(tree_from_nwk) + ggtree::geom_treescale()
@@ -24,7 +24,7 @@ plot_phylo_tree <- function(nwk_file, x_limits=NA, y_limits=NA, flip_coord=FALSE
 #Dendrogram
 #Can also use ggraph
 #cluster_vars is a vector of columns to cluster by.
-plot_dendro <- function(data, tip_var=NA, cluster_vars=NA) {
+render_dendro <- function(data, tip_var=NA, cluster_vars=NA) {
 
   #Subset the data frame to only contain the cluster_vars for clustering and the tip_var as the rownames(for labelling nodes)
   if (!is.na(tip_var) && !is.na(cluster_vars)) {
@@ -58,7 +58,7 @@ plot_dendro <- function(data, tip_var=NA, cluster_vars=NA) {
 }
 
 #Clonal Tree
-plot_clonal_tree <- function(nwk_file, node_groups, x_limits=NA, y_limits=NA, flip_coord=FALSE) {
+render_clonal_tree <- function(nwk_file, node_groups, x_limits=NA, y_limits=NA, flip_coord=FALSE) {
   tree <- ape::read.tree(nwk_file)
   tree <- ggtree::groupClade(object=tree, node=node_groups)
   gg_chart <- ggtree::ggtree(tree, aes(color=node_groups)) +
@@ -80,13 +80,13 @@ plot_clonal_tree <- function(nwk_file, node_groups, x_limits=NA, y_limits=NA, fl
 }
 
 #Standard Genomic Map
-plot_linear_genome_map_from_df <- function(data, comparisons = NULL) {
+render_linear_genome_map_from_df <- function(data, comparisons = NULL) {
   genoPlotR::plot_gene_map(data, comparisons)
 }
 
 #Radial Genomic Map
 #TODO: get data to model this and inform input
-plot_radial_genomic_map <- function(ideogram, chr_exclude, tracks_inside, tracks_outside) {
+render_radial_genomic_map <- function(ideogram, chr_exclude, tracks_inside, tracks_outside) {
   RCircos::RCircos.Set.Core.Components(cyto.info=ideogram, chr.exclude=chr_exclude,
                               tracks.inside=tracks_inside, tracks_outside)
   RCircos::RCircos.Set.Plot.Area()
@@ -95,7 +95,7 @@ plot_radial_genomic_map <- function(ideogram, chr_exclude, tracks_inside, tracks
 
 #Alignment (assuming table)
 #TODO: get data to model this and inform input
-plot_table <- function(data) {
+render_table <- function(data) {
   grid::grid.newpage()
   gridExtra::grid.table(data)
 }
