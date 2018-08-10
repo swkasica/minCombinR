@@ -2,10 +2,10 @@
 # Note: more specific TODO's are on appropriate functions
 #TODO: Allow the user to override the defaults (something with ..., although not sure how to do it yet)
 #TODO: decide on standard input when using factor(var)... do we include the functionality or does the user have to
-# -- currently the user has to do that for variables like group in line charts, but not for link_var in many types linekd
 #TODO: fix problem with get() where the most recent dataset is used? (see common_stat_examples)
+
+#In input functions, make sure the following are good:
 #TODO: MAKE ERROR MESSAGES WHEN THE USER DOENS'T INPUT THINGS THAT ARE ALLOWED. INCLUDING IF THEY HAVEN'T DECLARED THEIR BASE CHARTS YET!!
-#TODO: Report error messages for data inputs (especially data frame)
 #TODO: Consider data frames with NA rows.
 
 #' Specify requirements to make a base chart
@@ -64,7 +64,7 @@ specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_mark_t
 #' Specify a reencoded mark
 #' @param mark_type A string that specifies the type of mark to reencode. default depends on the type of chart. Possible strings include: 'default', 'area', 'line', 'point' and 'text'
 #' @param channel_type A string that specifies the type of channel to reencode. Default is 'colour'. Possible strings include: 'colour' , size', 'shape', 'texture', 'font_face'
-specify_reencodement <- function(base_specification, mark_type='default', channel='colour') {
+specify_reencodement <- function(base_specification, reencode_var, mark_type='default', channel='colour') {
 
 }
 
