@@ -4,7 +4,7 @@
 \alias{specify_reencodement}
 \title{Specify a reencoded mark}
 \usage{
-specify_reencodement(base_specification, mark_type = "default",
+specify_reencodement(base_specification, reencode_var, mark_type = "default",
   channel = "colour")
 }
 \arguments{
