@@ -1,28 +1,26 @@
 #TODO: alphabetize?
-all_chart_types <-  c(#common statistical
-  "bar", "line", #"stack_by_bar", "divergent_bar",
-  "heat_map", "heatmap", "density", "scatter", "pie", "venn",
-  "histogram","pdf", "boxplot","box_plot","violin", "swarm",
-  #relational
-  "node_link", "flow_diagram",
-  #temporal
-  "stream", "timeline",
-  #spatial
-  "geographic_map", "choropleth", "interior_map",
-  #other
-  "table", "category_stripe", "image",
-  #genomic
-  "phylogenetic_tree", "dendrogram", "clonal_tree",
-  "linear_genomic_map", "radial_genomic_map", "alignment"
-  ####TODO: include unrooted tree, composition plot, miscellany?, sankey and sequence logo plot!
-)
 
-master_chart_types <- c(
-  "timeline", "histogram", "pdf", "flow_diagram",
-  "stream", "geographic_map", "choropleth", "interior_map",
-  "dendrogram", "phylogenetic_tree", #"alignment", #(alignment is just an image)
-  "clonal_tree", "density_plot" #sequence_logo_plot" #(gel_image is just an image)
-)
+#TODO: include unrooted tree, composition plot, miscellany?, sankey and sequence logo plot!
+all_chart_types <-  c("bar", "line", #"stacked_bar","divergent_bar",
+                      "heat_map","heatmap", "density", "scatter", "pie", "venn",
+                      "histogram","pdf", "boxplot","box_plot","violin", "swarm",
+                      #relational
+                      "node_link", "flow_diagram",
+                      #temporal
+                      "stream", "timeline",
+                      #spatial
+                      "geographic_map", "choropleth", "interior_map",
+                      #other
+                      "table", "category_stripe", "image",
+                      #genomic
+                      "phylogenetic_tree", "dendrogram", "clonal_tree",
+                      "linear_genomic_map", "radial_genomic_map", "alignment")
+
+master_chart_types <- c("timeline", "histogram", "pdf", "flow_diagram",
+                        "stream", "geographic_map", "choropleth", "interior_map",
+                        "dendrogram", "phylogenetic_tree", #"alignment", #(alignment is just an image)
+                        "clonal_tree", "density_plot" #sequence_logo_plot" #(gel_image is just an image)
+                        )
 
 #TODO: include unrooted_tree, composition_plot, sankey and miscellany(?)
 not_spatially_alignable <- c("pie", "venn", "node_link", "image")

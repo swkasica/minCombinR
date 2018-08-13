@@ -13,27 +13,67 @@
 #' @param chart_type
 #'
 #' @export
-specify_base <- function(chart_type, data, x, y, z, ...) {
-  all_chart_types <-  c(#common statistical
-    "bar", "line", #"stacked_bar","divergent_bar",
-    "heat_map","heatmap", "density", "scatter", "pie", "venn",
-    "histogram","pdf", "boxplot","box_plot","violin", "swarm",
-    #relational
-    "node_link", "flow_diagram",
-    #temporal
-    "stream", "timeline",
-    #spatial
-    "geographic_map", "choropleth", "interior_map",
-    #other
-    "table", "category_stripe", "image",
-    #genomic
-    "phylogenetic_tree", "dendrogram", "clonal_tree",
-    "linear_genomic_map", "radial_genomic_map", "alignment"
-  )
+specify_base <- function(chart_type, data=NA, x=character(0), y=character(0), z=character(0),
+                         stack_by=character(0), fill=character(0), group=character(0), title=character(0), path=character(0),
+                         category=character(0),
+                         cluster_vars=c(character(0)), #A vector of characters for a dendro
+                         tip_var=c(character(0)), #A vector for the tip var column in data,for a dendro
+                         comparisons=list(), # A list of comparison objects for genomic map
+                         # --- bar ---
+                         layout=character(0), proportional=NA,
+                         reference_vector=character(0), reference_var=character(0),
+                         # --- stream ---
+                         key=character(0), value=character(0), date=character(0),
+                         # --- timeline ---
+                         start=character(0), end=character(0),
+                         names=character(0), events=character(0),
+                         # --- table ---
+                         rownames=character(0),
+                         # --- geographic map ---
+                         lat_var=character(0), long_var=character(0),
+                         # --- node link ---
+                         directed=NA) {
+
+  all_chart_types <-  c("bar", "line", #"stacked_bar","divergent_bar",
+                        "heat_map","heatmap", "density", "scatter", "pie", "venn",
+                        "histogram","pdf", "boxplot","box_plot","violin", "swarm",
+                        #relational
+                        "node_link", "flow_diagram",
+                        #temporal
+                        "stream", "timeline",
+                        #spatial
+                        "geographic_map", "choropleth", "interior_map",
+                        #other
+                        "table", "category_stripe", "image",
+                        #genomic
+                        "phylogenetic_tree", "dendrogram", "clonal_tree",
+                        "linear_genomic_map", "radial_genomic_map", "alignment")
   check_valid_str(chart_type, all_chart_types)
 
+  base_spec <- .BaseSpec(chart_type=chart_type,
+                         data=data, x=x, y=y, z=z,
+                         stack_by=stack_by, fill=fill, group=group,
+                         title=title, path=path, category=category,
+                         cluster_vars=cluster_vars, #A vector of characters for a dendro
+                         tip_var=tip_var, #A vector for the tip var column in data,for a dendro
+                         comparisons=comparisons, # A list of comparison objects for genomic map
+                         # --- bar ---
+                         layout=layout, proportional=proportional,
+                         reference_vector=reference_vector, reference_var=reference_var,
+                         # --- stream ---
+                         key=key, value=value, date=date,
+                         # --- timeline ---
+                         start=start, end=end, names=names, events=events,
+                         # --- table ---
+                         rownames=rownames,
+                         # --- geographic map ---
+                         lat_var=lat_var, long_var=long_var,
+                         # --- node link ---
+                         directed=directed)
+  return(base_spec)
+
   # return(as.character(match.call()))
-  return(match.call())
+  # return(match.call())
 }
 
 #TODO: currently only allows for one combo_type. Account for complex combos later.
