@@ -50,8 +50,8 @@ specify_base <- function(chart_type, data=NA, x=character(0), y=character(0), z=
                         "linear_genomic_map", "radial_genomic_map", "alignment")
   check_valid_str(chart_type, all_chart_types)
 
-  base_spec <- .BaseSpec(chart_type=chart_type,
-                         data=data, x=x, y=y, z=z,
+  base_spec <- BaseSpec(chart_type=chart_type,
+                        data=data, x=x, y=y, z=z,
                          stack_by=stack_by, fill=fill, group=group,
                          title=title, path=path, category=category,
                          cluster_vars=cluster_vars, #A vector of characters for a dendro
@@ -104,8 +104,17 @@ specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_mark_t
 #' Specify a reencoded mark
 #' @param mark_type A string that specifies the type of mark to reencode. default depends on the type of chart. Possible strings include: 'default', 'area', 'line', 'point' and 'text'
 #' @param channel_type A string that specifies the type of channel to reencode. Default is 'colour'. Possible strings include: 'colour' , size', 'shape', 'texture', 'font_face'
-specify_reencodement <- function(base_specification, reencode_var, mark_type='default', channel='colour') {
+#' @export
+reencode_mark <- function(base_specification, reencode_var, mark_type='default', channel='colour') {
+  base_specification$reencodements <- append(base_specification$reencodements,
+                                             list(c(reencode_var = reencode_var, mark_type = mark_type, channel = channel)))
 
+  #Without R5 classes
+  # base_specification$reencodement <- append(base_specification$reencodement,
+  #                                           list(c(reencode_var = reencode_var,
+  #                                                  mark_type = mark_type,
+  #                                                  channel = channel)))
+  # return(base_specification)
 }
 
 #TODO: decide on shorter names for chart_types and combinations (ex. "many_types_linked" --> "linked")
@@ -132,7 +141,7 @@ plot <- function(specs) {
     base_calls <- specs[sapply(1:length(specs),
                                function(x) {
                                  specs[[x]][1] == "specify_base()" && !is.na(as.list(specs[[x]][1]))
-                                 })]
+                               })]
     #View multiple plots in a single view
     if (specs$combo_type == "small_multiple") {
       base_specs <- as.list(specs$'base_1')
@@ -167,4 +176,3 @@ plot <- function(specs) {
   }
 
 }
-

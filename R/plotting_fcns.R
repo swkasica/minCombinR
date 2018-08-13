@@ -91,7 +91,7 @@ get_limits <- function(specified_charts, var_name) {
 #'TODO: currently, the user must name each of the args that are optional if they don't have them in the right order
 #'
 #'@export
-plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA, group=NA, title=NA,
+render_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA, group=NA, title=NA,
                         path, category, cluster_vars=NA, tip_var=NA, comparisons,
                         #For bar
                         layout="default", proportional = FALSE, reference_vector, reference_var,
@@ -169,7 +169,7 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
 #'@export
 plot_many_types_general <- function(...) {
   args_list <- list(...)
-  all_plots <- lapply(args_list, function(x) {do.call(plot_simple, x)})
+  all_plots <- lapply(args_list, function(x) {do.call(render_simple, x)})
   arrange_plots(all_plots, labels = "AUTO")
 }
 
@@ -201,7 +201,7 @@ plot_small_multiples <- function(chart_type, data, facet_by, x, y=NA, z=NA, fill
                       function(x) {dplyr::filter_(data, paste(facet_by, "==", quote(x)))})
   #Create a list of plots for each of the facet_dat subsets
   all_plots <- lapply(facet_dat,
-                      function(sub_dat) gevitR::plot_simple(chart_type = chart_type,
+                      function(sub_dat) gevitR::render_simple(chart_type = chart_type,
                                                             data = select(sub_dat, -facet_by),
                                                             x = x,
                                                             y = y,
@@ -443,12 +443,12 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
 
       #If no, rotate
       if (!is.null(y_arg) && y_arg == common_var) {
-        do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE))) #, y_limits=unlist(limits), rm_x_labels=TRUE)))
+        do.call(render_simple, args = c(chart_args, list(flip_coord = TRUE))) #, y_limits=unlist(limits), rm_x_labels=TRUE)))
       }
 
       #If yes, do not rotate
       else {
-        do.call(plot_simple, args = c(chart_args, list(x_limits=unlist(limits)))) #, rm_x_labels=TRUE)))
+        do.call(render_simple, args = c(chart_args, list(x_limits=unlist(limits)))) #, rm_x_labels=TRUE)))
       }
       })
 
@@ -462,9 +462,9 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
     lo_plots <- lapply(chart_args_list, function(chart_args) {
       y_arg <- infer_y(chart_args)
       if (!is.null(y_arg) && y_arg == common_var) {
-        do.call(plot_simple, args = c(chart_args, list(y_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
+        do.call(render_simple, args = c(chart_args, list(y_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
         } else {
-          do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE, x_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
+          do.call(render_simple, args = c(chart_args, list(flip_coord = TRUE, x_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
           }
       })
     #Arrange horizontally
@@ -530,9 +530,9 @@ plot_many_linked <- function(link_var, link_mark_type="default", ...) {
   }
 
   plots <- lapply(specified_charts, function(chart) {
-    do.call(plot_simple, args = c(chart, list(colour_var = link_var,
-                                              colour_scale = colour_limits,
-                                              colour_mark_type = link_mark_type)))
+    do.call(render_simple, args = c(chart, list(colour_var = link_var,
+                                                colour_scale = colour_limits,
+                                                colour_mark_type = link_mark_type)))
   })
 
   arrange_plots(plots, labels = "AUTO")

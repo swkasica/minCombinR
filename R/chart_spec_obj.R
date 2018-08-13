@@ -4,15 +4,15 @@
 require(methods)
 
 # ---- BaseSpec Class Definition ----
-.BaseSpec <- setClass(Class = "BaseSpec",
-                      slots = c(chart_type = "character",
-                                data = "ANY", #TODO check that data is of the correct source later.
-                                x = "character",
-                                y = "character",
-                                z = "character",
-                                stack_by = "character",
-                                fill = "character",
-                                group = "character",
+BaseSpec <- setRefClass(Class = "BaseSpec",
+                        fields = c(chart_type = "character",
+                                   data = "ANY", #TODO check that data is of the correct source later.
+                                   x = "character",
+                                   y = "character",
+                                   z = "character",
+                                   stack_by = "character",
+                                   fill = "character",
+                                   group = "character",
                                 title = "character",
                                 path = "character",
                                 category = "character",
@@ -52,14 +52,12 @@ require(methods)
                                 colour_scale = "character", # A vector of characters with associated var name and colour
                                 link_mark_type = "character",
                                 # -- reencoded marks --
-                                reencode_var = "character",
-                                mark_type = "character",
-                                channel = "character"),
+                                reencodements = "list")
 
-                      #Set the default values for the reencodement vars
-                      prototype = list(reencode_var=character(0),
-                                       mark_type=character(0),
-                                       channel=character(0))
+                      # #Set the default values for the reencodement vars
+                      # prototype = list(reencode_var=character(0),
+                      #                  mark_type=character(0),
+                      #                  channel=character(0))
 
 )
 
