@@ -41,6 +41,7 @@ BaseSpec <- R6::R6Class(classname = "BaseSpec", public = list(
   directed = FALSE, #!!! logical
 
 
+  # ---- Combinations that are not initialized but set by ComboSpec Object changes ----
   # --- small multiples and composite ---
   x_limits = NULL, #TODO: change to list()??
   y_limits = NULL, #TODO: can be vector of characters or numerics ... maybe change to list?
@@ -52,9 +53,21 @@ BaseSpec <- R6::R6Class(classname = "BaseSpec", public = list(
   colour_var = NULL,
   colour_scale = NA, # A vector of characters with associated var name and colour !!!
   link_mark_type = NULL,
+
+
   # -- reencoded marks --
   reencodements = list(), # list
 
+  # ---------- methods ----------
+  reencode = function(reencode_var, mark_type = "default", channel = "colour") {
+    self$reencodements <- append(self$reencodements,
+                                 list(c(reencode_var = reencode_var,
+                                        mark_type = mark_type,
+                                        channel = channel)))
+    invisible(self)
+  },
+
+  # ---------- initializer ----------
   #TODO: checks for all inputs OR make validation methods for all chart types?
   # -- types can be found in Learning/test_oop/testR6oop
   initialize = function(chart_type, data, x, y, z,

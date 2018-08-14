@@ -20,7 +20,7 @@ master_chart_types <- c("timeline", "histogram", "pdf", "flow_diagram",
                         "stream", "geographic_map", "choropleth", "interior_map",
                         "dendrogram", "phylogenetic_tree", #"alignment", #(alignment is just an image)
                         "clonal_tree", "density_plot" #sequence_logo_plot" #(gel_image is just an image)
-                        )
+)
 
 #TODO: include unrooted_tree, composition_plot, sankey and miscellany(?)
 not_spatially_alignable <- c("pie", "venn", "node_link", "image")
@@ -34,7 +34,7 @@ check_valid_str <- function(str_in, valid_options) {
                valid inputs include: ",
                "'", paste(valid_options, collapse = "', '"), "'",
                sep = "")
-         )
+    )
   }
 }
 
@@ -109,7 +109,7 @@ render_simple <- function(chart_specs) {
          "violin" = render_violinplot(chart_specs),
          "swarm" = render_swarm_plot(chart_specs),
 
-        #TODO: many types linked and composite for non-common_stat_chart_types (and non ggplot2)
+         #TODO: many types linked and composite for non-common_stat_chart_types (and non ggplot2)
          #Relational
          "node_link" = render_node_link(chart_specs),
          "flow_diagram" = render_flow_diagram(chart_specs), #TODO
@@ -135,7 +135,7 @@ render_simple <- function(chart_specs) {
          "linear_genomic_map" = render_linear_genome_map_from_df(chart_specs), #TODO:
          "radial_genomic_map" = NULL, #TODO: determine typical input
          "alignment" = render_image(chart_specs) #TODO: will this be a table or an image in most cases?
-         )
+  )
 }
 
 #'Many types general plot
@@ -178,13 +178,13 @@ plot_small_multiples <- function(chart_type, data, facet_by, x, y=NA, z=NA, fill
   #Create a list of plots for each of the facet_dat subsets
   all_plots <- lapply(facet_dat,
                       function(sub_dat) gevitR::render_simple(chart_type = chart_type,
-                                                            data = select(sub_dat, -facet_by),
-                                                            x = x,
-                                                            y = y,
-                                                            z = z,
-                                                            fill = fill,
-                                                            group = group,
-                                                            x_limits = x_limits))
+                                                              data = select(sub_dat, -facet_by),
+                                                              x = x,
+                                                              y = y,
+                                                              z = z,
+                                                              fill = fill,
+                                                              group = group,
+                                                              x_limits = x_limits))
   arrange_plots(all_plots, labels = "AUTO")
 }
 
@@ -287,7 +287,7 @@ get_order <- function(chart_args_list, common_var) {
         #Does the chart have the same ordering as the master ordering?
         #Note: This also requires that the ordering has the same length
         if (!identical(get_order_from_chart(chart_args), master_ordering)) {
-            stop ("These charts are not combinable by composite because both of them
+          stop ("These charts are not combinable by composite because both of them
                   have a fixed ordering that are not the same. Instead, try combining
                   these charts using many_types_linked.")
         }
@@ -426,12 +426,12 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
       else {
         do.call(render_simple, args = c(chart_args, list(x_limits=unlist(limits)))) #, rm_x_labels=TRUE)))
       }
-      })
+    })
 
     #arrange vertically
     cowplot::plot_grid(plotlist = lo_plots, ncol = 1, align = "v")
 
-  #Is the alignment horizontal?
+    #Is the alignment horizontal?
   } else if (alignment == 'horizontal' || alignment == 'h') {
 
     #Generate each chart accordingly (with rotations if necessary)
@@ -439,10 +439,10 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
       y_arg <- infer_y(chart_args)
       if (!is.null(y_arg) && y_arg == common_var) {
         do.call(render_simple, args = c(chart_args, list(y_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
-        } else {
-          do.call(render_simple, args = c(chart_args, list(flip_coord = TRUE, x_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
-          }
-      })
+      } else {
+        do.call(render_simple, args = c(chart_args, list(flip_coord = TRUE, x_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
+      }
+    })
     #Arrange horizontally
     cowplot::plot_grid(plotlist = lo_plots, nrow = 1, align = "h")
   }

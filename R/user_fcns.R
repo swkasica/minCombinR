@@ -83,22 +83,34 @@ specify_base <- function(chart_type, data=NA, x=NULL, y=character(0), z=characte
 #'
 #' #'
 #' @export
-specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_mark_type="default",
-                          alignment = NA, common_var=NA, order=NA) {
-  lo_specs <- list(...)
-  names_prefix <- "base"
-  names_suffix <- seq(1:length(lo_specs))
-  base_names <- paste(names_prefix, names_suffix, sep = "_")
-  names(lo_specs) <- base_names
-  lo_specs <- c(lo_specs, combo_type = combo_type)
-  if (combo_type == "small_multiple") {
-    lo_specs <- c(lo_specs, facet_by = facet_by)
-  } else if (combo_type == "many_types_linked") {
-    lo_specs <- c(link_var = link_var, link_mark_type = link_mark_type, lo_specs)
-  } else if (combo_type == "composite") {
-    lo_specs <- c(alignment = alignment, common_var = common_var, order = order, lo_specs)
-  }
-  return(lo_specs)
+specify_combo <- function(combo_type = NULL,
+                          # ...,
+                          chart_spec_obj_list = NA, #list of ChartSpecs'
+                          facet_by = character(0),
+                          link_var = character(0),
+                          link_mark_type = character(0),
+                          alignment = character(0),
+                          common_var = character(0),
+                          order = NULL) {
+  combo_spec <- ComboSpec$new(combo_type = combo_type, chart_spec_obj_list = chart_spec_obj_list,
+                              facet_by = facet_by,
+                              link_var = link_var, link_mark_type = link_mark_type,
+                              alignment = alignment, common_var = common_var, order = order)
+
+  # lo_specs <- list(...)
+  # names_prefix <- "base"
+  # names_suffix <- seq(1:length(lo_specs))
+  # base_names <- paste(names_prefix, names_suffix, sep = "_")
+  # names(lo_specs) <- base_names
+  # lo_specs <- c(lo_specs, combo_type = combo_type)
+  # if (combo_type == "small_multiple") {
+  #   lo_specs <- c(lo_specs, facet_by = facet_by)
+  # } else if (combo_type == "many_types_linked") {
+  #   lo_specs <- c(link_var = link_var, link_mark_type = link_mark_type, lo_specs)
+  # } else if (combo_type == "composite") {
+  #   lo_specs <- c(alignment = alignment, common_var = common_var, order = order, lo_specs)
+  # }
+  # return(lo_specs)
 }
 
 #' Specify a reencoded mark
@@ -106,10 +118,12 @@ specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_mark_t
 #' @param channel_type A string that specifies the type of channel to reencode. Default is 'colour'. Possible strings include: 'colour' , size', 'shape', 'texture', 'font_face'
 #' @export
 reencode_mark <- function(base_specification, reencode_var, mark_type='default', channel='colour') {
-  base_specification$reencodements <- append(base_specification$reencodements,
-                                             list(c(reencode_var = reencode_var, mark_type = mark_type, channel = channel)))
+  base_specification$reencode(reencode_var, mark_type, channel)
 
-  #Without R5 classes
+  # base_specification$reencodements <- append(base_specification$reencodements,
+  #                                            list(c(reencode_var = reencode_var, mark_type = mark_type, channel = channel)))
+
+  #Without R6 classes
   # base_specification$reencodement <- append(base_specification$reencodement,
   #                                           list(c(reencode_var = reencode_var,
   #                                                  mark_type = mark_type,
