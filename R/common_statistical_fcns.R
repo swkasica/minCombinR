@@ -19,18 +19,38 @@ NULL
 
 #NOTE: I combined this with render_stacked_bar chart (AP can use stack_by if they want to make a stacked bar chart)
 #var types - x = D, y = C
-render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
-                           proportional=FALSE,
-                           reference_vector, reference_var, title=NA,
-                           flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
-                           colour_var=NA, colour_scale=NA,
-                           x_limits=NA, y_limits=NA) {
+
+#Old vars
+#     data, x, y=NA, stack_by=NA, layout="default",
+#                            proportional=FALSE,
+#                            reference_vector, reference_var, title=NA,
+#                            flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
+#                            colour_var=NA, colour_scale=NA,
+#                            x_limits=NA, y_limits=NA
+
+render_bar_chart <- function(chart_specs) {
+  data = get(chart_specs$data)
+  x = chart_specs$x
+  y = chart_specs$y
+  stack_by = chart_specs$stack_by
+  layout = chart_specs$layout
+  proportional = chart_specs$proportional
+  reference_vector = chart_specs$reference_vector
+  reference_var = chart_specs$reference_var
+  title = chart_specs$title
+  flip_coord = chart_specs$flip_coord
+  rm_y_labels = chart_specs$rm_y_labels
+  rm_x_labels = chart_specs$rm_x_labels
+  colour_var = chart_specs$colour_var
+  colour_scale = chart_specs$colour_scale
+  x_limits = chart_specs$x_limits
+  y_limits = chart_specs$y_limits
 
   gg_chart <- if (layout == "divergent") {
-    if (is.na(stack_by)) {
+    if (length(stack_by) == 0) {
       #CASE 1: Divergent bar chart (waterfall)
       #If reference_var and reference_Vector is missing, I assume the data frame values are already set up in the proper format (split into positive and negative values.)
-      if (!missing(reference_var) && !missing(reference_vector)) {
+      if (length(reference_var) >0 && length(reference_vector) >0) {
         data[[y]] <- ifelse(data[[reference_var]] %in% reference_vector, -data[[y]], data[[y]])
       }
       data <- dplyr::arrange(data, desc(value))
@@ -75,20 +95,20 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
     }
   } else if (layout == "default") {
 
-    if (is.na(y) && is.na(stack_by)) {
+    if (length(y)==0 && length(stack_by)==0) {
       #CASE 3: Bar Chart with y as count (geom_bar)
       gg_chart <-
         ggplot(data, aes_string(x=x)) +
         geom_bar()
     } else {
-      if (isTRUE(proportional) | !is.na(y) & y==1) {
+      if (isTRUE(proportional) | length(y)>0 & y==1) {
         #CASE 6: Stacked proportional bar chart
         gg_chart <- ggplot(data, aes_string(x=x, y=1, fill=stack_by)) +
           geom_bar(stat="identity", position="fill") +
           scale_y_continuous(labels = scales::percent_format())
       } else {
-        if(!is.na(stack_by)) {
-          if (is.na(y) | y==1) {
+        if(length(stack_by)>0) {
+          if (length(y)==0 | y==1) {
             #CASE 8: Stacked bar chart with fill as stack_by and y as count
             gg_chart <- ggplot(data, aes_string(x=x)) +
               geom_bar(aes_string(fill=stack_by))
@@ -111,7 +131,7 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
     stop("When specifying a bar chart, layout input must be: 'default' or 'divergent'.")
   }
 
-  if(!is.na(title)) {
+  if(length(title)>0) {
     gg_chart <- gg_chart + ggtitle(title)
   }
 
@@ -129,7 +149,7 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
       theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
   }
 
-  if(!is.na(colour_scale)[1] && !is.na(colour_var)) {
+  if(!is.na(colour_scale)[1] && length(colour_var)>0) {
     gg_chart <- gg_chart %+% aes_string(fill = colour_var)
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
@@ -235,52 +255,56 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
 
 # Line Chart
 # x and y normally continuous but can have discrete (bivariate)
-render_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scale=NA,
-                            x_limits=NA, y_limits=NA, flip_coord=FALSE,
-                            rm_x_labels=FALSE, rm_y_labels=FALSE) {
-  if(is.na(group)){
-    gg_chart <- ggplot(data, aes_string(x = x, y = y, group = 1)) + geom_line()
+
+
+
+render_line_chart <- function(chart_specs) {
+  x = chart_specs$x
+  y = chart_specs$y
+  group = chart_specs$group
+  print(chart_specs$x_limits)
+
+  if(length(group) == 0) {
+    gg_chart <- ggplot(get(chart_specs$data), aes_string(x = x, y = y, group = 1)) + geom_line()
   } else {
-    gg_chart <- ggplot(data, aes_string(x = x, y = y, group = group)) + geom_line(aes_string(colour = group))
+    gg_chart <- ggplot(get(chart_specs$data), aes_string(x = x, y = y, group = group)) + geom_line(aes_string(colour = group))
   }
 
-  if(!is.na(title)) {
-    gg_chart <- gg_chart + ggtitle(title)
+  if(length(chart_specs$title) > 0) {
+    gg_chart <- gg_chart + ggtitle(chart_specs$title)
   }
 
-  if(!is.na(colour_scale)[1] && !is.na(colour_var)) {
+  if(!is.na(chart_specs$colour_scale)[1] && length(chart_specs$colour_var) > 0) {
     #Add colour variable
-    gg_chart <- gg_chart %+% aes_string(colour = colour_var)
+    gg_chart <- gg_chart %+% aes_string(colour = chart_specs$colour_var)
     #Scale colour variable
     gg_chart <- gg_chart +
-      scale_colour_manual(name = colour_var, values = colour_scale)
+      scale_colour_manual(name = chart_specs$colour_var, values = chart_specs$colour_scale)
       # theme(legend.position = "none")
   }
 
-
-  if(!is.na(x_limits)[1]) {
-    gg_chart <- gg_chart + xlim(x_limits)
+  if(!is.null(chart_specs$x_limits)) {
+    gg_chart <- gg_chart + xlim(chart_specs$x_limits)
   }
 
-  if(!is.na(y_limits)[1]) {
-    gg_chart <- gg_chart + ylim(y_limits)
+  if(!is.null(chart_specs$x_limits)) {
+    gg_chart <- gg_chart + ylim(chart_specs$y_limits)
   }
 
-  if(flip_coord) {
+  if(chart_specs$flip_coord) {
     gg_chart <- gg_chart + coord_flip()
   }
 
-
-  if(rm_x_labels) {
+  if(chart_specs$rm_x_labels) {
     gg_chart <- gg_chart +
       theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
   }
 
-  if(rm_y_labels) {
+  if(chart_specs$rm_y_labels) {
     gg_chart <- gg_chart +
       theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
   }
-
+  print(gg_chart)
   gg_chart
 }
 

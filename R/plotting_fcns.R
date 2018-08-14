@@ -91,74 +91,50 @@ get_limits <- function(specified_charts, var_name) {
 #'TODO: currently, the user must name each of the args that are optional if they don't have them in the right order
 #'
 #'@export
-render_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA, group=NA, title=NA,
-                        path, category, cluster_vars=NA, tip_var=NA, comparisons,
-                        #For bar
-                        layout="default", proportional = FALSE, reference_vector, reference_var,
-                        #For stream
-                        key, value, date,
-                        #For timeline
-                        start=NA, end=NA, names=NA, events=NA,
-                        #For table
-                        rownames=NA,
-                        #For geographic map
-                        lat_var=NA, long_var=NA,
-                        #For node link
-                        directed=FALSE,
-                        #FOR COMPOSITE (only implemented for a few chart types)
-                        flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
-                        #FOR MANY TYPES LINKED
-                        colour_var=NA, colour_scale=NA, link_mark_type=NA,
-                        #FOR SMALL MULTIPLES and composite
-                        x_limits=NA, y_limits=NA) {
-  check_valid_str(chart_type, all_chart_types)
-  switch(chart_type,
+render_simple <- function(chart_specs) {
+  check_valid_str(chart_specs$chart_type, all_chart_types)
+  switch(chart_specs$chart_type,
          #Common Stat Chart Types
-         "bar" = render_bar_chart(data, x, y, stack_by, layout, proportional,
-                                reference_vector, reference_var, title,
-                                flip_coord, rm_y_labels, rm_x_labels,
-                                colour_var, colour_scale, x_limits, y_limits),
-         # "stacked_bar" = render_stacked_bar_chart(data, x, fill, title, colour_var, colour_scale),
-         # "divergent_bar" = render_divergent_bar_chart(data, title, colour_var, colour_scale, x_limits, y_limits),
-         "line" = render_line_chart(data, x, y, group, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "heat_map" = render_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "heatmap" = render_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "density" = render_density_chart(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "scatter" = render_scatter(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "pie" = render_pie_chart(data, x, title, colour_var, colour_scale),
-         "histogram" = render_histogram(data, x, title, colour_var, colour_scale, x_limits),
-         "pdf" = render_pdf(data, x, title, colour_var, colour_scale, x_limits, flip_coord),
-         "boxplot" = render_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "box_plot" = render_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "violin" = render_violinplot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "swarm" = render_swarm_plot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "bar" = render_bar_chart(chart_specs),
+         "line" = render_line_chart(chart_specs),
+         "heat_map" = render_heatmap(chart_specs),
+         "heatmap" = render_heatmap(chart_specs),
+         "density" = render_density_chart(chart_specs),
+         "scatter" = render_scatter(chart_specs),
+         "pie" = render_pie_chart(chart_specs),
+         "histogram" = render_histogram(chart_specs),
+         "pdf" = render_pdf(chart_specs),
+         "boxplot" = render_boxplot(chart_specs),
+         "box_plot" = render_boxplot(chart_specs),
+         "violin" = render_violinplot(chart_specs),
+         "swarm" = render_swarm_plot(chart_specs),
 
         #TODO: many types linked and composite for non-common_stat_chart_types (and non ggplot2)
          #Relational
-         "node_link" = render_node_link(data, directed),
-         "flow_diagram" = render_flow_diagram(data), #TODO
+         "node_link" = render_node_link(chart_specs),
+         "flow_diagram" = render_flow_diagram(chart_specs), #TODO
 
          #Temporal
-         "stream" = render_streamgraph(data, key, value, date), #TODO: change param names
-         "timeline" = render_timeline(data, start, end, names, events, colour_var, colour_scale),
+         "stream" = render_streamgraph(chart_specs), #TODO: change param names
+         "timeline" = render_timeline(chart_specs),
 
          #Spatial
-         "geographic_map" = render_geographic_map(data, lat_var, long_var),
-         "choropleth" = render_choropleth(data, lat_var, long_var, fill, group, flip_coord), #TODO: change input (see examples_obsandGenotype)
-         "interior_map" = render_image(path), #TODO: maybe change if you use the magick package
+         "geographic_map" = render_geographic_map(chart_specs),
+         "choropleth" = render_choropleth(chart_specs), #TODO: change input (see examples_obsandGenotype)
+         "interior_map" = render_image(chart_specs), #TODO: maybe change if you use the magick package
 
          #Other
-         "table" = render_table(data, flip_coord, rownames),
-         "category_stripe" = render_category_stripe(data, x, category, x_limits),
-         "image" = render_image(path), #TODO: maybe change if you use the magick package
+         "table" = render_table(chart_specs),
+         "category_stripe" = render_category_stripe(chart_specs),
+         "image" = render_image(chart_specs), #TODO: maybe change if you use the magick package
 
          #genomic
-         "phylogenetic_tree" = render_phylo_tree(path, x_limits, y_limits, flip_coord), #path is a path to a nwk_file
-         "dendrogram" = render_dendro(data, tip_var, cluster_vars),
-         "clonal_tree" = render_clonal_tree(path, group, x_limits, y_limits, flip_coord),
-         "linear_genomic_map" = render_linear_genome_map_from_df(data, comparisons), #TODO:
+         "phylogenetic_tree" = render_phylo_tree(chart_specs), #path is a path to a nwk_file
+         "dendrogram" = render_dendro(chart_specs),
+         "clonal_tree" = render_clonal_tree(chart_specs),
+         "linear_genomic_map" = render_linear_genome_map_from_df(chart_specs), #TODO:
          "radial_genomic_map" = NULL, #TODO: determine typical input
-         "alignment" = render_image(path) #TODO: will this be a table or an image in most cases?
+         "alignment" = render_image(chart_specs) #TODO: will this be a table or an image in most cases?
          )
 }
 
@@ -548,6 +524,7 @@ plot_many_linked <- function(link_var, link_mark_type="default", ...) {
 arrange_plots <- function(chart_list, labels = NULL, shared_legend=FALSE) {
 
   chart_list <- lapply(chart_list, function(chart) {
+    print(class(chart))
     if('gg' %in% class(chart)) {
       ggplotify::as.grob(chart)
     } else if ('data.frame' %in% class(chart)){

@@ -13,14 +13,14 @@
 #' @param chart_type
 #'
 #' @export
-specify_base <- function(chart_type, data=NA, x=character(0), y=character(0), z=character(0),
+specify_base <- function(chart_type, data=NA, x=NULL, y=character(0), z=character(0),
                          stack_by=character(0), fill=character(0), group=character(0), title=character(0), path=character(0),
                          category=character(0),
                          cluster_vars=c(character(0)), #A vector of characters for a dendro
                          tip_var=c(character(0)), #A vector for the tip var column in data,for a dendro
                          comparisons=list(), # A list of comparison objects for genomic map
                          # --- bar ---
-                         layout=character(0), proportional=NA,
+                         layout=character(0), proportional=FALSE,
                          reference_vector=character(0), reference_var=character(0),
                          # --- stream ---
                          key=character(0), value=character(0), date=character(0),
@@ -32,7 +32,7 @@ specify_base <- function(chart_type, data=NA, x=character(0), y=character(0), z=
                          # --- geographic map ---
                          lat_var=character(0), long_var=character(0),
                          # --- node link ---
-                         directed=NA) {
+                         directed=FALSE) {
 
   all_chart_types <-  c("bar", "line", #"stacked_bar","divergent_bar",
                         "heat_map","heatmap", "density", "scatter", "pie", "venn",
@@ -48,28 +48,28 @@ specify_base <- function(chart_type, data=NA, x=character(0), y=character(0), z=
                         #genomic
                         "phylogenetic_tree", "dendrogram", "clonal_tree",
                         "linear_genomic_map", "radial_genomic_map", "alignment")
-  check_valid_str(chart_type, all_chart_types)
+  # check_valid_str(chart_type, all_chart_types)
 
-  base_spec <- BaseSpec(chart_type=chart_type,
-                        data=data, x=x, y=y, z=z,
-                         stack_by=stack_by, fill=fill, group=group,
-                         title=title, path=path, category=category,
-                         cluster_vars=cluster_vars, #A vector of characters for a dendro
-                         tip_var=tip_var, #A vector for the tip var column in data,for a dendro
-                         comparisons=comparisons, # A list of comparison objects for genomic map
-                         # --- bar ---
-                         layout=layout, proportional=proportional,
-                         reference_vector=reference_vector, reference_var=reference_var,
-                         # --- stream ---
-                         key=key, value=value, date=date,
-                         # --- timeline ---
-                         start=start, end=end, names=names, events=events,
-                         # --- table ---
-                         rownames=rownames,
-                         # --- geographic map ---
-                         lat_var=lat_var, long_var=long_var,
-                         # --- node link ---
-                         directed=directed)
+  base_spec <- BaseSpec$new(chart_type=chart_type,
+                            data=data, x=x, y=y, z=z,
+                            stack_by=stack_by, fill=fill, group=group,
+                            title=title, path=path, category=category,
+                            cluster_vars=cluster_vars, #A vector of characters for a dendro
+                            tip_var=tip_var, #A vector for the tip var column in data,for a dendro
+                            comparisons=comparisons, # A list of comparison objects for genomic map
+                            # --- bar ---
+                            layout=layout, proportional=proportional,
+                            reference_vector=reference_vector, reference_var=reference_var,
+                            # --- stream ---
+                            key=key, value=value, date=date,
+                            # --- timeline ---
+                            start=start, end=end, names=names, events=events,
+                            # --- table ---
+                            rownames=rownames,
+                            # --- geographic map ---
+                            lat_var=lat_var, long_var=long_var,
+                            # --- node link ---
+                            directed=directed)
   return(base_spec)
 
   # return(as.character(match.call()))
@@ -124,12 +124,10 @@ reencode_mark <- function(base_specification, reencode_var, mark_type='default',
 plot <- function(specs) {
 
   #No combination!
-  if(class(specs) == "call") {
-    spec_list <- as.list(specs)
-    spec_list <- spec_list[spec_list != "specify_base"]
-    spec_plot <- do.call(plot_simple, spec_list)
+  if(class(specs)[1] == "BaseSpec") {
+    spec_plot <- render_simple(specs)
+    print(spec_plot)
     return(arrange_plots(list(spec_plot)))
-    # return(do.call(plot_simple, spec_list))
   }
 
   #TODO: clean
