@@ -1,4 +1,5 @@
 #Generic input function for inputing data, helper functions are in the back
+#' @export
 input_data<-function(file  = NA, dataType = NA, desc = NA,...){
   #Only supports specific data types
   if(!(dataType %in% c("tree","table","dna","spatial","image")))
@@ -351,6 +352,7 @@ input_image<-function(file = NA,desc = NA,asObj=TRUE,...){
 }
 
 #helper method to annotate FEATURES within an image
+#'@export
 annotate_image<-function(img = NULL,imgDetails=NULL,outfile = NULL){
   # If user does not provide a file name, make one up
   if(is.null(outfile)){

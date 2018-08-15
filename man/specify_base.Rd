@@ -4,7 +4,16 @@
 \alias{specify_base}
 \title{Specify requirements to make a base chart}
 \usage{
-specify_base(chart_type, data, x, y, z, ...)
+specify_base(chart_type, data = NA, x = character(0), y = character(0),
+  z = character(0), stack_by = character(0), fill = character(0),
+  group = character(0), title = character(0), path = character(0),
+  category = character(0), cluster_vars = c(character(0)),
+  tip_var = c(character(0)), comparisons = list(), layout = character(0),
+  proportional = NA, reference_vector = character(0),
+  reference_var = character(0), key = character(0), value = character(0),
+  date = character(0), start = character(0), end = character(0),
+  names = character(0), events = character(0), rownames = character(0),
+  lat_var = character(0), long_var = character(0), directed = NA)
 }
 \arguments{
 \item{chart_type}{}
