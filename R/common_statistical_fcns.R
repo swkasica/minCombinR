@@ -22,7 +22,7 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
                              proportional=FALSE,
                              reference_vector, reference_var, title=NA,
                              flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
-                             colour_var=NA, colour_scale=NA,
+                             colour_var=NULL, colour_scale=NA,
                              x_limits=NA, y_limits=NA) {
 
   gg_chart <- if (layout == "divergent") {
@@ -128,7 +128,7 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
       theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
   }
 
-  if(!is.na(colour_scale)[1] && !is.na(colour_var)) {
+  if(!is.na(colour_scale)[1] && !is.null(colour_var)) {
     gg_chart <- gg_chart %+% aes_string(fill = colour_var)
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
@@ -150,7 +150,7 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
 #BELOW IS THE OLD BAR CHART BEFORE ADDING DIVERGENT!!!
 # render_bar_chart <- function(data, x, y=NA, stack_by=NA, title=NA,
 #                            flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
-#                            colour_var=NA, colour_scale=NA,
+#                            colour_var=NULL, colour_scale=NA,
 #                            x_limits=NA, y_limits=NA) {
 #
 #   #TODO: Add a colour_var and if it is present, when making the ggplot, stacked or colour with the colour_var
@@ -215,7 +215,7 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
 
 # Note- is now part of render_bar_chart
 # Stacked Bar chart
-# render_stacked_bar_chart <- function(data, x, fill=NA, title=NA, colour_var=NA, colour_scale=NA) {
+# render_stacked_bar_chart <- function(data, x, fill=NA, title=NA, colour_var=NULL, colour_scale=NA) {
 
 #   gg_chart <- ggplot(data, aes_string(x=x)) +
 #     geom_bar(aes_string(fill=fill), position="fill")
@@ -234,9 +234,10 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
 
 # Line Chart
 # x and y normally continuous but can have discrete (bivariate)
-render_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_scale=NA,
+render_line_chart <- function(data, x, y, group, title, colour_var=NULL, colour_scale=NA,
                               x_limits=NA, y_limits=NA, flip_coord=FALSE,
-                              rm_x_labels=FALSE, rm_y_labels=FALSE) {
+                              #rm_x_labels=FALSE, rm_y_labels=FALSE,
+                              reencodement = NULL) {
   if(is.na(group)){
     gg_chart <- ggplot(data, aes_string(x = x, y = y, group = 1)) + geom_line()
   } else {
@@ -247,13 +248,15 @@ render_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_sc
     gg_chart <- gg_chart + ggtitle(title)
   }
 
-  if(!is.na(colour_scale)[1] && !is.na(colour_var)) {
+  if(!is.null(colour_var)) {
     #Add colour variable
     gg_chart <- gg_chart %+% aes_string(colour = colour_var)
+  }
+
+  if (!is.na(colour_scale)[1]) {
     #Scale colour variable
     gg_chart <- gg_chart +
       scale_colour_manual(name = colour_var, values = colour_scale)
-    # theme(legend.position = "none")
   }
 
 
@@ -269,16 +272,38 @@ render_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_sc
     gg_chart <- gg_chart + coord_flip()
   }
 
+  # if(rm_x_labels) {
+  #   gg_chart <- gg_chart +
+  #     theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  # }
+  #
+  # if(rm_y_labels) {
+  #   gg_chart <- gg_chart +
+  #     theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
+  # }
 
-  if(rm_x_labels) {
-    gg_chart <- gg_chart +
-      theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
-  }
-
-  if(rm_y_labels) {
-    gg_chart <- gg_chart +
-      theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
-  }
+  #TODO: make this a generic function that changes the colour_var !!!
+  # if(!is.null(reencodement)) {
+  #
+  #   lapply(reencodement, function(reencode_specs) {
+  #     reencode_var <- reencode_specs[["reencode_var"]]
+  #     mark_type <- reencode_specs[["mark_type"]]
+  #     channel <- reencode_specs[["channel"]]
+  #
+  #     #Could have this as a setter method
+  #     if (mark_type == "default") {
+  #       mark_type <- "area"
+  #     }
+  #
+  #     #could have this check in the setter method
+  #     if (channel != "colour") {
+  #       "have not implemented channels that are not colour for reencoded marks yet!"
+  #     }
+  #
+  #     gg_chart <<- gg_chart %+% aes_string(color=reencode_var)
+  #
+  #   })
+  # }
 
   gg_chart
 }
@@ -286,7 +311,7 @@ render_line_chart <- function(data, x, y, group, title, colour_var=NA, colour_sc
 # Heatmap
 # x and y always discrete
 #TODO: Discuss what to do for NA values (will just not have a tile right now.)
-render_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
+render_heatmap <- function(data, x, y, z, title, colour_var=NULL, colour_scale=NA,
                            x_limits=NA, y_limits=NA, flip_coord=FALSE,
                            rm_x_labels=FALSE, rm_y_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x, y, fill = z)) +
@@ -295,7 +320,7 @@ render_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
 
   #To scale colour (called from many_types_linked and small_multiple)
   if (!is.na(colour_scale)[1]) {
-    if (colour_var != z && !(is.na(colour_var))) {
+    if (colour_var != z && !(is.null(colour_var))) {
       warning("z is masking link_var because link_var and z have to be the same for a heat_map when linking with colour")
     }
     get_palette <- colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))
@@ -357,7 +382,7 @@ render_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
 # # Divergent Bar chart
 # # Note - bar chart might not be categorical in all cases, can also be a continous value
 # #        consider expanding functionality.
-# render_divergent_bar_chart <- function(data, title, colour_var=NA, colour_scale=NA) {
+# render_divergent_bar_chart <- function(data, title, colour_var=NULL, colour_scale=NA) {
 #   #TODO: ask Ana is she has time to change this or if I should
 #   #TODO: add title option
 #   likert_data <- likert::likert(data)
@@ -368,7 +393,7 @@ render_heatmap <- function(data, x, y, z, title, colour_var=NA, colour_scale=NA,
 #TODO: Test with real dataset to see what you want this to do
 #TODO: allow many_linked with colour_scale and colour_var depending on what you decide with dataset
 #x & y always continuous
-render_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
+render_density_chart <- function(data, x, y, title, colour_var=NULL, colour_scale=NA,
                                  x_limits=NA, y_limits=NA, flip_coord=FALSE,
                                  rm_x_labels=FALSE, rm_y_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x=x, y=y) ) +
@@ -411,7 +436,7 @@ render_density_chart <- function(data, x, y, title, colour_var=NA, colour_scale=
 
 # Scatter plot
 # TODO: include geom_jitter?
-render_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
+render_scatter <- function(data, x, y, title, colour_var=NULL, colour_scale=NA,
                            x_limits=NA, y_limits=NA, flip_coord=FALSE,
                            rm_x_labels=FALSE, rm_y_labels=FALSE) {
 
@@ -457,7 +482,7 @@ render_scatter <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
 }
 
 # Pie chart
-render_pie_chart <- function(data, x, title, colour_var=NA, colour_scale=NA) {
+render_pie_chart <- function(data, x, title, colour_var=NULL, colour_scale=NA) {
 
   #due to summarization step, need to group by the facet too in order for this to work
   #might also want to make these frequencies
@@ -512,7 +537,7 @@ render_venn <- function(num_circles, area1, area2, area3, cross_area, overlap12,
 
 # Histogram
 #TODO: decide to add binwidth... should probably
-render_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA,
+render_histogram <- function(data, x, title, colour_var=NULL, colour_scale=NA,
                              x_limits=NA, flip_coord=FALSE, rm_x_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x)) + geom_histogram()
 
@@ -546,7 +571,7 @@ render_histogram <- function(data, x, title, colour_var=NA, colour_scale=NA,
 }
 
 # Probability Density Function
-render_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA,
+render_pdf <- function(data, x, title, colour_var=NULL, colour_scale=NA,
                        x_limits=NA, flip_coord=FALSE, rm_x_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x)) + geom_density(kernel = "gaussian")
 
@@ -579,7 +604,7 @@ render_pdf <- function(data, x, title, colour_var=NA, colour_scale=NA,
 
 # Boxplot
 render_boxplot <- function(data, x, y, title, rm_y_labels=F, rm_x_labels=F,
-                           colour_var=NA, colour_scale=NA,
+                           colour_var=NULL, colour_scale=NA,
                            x_limits=NA, y_limits=NA, flip_coord=FALSE) {
   gg_chart <- ggplot(data, aes_string(x,y)) + geom_boxplot()
 
@@ -621,7 +646,7 @@ render_boxplot <- function(data, x, y, title, rm_y_labels=F, rm_x_labels=F,
 }
 
 # Violin Plot
-render_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
+render_violinplot <- function(data, x, y, title, colour_var=NULL, colour_scale=NA,
                               x_limits=NA, y_limits=NA, flip_coord=FALSE,
                               rm_x_labels=FALSE, rm_y_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x,y)) + geom_violin()
@@ -665,7 +690,7 @@ render_violinplot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
 }
 
 # Swarm Plot
-render_swarm_plot <- function(data, x, y, title, colour_var=NA, colour_scale=NA,
+render_swarm_plot <- function(data, x, y, title, colour_var=NULL, colour_scale=NA,
                               x_limits=NA, y_limits=NA, flip_coord=FALSE,
                               rm_x_labels=FALSE, rm_y_labels=FALSE) {
   gg_chart <- ggplot(data, aes_string(x, y)) + ggbeeswarm::geom_beeswarm()

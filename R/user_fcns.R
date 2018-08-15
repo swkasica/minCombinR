@@ -61,11 +61,55 @@ specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_mark_t
   return(lo_specs)
 }
 
+#TODO Currently only works with the default mark type and the colour channel!!!
 #' Specify a reencoded mark
 #' @param mark_type A string that specifies the type of mark to reencode. default depends on the type of chart. Possible strings include: 'default', 'area', 'line', 'point' and 'text'
 #' @param channel_type A string that specifies the type of channel to reencode. Default is 'colour'. Possible strings include: 'colour' , size', 'shape', 'texture', 'font_face'
-specify_reencodement <- function(base_specification, reencode_var, mark_type='default', channel='colour') {
+#' @export
+specify_reencodement <- function(base_specification, reencode_var, mark_type='default', channel='colour', override = FALSE) {
 
+  #Set the variables for reencoded marks!:
+
+  #Could have this as a setter method if using R6 in the specify reencodement user fcn
+  if (mark_type == "default") {
+    if (channel == "color" || channel == "colour") {
+      if (!is.null(base_specification$colour_var) && override == FALSE) {
+        stop(paste("The colour channel for mark type: ", mark_type, " has already been set.
+                     To override the previous colour channel, use override == TRUE in the reencodement.
+                       ie. in reencode(..., override = TRUE)"))
+      } else {
+        base_specification$colour_var <- reencode_var
+      }
+    } else {
+      #could have this check in the setter method if using R6 in the specify reencodement user fcn
+      stop("Have not implemented channels that are not colour for reencoded marks yet!")
+    }
+  } else {
+
+    stop("currently only works with default mark types!!!")
+
+  }
+
+  print(base_specification$colour_var)
+
+  #TODO: error messages if reencode something twice.
+  # if (!is.null(reencodement)) {
+    # lapply(reencodement, function(reencode_specs) {
+      # reencode_var <- reencode_specs[["reencode_var"]]
+      # mark_type <- reencode_specs[["mark_type"]]
+      # channel <- reencode_specs[["channel"]]
+
+    # })
+  # }
+
+  # base_specification$reencodement <- append(base_specification$reencodement,
+  #                                           list(c(reencode_var = reencode_var,
+  #                                                  mark_type = mark_type,
+  #                                                  channel = channel)))
+
+  # base_specification$colour_var <- colour_var
+
+  return(base_specification)
 }
 
 #TODO: decide on shorter names for chart_types and combinations (ex. "many_types_linked" --> "linked")
@@ -78,6 +122,7 @@ plot <- function(specs) {
   if(class(specs) == "call") {
     spec_list <- as.list(specs)
     spec_list <- spec_list[spec_list != "specify_base"]
+    print(spec_list)
     spec_plot <- do.call(plot_simple, spec_list)
     return(arrange_plots(list(spec_plot)))
     # return(do.call(plot_simple, spec_list))

@@ -112,19 +112,23 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                         #FOR COMPOSITE (only implemented for a few chart types)
                         flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
                         #FOR MANY TYPES LINKED
-                        colour_var=NA, colour_scale=NA, colour_mark_type=NA,
+                        colour_var=NULL, colour_scale=NA, colour_mark_type=NA,
                         #FOR SMALL MULTIPLES and composite
-                        x_limits=NA, y_limits=NA) {
+                        x_limits=NA, y_limits=NA,
+                        #FOR REENCODEMENTS
+                        reencodement=NULL) {
   check_valid_str(chart_type, all_chart_types)
+
+
   switch(chart_type,
          #Common Stat Chart Types
          "bar" = render_bar_chart(data, x, y, stack_by, layout, proportional,
                                   reference_vector, reference_var, title,
                                   flip_coord, rm_y_labels, rm_x_labels,
-                                  colour_var, colour_scale, x_limits, y_limits),
+                                  colour_var, colour_scale, x_limits, y_limits, reencodement),
          # "stacked_bar" = render_stacked_bar_chart(data, x, fill, title, colour_var, colour_scale),
          # "divergent_bar" = render_divergent_bar_chart(data, title, colour_var, colour_scale, x_limits, y_limits),
-         "line" = render_line_chart(data, x, y, group, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "line" = render_line_chart(data, x, y, group, title, colour_var, colour_scale, x_limits, y_limits, flip_coord, reencodement),
          "heat_map" = render_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
          "heatmap" = render_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
          "density" = render_density_chart(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
