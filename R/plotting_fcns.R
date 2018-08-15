@@ -1,25 +1,27 @@
 #TODO: alphabetize?
+all_chart_types <-  c(#common statistical
+  "bar", "line", #"stack_by_bar", "divergent_bar",
+  "heat_map", "heatmap", "density", "scatter", "pie", "venn",
+  "histogram","pdf", "boxplot","box_plot","violin", "swarm",
+  #relational
+  "node_link", "flow_diagram",
+  #temporal
+  "stream", "timeline",
+  #spatial
+  "geographic_map", "choropleth", "interior_map",
+  #other
+  "table", "category_stripe", "image",
+  #genomic
+  "phylogenetic_tree", "dendrogram", "clonal_tree",
+  "linear_genomic_map", "radial_genomic_map", "alignment"
+  ####TODO: include unrooted tree, composition plot, miscellany?, sankey and sequence logo plot!
+)
 
-#TODO: include unrooted tree, composition plot, miscellany?, sankey and sequence logo plot!
-all_chart_types <-  c("bar", "line", #"stacked_bar","divergent_bar",
-                      "heat_map","heatmap", "density", "scatter", "pie", "venn",
-                      "histogram","pdf", "boxplot","box_plot","violin", "swarm",
-                      #relational
-                      "node_link", "flow_diagram",
-                      #temporal
-                      "stream", "timeline",
-                      #spatial
-                      "geographic_map", "choropleth", "interior_map",
-                      #other
-                      "table", "category_stripe", "image",
-                      #genomic
-                      "phylogenetic_tree", "dendrogram", "clonal_tree",
-                      "linear_genomic_map", "radial_genomic_map", "alignment")
-
-master_chart_types <- c("timeline", "histogram", "pdf", "flow_diagram",
-                        "stream", "geographic_map", "choropleth", "interior_map",
-                        "dendrogram", "phylogenetic_tree", #"alignment", #(alignment is just an image)
-                        "clonal_tree", "density_plot" #sequence_logo_plot" #(gel_image is just an image)
+master_chart_types <- c(
+  "timeline", "histogram", "pdf", "flow_diagram",
+  "stream", "geographic_map", "choropleth", "interior_map",
+  "dendrogram", "phylogenetic_tree", #"alignment", #(alignment is just an image)
+  "clonal_tree", "density_plot" #sequence_logo_plot" #(gel_image is just an image)
 )
 
 #TODO: include unrooted_tree, composition_plot, sankey and miscellany(?)
@@ -54,6 +56,7 @@ get_limits <- function(specified_charts, var_name) {
       var_name <- gsub("^as.factor\\({1}|\\){1}$", "", var_name)
       unique_vars <- unique(ref_data[[var_name]])
       limits <<- unique(c(limits, as.vector(unique_vars)))
+      print(limits)
     } else if (is.numeric(ref_data[[var_name]])) {
       unique_vars <- unique(ref_data[[var_name]])
 
@@ -73,14 +76,13 @@ get_limits <- function(specified_charts, var_name) {
     }
   })
 
-  if (is.numeric(limits) && !grepl("^as.factor\\({1}&\\){1}$", var_name)) {
+  if (is.numeric(limits) && !grepl("^as.factor\\({1}|\\){1}$", var_name)) {
     min <- min(limits)
     max <- max(limits)
     limits <- c(min,max)
   }
-
+  print(limits)
   return(limits)
-
 }
 
 #'Plot a base chart type
@@ -93,50 +95,74 @@ get_limits <- function(specified_charts, var_name) {
 #'TODO: currently, the user must name each of the args that are optional if they don't have them in the right order
 #'
 #'@export
-render_simple <- function(chart_specs) {
-  check_valid_str(chart_specs$chart_type, all_chart_types)
-  switch(chart_specs$chart_type,
+plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA, group=NA, title=NA,
+                        path, category, cluster_vars=NA, tip_var=NA, comparisons,
+                        #For bar
+                        layout="default", proportional = FALSE, reference_vector, reference_var,
+                        #For stream
+                        key, value, date,
+                        #For timeline
+                        start=NA, end=NA, names=NA, events=NA,
+                        #For table
+                        rownames=NA,
+                        #For geographic map
+                        lat_var=NA, long_var=NA,
+                        #For node link
+                        directed=FALSE,
+                        #FOR COMPOSITE (only implemented for a few chart types)
+                        flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
+                        #FOR MANY TYPES LINKED
+                        colour_var=NA, colour_scale=NA, colour_mark_type=NA,
+                        #FOR SMALL MULTIPLES and composite
+                        x_limits=NA, y_limits=NA) {
+  check_valid_str(chart_type, all_chart_types)
+  switch(chart_type,
          #Common Stat Chart Types
-         "bar" = render_bar_chart(chart_specs),
-         "line" = render_line_chart(chart_specs),
-         "heat_map" = render_heatmap(chart_specs),
-         "heatmap" = render_heatmap(chart_specs),
-         "density" = render_density_chart(chart_specs),
-         "scatter" = render_scatter(chart_specs),
-         "pie" = render_pie_chart(chart_specs),
-         "histogram" = render_histogram(chart_specs),
-         "pdf" = render_pdf(chart_specs),
-         "boxplot" = render_boxplot(chart_specs),
-         "box_plot" = render_boxplot(chart_specs),
-         "violin" = render_violinplot(chart_specs),
-         "swarm" = render_swarm_plot(chart_specs),
+         "bar" = render_bar_chart(data, x, y, stack_by, layout, proportional,
+                                  reference_vector, reference_var, title,
+                                  flip_coord, rm_y_labels, rm_x_labels,
+                                  colour_var, colour_scale, x_limits, y_limits),
+         # "stacked_bar" = render_stacked_bar_chart(data, x, fill, title, colour_var, colour_scale),
+         # "divergent_bar" = render_divergent_bar_chart(data, title, colour_var, colour_scale, x_limits, y_limits),
+         "line" = render_line_chart(data, x, y, group, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "heat_map" = render_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "heatmap" = render_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "density" = render_density_chart(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "scatter" = render_scatter(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "pie" = render_pie_chart(data, x, title, colour_var, colour_scale),
+         "histogram" = render_histogram(data, x, title, colour_var, colour_scale, x_limits),
+         "pdf" = render_pdf(data, x, title, colour_var, colour_scale, x_limits, flip_coord),
+         "boxplot" = render_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "box_plot" = render_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "violin" = render_violinplot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "swarm" = render_swarm_plot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
 
          #TODO: many types linked and composite for non-common_stat_chart_types (and non ggplot2)
          #Relational
-         "node_link" = render_node_link(chart_specs),
-         "flow_diagram" = render_flow_diagram(chart_specs), #TODO
+         "node_link" = render_node_link(data, directed),
+         "flow_diagram" = render_flow_diagram(data), #TODO
 
          #Temporal
-         "stream" = render_streamgraph(chart_specs), #TODO: change param names
-         "timeline" = render_timeline(chart_specs),
+         "stream" = render_streamgraph(data, key, value, date), #TODO: change param names
+         "timeline" = render_timeline(data, start, end, names, events, colour_var, colour_scale),
 
          #Spatial
-         "geographic_map" = render_geographic_map(chart_specs),
-         "choropleth" = render_choropleth(chart_specs), #TODO: change input (see examples_obsandGenotype)
-         "interior_map" = render_image(chart_specs), #TODO: maybe change if you use the magick package
+         "geographic_map" = render_geographic_map(data, lat_var, long_var),
+         "choropleth" = render_choropleth(data, lat_var, long_var, fill, group, flip_coord), #TODO: change input (see examples_obsandGenotype)
+         "interior_map" = render_image(path), #TODO: maybe change if you use the magick package
 
          #Other
-         "table" = render_table(chart_specs),
-         "category_stripe" = render_category_stripe(chart_specs),
-         "image" = render_image(chart_specs), #TODO: maybe change if you use the magick package
+         "table" = render_table(data, flip_coord, rownames),
+         "category_stripe" = render_category_stripe(data, x, category, x_limits),
+         "image" = render_image(path), #TODO: maybe change if you use the magick package
 
          #genomic
-         "phylogenetic_tree" = render_phylo_tree(chart_specs), #path is a path to a nwk_file
-         "dendrogram" = render_dendro(chart_specs),
-         "clonal_tree" = render_clonal_tree(chart_specs),
-         "linear_genomic_map" = render_linear_genome_map_from_df(chart_specs), #TODO:
+         "phylogenetic_tree" = render_phylo_tree(path, x_limits, y_limits, flip_coord), #path is a path to a nwk_file
+         "dendrogram" = render_dendro(data, tip_var, cluster_vars),
+         "clonal_tree" = render_clonal_tree(path, group, x_limits, y_limits, flip_coord),
+         "linear_genomic_map" = render_linear_genome_map_from_df(data, comparisons), #TODO:
          "radial_genomic_map" = NULL, #TODO: determine typical input
-         "alignment" = render_image(chart_specs) #TODO: will this be a table or an image in most cases?
+         "alignment" = render_image(path) #TODO: will this be a table or an image in most cases?
   )
 }
 
@@ -147,7 +173,7 @@ render_simple <- function(chart_specs) {
 #'@export
 plot_many_types_general <- function(...) {
   args_list <- list(...)
-  all_plots <- lapply(args_list, function(x) {do.call(render_simple, x)})
+  all_plots <- lapply(args_list, function(x) {do.call(plot_simple, x)})
   arrange_plots(all_plots, labels = "AUTO")
 }
 
@@ -166,75 +192,27 @@ plot_many_types_general <- function(...) {
 #'@param facet_by
 #'
 #'@export
-plot_small_multiples <- function(combo_specs, facet_by) {
-  facet_by <- combo_specs$facet_by
-  chart_spec <- combo_specs$chart_spec_obj_list[[1]]
-
-  # -- Chart Spec Var's --
-  chart_type <- chart_spec$chart_type
-  data <- get(chart_spec$data)
-  # x <- chart_spec$x,
-  # y=NA,
-  # z=NA,
-  # fill=NA,
-  # group=NA
-
-  # chart_specs <- list(chart_type = chart_spec$chart_type, data = deparse(substitute(chart_spec$data)))
-  # x_limits <- unlist(get_limits(list(chart_specs), chart_spec$x))
-  # if(!is.na(y)) {
-  #   y_limits <- unlist(get_limits(list(chart_specs), chart_spec$y))
-  # }
-
-  # set_x_limits(list(chart_spec))
-
-  #TODO: !!! infer_x and infer_y
-  x_limits <- unlist(get_limits(list(chart_spec), chart_spec$x))
-  if (!is.na(chart_spec$y)) {
-    y_limits <- unlist(get_limits(list(chart_spec), chart_spec$y))
+plot_small_multiples <- function(chart_type, data, facet_by, x, y=NA, z=NA, fill=NA, group=NA) {
+  chart_specs <- list(chart_type = chart_type, data = deparse(substitute(data)))
+  x_limits <- unlist(get_limits(list(chart_specs), x))
+  if(!is.na(y)) {
+    y_limits <- unlist(get_limits(list(chart_specs), y))
   }
 
-  combo_specs$set_small_multiples(facet_by, chart_spec, x_limits, y_limits)
-
-  print('!!!! THIS SHOULD PRINT')
-  print(chart_spec$x_limits)
-  print(chart_spec$y_limits)
-
+  #TODO: maybe just use facet_wrap for ggplot charts? (statistical chart types)
   #Create a list of data subsets according to the facetting variable
   facet_dat <- lapply(unique(data[[facet_by]]),
                       function(x) {dplyr::filter_(data, paste(facet_by, "==", quote(x)))})
-
-  #Create a ChartSpec object for each of the facets
-  subset_obj <- chart_spec$clone()
-  all_plots <- lapply(facet_dat,
-<<<<<<< HEAD
-                      function(sub_dat) {
-                        #TODO??? HOW TO DO THIS?? SHOULD I CREATE A NEW OBJECT FOR EACH? OR ONLY ONE NEW OBJECT AND SOMEHOW CHANGE THE DATA?!
-                        subset_obj$data_subset <- sub_dat
-                        gevitR::render_simple(subset_obj)
-                      })
-  # print('all plots')
-  # print(all_plots)
-
   #Create a list of plots for each of the facet_dat subsets
-  # all_plots <- lapply(facet_dat,
-  #                     function(sub_dat) gevitR::render_simple(chart_type = chart_type,
-  #                                                             data = select(sub_dat, -facet_by),
-  #                                                             x = x,
-  #                                                             y = y,
-  #                                                             z = z,
-  #                                                             fill = fill,
-  #                                                             group = group,
-  #                                                             x_limits = x_limits))
-=======
-                      function(sub_dat) gevitR::render_simple(chart_type = chart_type,
-                                                              data = select(sub_dat, -facet_by),
-                                                              x = x,
-                                                              y = y,
-                                                              z = z,
-                                                              fill = fill,
-                                                              group = group,
-                                                              x_limits = x_limits))
->>>>>>> 81041db000ac2bf3be245e1f8796aa57348cf439
+  all_plots <- lapply(facet_dat,
+                      function(sub_dat) gevitR::plot_simple(chart_type = chart_type,
+                                                            data = select(sub_dat, -facet_by),
+                                                            x = x,
+                                                            y = y,
+                                                            z = z,
+                                                            fill = fill,
+                                                            group = group,
+                                                            x_limits = x_limits))
   arrange_plots(all_plots, labels = "AUTO")
 }
 
@@ -338,12 +316,12 @@ get_order <- function(chart_args_list, common_var) {
         #Note: This also requires that the ordering has the same length
         if (!identical(get_order_from_chart(chart_args), master_ordering)) {
           stop ("These charts are not combinable by composite because both of them
-                  have a fixed ordering that are not the same. Instead, try combining
-                  these charts using many_types_linked.")
+                have a fixed ordering that are not the same. Instead, try combining
+                these charts using many_types_linked.")
+        }
+        }
         }
       }
-    }
-  }
 
   #If there are no master charts, return the first charts order
   if (is.null(master_ordering)) {
@@ -352,7 +330,7 @@ get_order <- function(chart_args_list, common_var) {
   }
 
   return(master_ordering)
-}
+    }
 
 #New algorithm developed with Ana to check if composites are combinable:
 #Returns nothing... will return errors for charts that are not combinable.
@@ -366,7 +344,7 @@ check_combinable_composite <- function(chart_args_list) {
       stop(paste("Chart type:", chart_args$chart_type, "is not spatially alignable.
                  You might try combining using linkage instead of composite."))
     }
-  })
+    })
 
   #For each chart combination,
   lapply(1:(length(chart_args_list) - 1), function(n) {
@@ -393,7 +371,7 @@ check_combinable_composite <- function(chart_args_list) {
       }
     })
   })
-}
+  }
 
 #TODO: remove labels that are on the common axis for all charts but the last - will do once we have done some testing as it will make testing easier
 #TODO: move legends so they don't disrupt the alignment in cowplot!!!
@@ -469,12 +447,12 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
 
       #If no, rotate
       if (!is.null(y_arg) && y_arg == common_var) {
-        do.call(render_simple, args = c(chart_args, list(flip_coord = TRUE))) #, y_limits=unlist(limits), rm_x_labels=TRUE)))
+        do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE))) #, y_limits=unlist(limits), rm_x_labels=TRUE)))
       }
 
       #If yes, do not rotate
       else {
-        do.call(render_simple, args = c(chart_args, list(x_limits=unlist(limits)))) #, rm_x_labels=TRUE)))
+        do.call(plot_simple, args = c(chart_args, list(x_limits=unlist(limits)))) #, rm_x_labels=TRUE)))
       }
     })
 
@@ -488,9 +466,9 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
     lo_plots <- lapply(chart_args_list, function(chart_args) {
       y_arg <- infer_y(chart_args)
       if (!is.null(y_arg) && y_arg == common_var) {
-        do.call(render_simple, args = c(chart_args, list(y_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
+        do.call(plot_simple, args = c(chart_args, list(y_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
       } else {
-        do.call(render_simple, args = c(chart_args, list(flip_coord = TRUE, x_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
+        do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE, x_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
       }
     })
     #Arrange horizontally
@@ -556,9 +534,9 @@ plot_many_linked <- function(link_var, link_mark_type="default", ...) {
   }
 
   plots <- lapply(specified_charts, function(chart) {
-    do.call(render_simple, args = c(chart, list(colour_var = link_var,
-                                                colour_scale = colour_limits,
-                                                colour_mark_type = link_mark_type)))
+    do.call(plot_simple, args = c(chart, list(colour_var = link_var,
+                                              colour_scale = colour_limits,
+                                              colour_mark_type = link_mark_type)))
   })
 
   arrange_plots(plots, labels = "AUTO")
@@ -574,7 +552,6 @@ plot_many_linked <- function(link_var, link_mark_type="default", ...) {
 arrange_plots <- function(chart_list, labels = NULL, shared_legend=FALSE) {
 
   chart_list <- lapply(chart_list, function(chart) {
-    print(class(chart))
     if('gg' %in% class(chart)) {
       ggplotify::as.grob(chart)
     } else if ('data.frame' %in% class(chart)){
@@ -594,4 +571,3 @@ arrange_plots <- function(chart_list, labels = NULL, shared_legend=FALSE) {
 
   cowplot::plot_grid(plotlist = chart_list, labels = labels)
 }
-

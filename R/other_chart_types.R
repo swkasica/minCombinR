@@ -36,7 +36,7 @@ render_category_stripe <- function(data, x, category, x_limits=NA) {
           axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           panel.background = element_blank(),
           legend.position = "none")
-    # guides(fill=guide_legend(title = category))
+  # guides(fill=guide_legend(title = category))
 
   if(!is.na(x_limits)[1]) {
     gg_chart <- gg_chart + xlim(x_limits)
@@ -73,4 +73,3 @@ render_image <- function(path) {
 # render_pdf_image <- function(sourcepdf) {
 #   tm::readPDF(source=sourcepdf)
 # }
-

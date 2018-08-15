@@ -88,7 +88,7 @@ render_linear_genome_map_from_df <- function(data, comparisons = NULL) {
 #TODO: get data to model this and inform input
 render_radial_genomic_map <- function(ideogram, chr_exclude, tracks_inside, tracks_outside) {
   RCircos::RCircos.Set.Core.Components(cyto.info=ideogram, chr.exclude=chr_exclude,
-                              tracks.inside=tracks_inside, tracks_outside)
+                                       tracks.inside=tracks_inside, tracks_outside)
   RCircos::RCircos.Set.Plot.Area()
   RCircos::RCircos.Chromosome.Ideogram.Plot()
 }
