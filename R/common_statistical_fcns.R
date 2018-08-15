@@ -29,12 +29,16 @@ NULL
 #                            x_limits=NA, y_limits=NA
 
 render_bar_chart <- function(chart_specs) {
+<<<<<<< HEAD
   if (!is.null(chart_specs$data_subset)) {
     #For small multiples
     data = chart_specs$data_subset
   } else {
     data = get(chart_specs$data)
   }
+=======
+  data = get(chart_specs$data)
+>>>>>>> 81041db000ac2bf3be245e1f8796aa57348cf439
   x = chart_specs$x
   y = chart_specs$y
   stack_by = chart_specs$stack_by
@@ -50,11 +54,14 @@ render_bar_chart <- function(chart_specs) {
   colour_scale = chart_specs$colour_scale
   x_limits = chart_specs$x_limits
   y_limits = chart_specs$y_limits
+<<<<<<< HEAD
 
   # print('!!!')
   # print(data)
   # print(x)
   # print(y)
+=======
+>>>>>>> 81041db000ac2bf3be245e1f8796aa57348cf439
 
   gg_chart <- if (layout == "divergent") {
     if (length(stack_by) == 0) {
@@ -274,7 +281,11 @@ render_line_chart <- function(chart_specs) {
   x = chart_specs$x
   y = chart_specs$y
   group = chart_specs$group
+<<<<<<< HEAD
   # print(chart_specs$x_limits)
+=======
+  print(chart_specs$x_limits)
+>>>>>>> 81041db000ac2bf3be245e1f8796aa57348cf439
 
   if(length(group) == 0) {
     gg_chart <- ggplot(get(chart_specs$data), aes_string(x = x, y = y, group = 1)) + geom_line()
@@ -316,7 +327,11 @@ render_line_chart <- function(chart_specs) {
     gg_chart <- gg_chart +
       theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
   }
+<<<<<<< HEAD
   # print(gg_chart)
+=======
+  print(gg_chart)
+>>>>>>> 81041db000ac2bf3be245e1f8796aa57348cf439
   gg_chart
 }
 

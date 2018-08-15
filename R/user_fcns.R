@@ -20,7 +20,11 @@ specify_base <- function(chart_type, data=NA, x=NULL, y=character(0), z=characte
                          tip_var=c(character(0)), #A vector for the tip var column in data,for a dendro
                          comparisons=list(), # A list of comparison objects for genomic map
                          # --- bar ---
+<<<<<<< HEAD
                          layout="default", proportional=FALSE,
+=======
+                         layout=character(0), proportional=FALSE,
+>>>>>>> 81041db000ac2bf3be245e1f8796aa57348cf439
                          reference_vector=character(0), reference_var=character(0),
                          # --- stream ---
                          key=character(0), value=character(0), date=character(0),
@@ -84,15 +88,23 @@ specify_base <- function(chart_type, data=NA, x=NULL, y=character(0), z=characte
 #' Can provide ChartSpec objects that are being combined either in a list in chart_spec_obj_list or individually (...)
 #' @export
 specify_combo <- function(combo_type = NULL,
+<<<<<<< HEAD
                           ...,
                           chart_spec_obj_list = NULL, #list of ChartSpecs',
+=======
+                          # ...,
+                          chart_spec_obj_list = NA, #list of ChartSpecs'
+>>>>>>> 81041db000ac2bf3be245e1f8796aa57348cf439
                           facet_by = character(0),
                           link_var = character(0),
                           link_mark_type = character(0),
                           alignment = character(0),
                           common_var = character(0),
                           order = NULL) {
+<<<<<<< HEAD
   chart_spec_obj_list <- c(list(...), chart_spec_obj_list)
+=======
+>>>>>>> 81041db000ac2bf3be245e1f8796aa57348cf439
   combo_spec <- ComboSpec$new(combo_type = combo_type, chart_spec_obj_list = chart_spec_obj_list,
                               facet_by = facet_by,
                               link_var = link_var, link_mark_type = link_mark_type,
@@ -140,18 +152,35 @@ plot <- function(specs) {
 
   #No combination!
   if(class(specs)[1] == "BaseSpec") {
+<<<<<<< HEAD
     # - render and arrange
     spec_plot <- render_simple(specs)
+=======
+    spec_plot <- render_simple(specs)
+    print(spec_plot)
+>>>>>>> 81041db000ac2bf3be245e1f8796aa57348cf439
     return(arrange_plots(list(spec_plot)))
   }
 
   #TODO: clean
+<<<<<<< HEAD
   else if(class(specs)[1] == "ComboSpec") {
     # base_calls <- specs[sapply(1:length(specs),
     #                            function(x) {
     #                              specs[[x]][1] == "specify_base()" && !is.na(as.list(specs[[x]][1]))
     #                            })]
 
+=======
+  else {
+    #Found a better way to do this so commented out but may be useful later.
+    #Find all combinations (currently only allowed one combo type so commented out)
+    # combo_call <- specs[sapply(1:length(specs), function(x) {specs[[x]][1] == "specify_combo()"})]
+    #Find the base calls for each of the charts in a combination
+    base_calls <- specs[sapply(1:length(specs),
+                               function(x) {
+                                 specs[[x]][1] == "specify_base()" && !is.na(as.list(specs[[x]][1]))
+                               })]
+>>>>>>> 81041db000ac2bf3be245e1f8796aa57348cf439
     #View multiple plots in a single view
     if (specs$combo_type == "small_multiple") {
       # base_specs <- as.list(specs$'base_1')

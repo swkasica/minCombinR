@@ -206,6 +206,7 @@ plot_small_multiples <- function(combo_specs, facet_by) {
   #Create a ChartSpec object for each of the facets
   subset_obj <- chart_spec$clone()
   all_plots <- lapply(facet_dat,
+<<<<<<< HEAD
                       function(sub_dat) {
                         #TODO??? HOW TO DO THIS?? SHOULD I CREATE A NEW OBJECT FOR EACH? OR ONLY ONE NEW OBJECT AND SOMEHOW CHANGE THE DATA?!
                         subset_obj$data_subset <- sub_dat
@@ -224,6 +225,16 @@ plot_small_multiples <- function(combo_specs, facet_by) {
   #                                                             fill = fill,
   #                                                             group = group,
   #                                                             x_limits = x_limits))
+=======
+                      function(sub_dat) gevitR::render_simple(chart_type = chart_type,
+                                                              data = select(sub_dat, -facet_by),
+                                                              x = x,
+                                                              y = y,
+                                                              z = z,
+                                                              fill = fill,
+                                                              group = group,
+                                                              x_limits = x_limits))
+>>>>>>> 81041db000ac2bf3be245e1f8796aa57348cf439
   arrange_plots(all_plots, labels = "AUTO")
 }
 
@@ -563,6 +574,7 @@ plot_many_linked <- function(link_var, link_mark_type="default", ...) {
 arrange_plots <- function(chart_list, labels = NULL, shared_legend=FALSE) {
 
   chart_list <- lapply(chart_list, function(chart) {
+    print(class(chart))
     if('gg' %in% class(chart)) {
       ggplotify::as.grob(chart)
     } else if ('data.frame' %in% class(chart)){
