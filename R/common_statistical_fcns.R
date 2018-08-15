@@ -128,8 +128,11 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
       theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
   }
 
-  if(!is.na(colour_scale)[1] && !is.null(colour_var)) {
-    gg_chart <- gg_chart %+% aes_string(fill = colour_var)
+  if(!is.null(colour_var)) {
+    gg_chart <- gg_chart %+% geom_bar(aes_string(fill = colour_var))
+  }
+
+  if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
     # theme(legend.position = "none")
@@ -235,9 +238,7 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
 # Line Chart
 # x and y normally continuous but can have discrete (bivariate)
 render_line_chart <- function(data, x, y, group, title, colour_var=NULL, colour_scale=NA,
-                              x_limits=NA, y_limits=NA, flip_coord=FALSE,
-                              #rm_x_labels=FALSE, rm_y_labels=FALSE,
-                              reencodement = NULL) {
+                              x_limits=NA, y_limits=NA, flip_coord=FALSE) {
   if(is.na(group)){
     gg_chart <- ggplot(data, aes_string(x = x, y = y, group = 1)) + geom_line()
   } else {
@@ -447,9 +448,12 @@ render_scatter <- function(data, x, y, title, colour_var=NULL, colour_scale=NA,
     gg_chart <- gg_chart + ggtitle(title)
   }
 
-  if(!is.na(colour_scale)[1]) {
+  if(!is.null(colour_var)) {
     #Add colour variable
     gg_chart <- gg_chart %+% aes_string(colour = colour_var)
+  }
+
+  if(!is.na(colour_scale)[1]) {
     #Scale colour variable
     gg_chart <- gg_chart +
       scale_colour_manual(name = colour_var, values = colour_scale)
@@ -497,6 +501,7 @@ render_pie_chart <- function(data, x, title, colour_var=NULL, colour_scale=NA) {
   #     coord_polar("y", start=0)+
   #     facet_wrap(facet_by)
   # }else{
+
   data <- data %>%
     count_(x) %>%
     mutate(freq = n/sum(n))
@@ -545,9 +550,12 @@ render_histogram <- function(data, x, title, colour_var=NULL, colour_scale=NA,
     gg_chart <- gg_chart + ggtitle(title)
   }
 
-  if(!is.na(colour_scale)[1]) {
+  if(!is.null(colour_var)) {
     #Add colour variable
     gg_chart <- gg_chart %+% aes_string(fill = colour_var)
+  }
+
+  if(!is.na(colour_scale)[1]) {
     #Add manual colour scale
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
@@ -579,9 +587,12 @@ render_pdf <- function(data, x, title, colour_var=NULL, colour_scale=NA,
     gg_chart <- gg_chart + ggtitle(title)
   }
 
-  if(!is.na(colour_scale)[1]) {
+  if(!is.null(colour_var)) {
     #Add colour variable
     gg_chart <- gg_chart %+% aes_string(fill = colour_var)
+  }
+
+  if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
     # theme(legend.position = "none")
@@ -622,9 +633,12 @@ render_boxplot <- function(data, x, y, title, rm_y_labels=F, rm_x_labels=F,
       theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
   }
 
-  if(!is.na(colour_scale)[1]) {
+  if(!is.null(colour_var)) {
     #Add colour variable
     gg_chart <- gg_chart %+% aes_string(fill = colour_var)
+  }
+
+  if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
     # theme(legend.position = "none")
@@ -655,10 +669,12 @@ render_violinplot <- function(data, x, y, title, colour_var=NULL, colour_scale=N
     gg_chart <- gg_chart + ggtitle(title)
   }
 
-
-  if(!is.na(colour_scale)[1]) {
+  if(!is.null(colour_var)) {
     #Add colour variable
     gg_chart <- gg_chart %+% aes_string(fill = colour_var)
+  }
+
+  if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
       scale_fill_manual(name = colour_var, values = colour_scale)
     # theme(legend.position = "none")
@@ -699,10 +715,12 @@ render_swarm_plot <- function(data, x, y, title, colour_var=NULL, colour_scale=N
     gg_chart <- gg_chart + ggtitle(title)
   }
 
+  if(!is.null(colour_var)) {
+    #Add colour variable
+    gg_chart <- gg_chart %+% aes_string(fill = colour_var)
+  }
 
   if(!is.na(colour_scale)[1]) {
-    #Add colour variable
-    gg_chart <- gg_chart %+% aes_string(color = colour_var)
     gg_chart <- gg_chart +
       scale_colour_manual(name = colour_var, values = colour_scale)
     # theme(legend.position = "none")

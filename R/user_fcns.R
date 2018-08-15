@@ -70,6 +70,8 @@ specify_reencodement <- function(base_specification, reencode_var, mark_type='de
 
   #Set the variables for reencoded marks!:
 
+  no_default_reencodement <- list("heatmap", "heat_map", "density", "pie")
+
   #Could have this as a setter method if using R6 in the specify reencodement user fcn
   if (mark_type == "default") {
     if (channel == "color" || channel == "colour") {
@@ -89,8 +91,6 @@ specify_reencodement <- function(base_specification, reencode_var, mark_type='de
     stop("currently only works with default mark types!!!")
 
   }
-
-  print(base_specification$colour_var)
 
   #TODO: error messages if reencode something twice.
   # if (!is.null(reencodement)) {
