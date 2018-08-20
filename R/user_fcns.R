@@ -70,7 +70,7 @@ specify_reencodement <- function(base_specification, reencode_var, mark_type='de
 
   #Set the variables for reencoded marks!:
 
-  no_default_reencodement <- list("heatmap", "heat_map", "density", "pie")
+  no_default_reencodement <- list("heatmap", "heat_map", "density", "pie", "table", "category_stripe", "image")
 
   #Could have this as a setter method if using R6 in the specify reencodement user fcn
   if (mark_type == "default") {

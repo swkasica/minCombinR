@@ -2,6 +2,7 @@
 #' @export
 input_data<-function(file  = NA, dataType = NA, desc = NA,...){
   #Only supports specific data types
+  #TODO: data for sequence alignment
   if(!(dataType %in% c("tree","table","dna","spatial","image")))
     stop("Data type is not supported. Please choose one of : tree, table, dna, spatial, image. Use ?input_data to learn more about the different input types.")
 
@@ -9,7 +10,7 @@ input_data<-function(file  = NA, dataType = NA, desc = NA,...){
 
   switch(dataType,
          "table" = input_table(file,desc,...),
-         "tree" = input_phyloTree(file,desc,...) ,
+         "tree" = input_phyloTree(file,desc,...),
          "dna" = input_dna(file,desc,...),
          "spatial" = input_spatial(file,desc,proj4String,...),
          "image" = input_image(file,desc,...))

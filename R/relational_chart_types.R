@@ -1,9 +1,13 @@
 #Helper functions for relational chart types
 
 #Node link
-render_node_link <- function(data, directed=FALSE) {
-  my_graph=igraph::graph_from_data_frame(d=data, directed=directed)
-  ggraph::ggraph(my_graph) + ggraph::geom_edge_link() + ggraph::geom_node_point()
+render_node_link <- function(data, directed=FALSE, colour_var=NULL) {
+  my_graph <- igraph::graph_from_data_frame(d=data, directed=directed)
+  graph_chart <- ggraph::ggraph(my_graph) + ggraph::geom_edge_link() + ggraph::geom_node_point()
+
+  if(!is.null(colour_var)) {
+    graph_chart <- graph_chart %+% ggraph::geom_edge_link(color=colour_var)
+  }
 }
 
 #Flow diagram

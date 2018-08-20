@@ -2,15 +2,20 @@
 
 # Tables
 #x is rows, y is columns
+# param: data - can either be a table or a gevitDataObj
 render_table <- function(data, flip_coord=FALSE, rownames=NA, x_limits=NA, y_limits=NA) {
 
-  if (!is.na(rownames)) {
+  if(class(data)[1] == "gevitDataObj") {
+    data <- data$data
+  }
+
+  if(!is.na(rownames)) {
     data <- as.data.frame(data)
     rownames(data) <- data[ , rownames]
     data[ , rownames] <- NULL
   }
 
-  if (flip_coord) {
+  if(flip_coord) {
     data <- t(data)
   }
 

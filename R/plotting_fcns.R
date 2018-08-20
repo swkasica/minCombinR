@@ -96,7 +96,7 @@ get_limits <- function(specified_charts, var_name) {
 #'
 #'@export
 plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA, group=NA, title=NA,
-                        path, category, cluster_vars=NA, tip_var=NA, comparisons,
+                        path, category, cluster_vars=NULL, tip_var=NULL, comparisons,
                         #For bar
                         layout="default", proportional = FALSE, reference_vector, reference_var,
                         #For stream
@@ -107,6 +107,12 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                         rownames=NA,
                         #For geographic map
                         lat_var=NA, long_var=NA,
+                        #For dendro reencodements,
+                        labels=NULL,
+                        labels_col_var=NULL, labels_col_values=NULL, labels_col_palette=NULL, labels_size=NULL,
+                        leaf_col_var=NULL, leaf_col_palette=NULL,
+                        #For phylogenetic tree reencodements
+                        edge_col_var=NULL, edge_col_palette=NULL,
                         #For node link
                         directed=FALSE,
                         #FOR COMPOSITE (only implemented for a few chart types)
@@ -139,7 +145,7 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
 
          #TODO: many types linked and composite for non-common_stat_chart_types (and non ggplot2)
          #Relational
-         "node_link" = render_node_link(data, directed),
+         "node_link" = render_node_link(data, directed, colour_var),
          "flow_diagram" = render_flow_diagram(data), #TODO
 
          #Temporal
@@ -157,8 +163,12 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
          "image" = render_image(path), #TODO: maybe change if you use the magick package
 
          #genomic
-         "phylogenetic_tree" = render_phylo_tree(path, x_limits, y_limits, flip_coord), #path is a path to a nwk_file
-         "dendrogram" = render_dendro(data, tip_var, cluster_vars),
+         "phylogenetic_tree" = render_phylo_tree(data, x_limits, y_limits, flip_coord,
+                                                 edge_col_var, edge_col_palette), #path is a path to a nwk_file
+         "dendrogram" = render_dendro(data, labels,
+                                      labels_col_var, labels_col_values, labels_col_palette, labels_size,
+                                      leaf_col_var, leaf_col_palette,
+                                      tip_var, cluster_vars),
          "clonal_tree" = render_clonal_tree(path, group, x_limits, y_limits, flip_coord),
          "linear_genomic_map" = render_linear_genome_map_from_df(data, comparisons), #TODO:
          "radial_genomic_map" = NULL, #TODO: determine typical input
