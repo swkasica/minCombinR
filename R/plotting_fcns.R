@@ -112,7 +112,7 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                         labels_col_var=NULL, labels_col_values=NULL, labels_col_palette=NULL, labels_size=NULL,
                         leaf_col_var=NULL, leaf_col_palette=NULL,
                         #For phylogenetic tree reencodements
-                        edge_col_var=NULL, edge_col_palette=NULL,
+                        branch_col_var=NULL, branch_col_palette=NULL,
                         #For node link
                         directed=FALSE,
                         #FOR COMPOSITE (only implemented for a few chart types)
@@ -164,7 +164,7 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
 
          #genomic
          "phylogenetic_tree" = render_phylo_tree(data, x_limits, y_limits, flip_coord,
-                                                 edge_col_var, edge_col_palette), #path is a path to a nwk_file
+                                                 branch_col_var, branch_col_palette), #path is a path to a nwk_file
          "dendrogram" = render_dendro(data, labels,
                                       labels_col_var, labels_col_values, labels_col_palette, labels_size,
                                       leaf_col_var, leaf_col_palette,

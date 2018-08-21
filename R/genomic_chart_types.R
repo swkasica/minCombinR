@@ -7,18 +7,22 @@
 #Phylogenetic Tree
 render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE, edge_col_var=NULL, edge_col_palette=NULL) {
 
+
   if (class(data) != "gevitDataObj") {
     #TODO: allow for a nwk file as input too?
     stop("phylogenetic tree must be first created using gevitR input functions.")
   }
 
-  gg_chart <- ggtree::ggtree(data@data$tree) + ggtree::geom_treescale()
+  tree <- data@data$tree
+  meta <- data@data$metadata
 
-  if(!is.null(edge_col_var)) {
-    if (is.null(edge_col_palette)) {
+  gg_chart <- ggtree::ggtree(tree) + ggtree::geom_treescale()
+
+  if(!is.null(branch_col_var)) {
+    if (is.null(branch_col_palette)) {
       get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
-      colours <- get_palette(length(unique(data@data$metadata[[edge_col_var]])))
-      names(colours) <- unique(data@data$metadata[[edge_col_var]])
+      colours <- get_palette(length(unique(meta[[branch_col_var]])))
+      names(colours) <- unique(meta[[branch_col_var]])
     }
 
     #getting ready to merge into metadata
@@ -26,10 +30,11 @@ render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE, 
     tmp <- rownames(colours)
     colours <- cbind(tmp, data.frame(colours, row.names = NULL))
     #rename for joining
-    colnames(colours)[colnames(colours) == "tmp"] <- edge_col_var
-    #merge with metadata
-    metadata <- plyr::join(x=data@data$metadata, y=colours, by=edge_col_var)
-    gg_chart <- gg_chart %<+% metadata + aes(color=I(colours)) + theme_tree()
+    colnames(colours)[colnames(colours) == "tmp"] <- branch_col_var
+    #join with metadata
+    metadata <- plyr::join(x=meta, y=colours, by=branch_col_var)
+
+    gg_chart <- gg_chart %<+% metadata + aes(color=colours) + theme_tree()
 
     # tree_sample <- treeEBOV@data$tree
     # ggchart <- ggtree::ggtree(tree_sample) + ggtree::geom_treescale()
@@ -180,12 +185,71 @@ render_dendro <- function(data, labels=NULL,
   ggplot(ggdend) + ylim(-4, max(dendextend::get_branches_heights(dend))) #Changes the ylim to deal with long labels in ggplot2
 }
 
-# -- Render a Clonal Tree --
-render_clonal_tree <- function(nwk_file, node_groups, x_limits=NA, y_limits=NA, flip_coord=FALSE) {
-  tree <- ape::read.tree(nwk_file)
-  tree <- ggtree::groupClade(object=tree, node=node_groups)
+
+# --- Render Clonal Tree ---
+# data = gevitDataObj of type tree
+#     metadata in data should have values for all nodes (including both tip nodes and internal nodes)
+# branch_col_var = a variable found in data that will be used to color the edge of the associated nodes.
+# branch_col_palette = A NAMED vector of colors (hex) for branch colors for branch_col_var;
+#     has to be named to choose which colour corresponds to which val. (mostly have this for many types linked!)
+# node_col_var = a variable to color the node points by
+# node_col_palette = A NAMED vector of colors for point colors for node_col_var ; will by used by many_types_linked
+render_clonal_tree <- function(data, branch_col_var=NULL, branch_col_palette=NULL, node_col_var=NULL, node_col_palette=NULL,
+                               x_limits=NA, y_limits=NA, flip_coord=FALSE) { #node_groups,
+  # tree <- ape::read.tree(nwk_file)
+  # tree <- ggtree::groupClade(object=tree, node=node_groups)
+
+  if (class(data) != "gevitDataObj") {
+    #TODO: allow for a nwk file as input too?
+    stop("phylogenetic tree must be first created using gevitR input functions.")
+  }
+  tree <- data@data$tree
+  meta <- data@data$metadata
+
   gg_chart <- ggtree::ggtree(tree, aes(color=node_groups)) +
-    ggtree::geom_nodepoint(aes(size=5, alpha=0.5))
+    ggtree::geom_treescale() +
+    geom_point()
+
+  if (!is.null(branch_col_var)) {
+    if (is.null(branch_col_palette)) {
+      #TODO: consider what happens with more than 9 colors
+      get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
+      colours <- get_palette(length(unique(meta[[branch_col_var]])))
+      names(colours) <- unique(meta[[branch_col_var]])
+    }
+
+    #getting ready to merge into metadata
+    colours <- as.data.frame(colours)
+    tmp <- rownames(colours)
+    colours <- cbind(tmp, data.frame(colours, row.names = NULL))
+    #rename for joining
+    colnames(colours)[colnames(colours) == "tmp"] <- branch_col_var
+    #join with metadata
+    metadata <- plyr::join(x=meta, y=colours, by=branch_col_var)
+
+    #TODO: could technically use I(colours) here because should have metadata for all internal nodes too
+    gg_chart <- gg_chart %<+% metadata + aes(color=colours) + theme_tree()
+  }
+
+  if (!is.null(node_col_var)) {
+    if (is.null(branch_col_palette)) {
+      #TODO: consider what happens with more than 9 colors
+      get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
+      colours <- get_palette(length(unique(meta[[branch_col_var]])))
+      names(colours) <- unique(meta[[branch_col_var]])
+    }
+
+    #getting ready to merge into metadata
+    colours <- as.data.frame(colours)
+    tmp <- rownames(colours)
+    colours <- cbind(tmp, data.frame(colours, row.names = NULL))
+    #rename for joining
+    colnames(colours)[colnames(colours) == "tmp"] <- branch_col_var
+    #join with metadata
+    metadata <- plyr::join(x=meta, y=colours, by=branch_col_var)
+
+    gg_chart %<+% metadata + geom_point(aes(color=I(colours)))
+  }
 
   if(!is.na(x_limits)[1]) {
     gg_chart <- gg_chart + xlim(x_limits)
