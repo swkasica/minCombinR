@@ -20,9 +20,7 @@ render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE, 
 
   if(!is.null(branch_col_var)) {
     if (is.null(branch_col_palette)) {
-      get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
-      colours <- get_palette(length(unique(meta[[branch_col_var]])))
-      names(colours) <- unique(meta[[branch_col_var]])
+      colours <- get_colour_palette(data, branch_col_var)
     } else {
       colours <- branch_col_palette
     }
@@ -122,6 +120,7 @@ render_dendro <- function(data, labels=NULL,
     label_color_values <- label_color_values[order.dendrogram(dend)]
 
     if (!is.null(labels_col_palette)) {
+      #TODO: if not provided with colour_palette then generate with get_colour_palette()!!!
       #to show how palette will be generated in many types linked
       # get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
       # colours <- get_palette(length(unique(label_color_values)))
@@ -139,6 +138,7 @@ render_dendro <- function(data, labels=NULL,
   if (!is.null(labels_col_values)) {
 
     if (!is.null(labels_col_palette)) {
+      #TODO: if not provided with colour_palette then generate with get_colour_palette()!!!
       #to show how palette will be generated in many types linked
       # get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
       # colours <- get_palette(length(unique(label_color_values)))
@@ -214,11 +214,7 @@ render_clonal_tree <- function(data, branch_col_var=NULL, branch_col_palette=NUL
 
   if (!is.null(branch_col_var)) {
     if (is.null(branch_col_palette)) {
-      #TODO: consider what happens with more than 9 colors
-      #TODO: also consider different types of vairables!! (use get_limits function!)
-      get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
-      colours <- get_palette(length(unique(meta[[branch_col_var]])))
-      names(colours) <- unique(meta[[branch_col_var]])
+      colours <- get_colour_palette(data, branch_col_var)
     } else {
       colours <- branch_col_palette
     }
@@ -238,10 +234,7 @@ render_clonal_tree <- function(data, branch_col_var=NULL, branch_col_palette=NUL
 
   if (!is.null(node_col_var)) {
     if (is.null(node_col_palette)) {
-      #TODO: consider what happens with more than 9 colors
-      get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
-      colours <- get_palette(length(unique(meta[[node_col_palette]])))
-      names(colours) <- unique(meta[[node_col_palette]])
+      colours <- get_colour_palette(data, node_col_var)
     } else {
       colours <- node_col_palette
     }

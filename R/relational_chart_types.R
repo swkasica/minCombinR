@@ -1,14 +1,34 @@
 #Helper functions for relational chart types
 
-#Node link
+# --- Render Node link ---
 #TODO: input function for graphs??
-render_node_link <- function(data, directed=FALSE, colour_var=NULL) {
-  my_graph <- igraph::graph_from_data_frame(d=data, directed=directed)
-  graph_chart <- ggraph::ggraph(my_graph) + ggraph::geom_edge_link() + ggraph::geom_node_point()
+render_node_link <- function(data,
+                             directed = FALSE,
+                             edge_col_var = NULL,
+                             edge_col_palette = NULL,
+                             node_col_var = NULL,
+                             node_col_palette = NULL) {
 
-  if(!is.null(colour_var)) {
-    graph_chart <- graph_chart %+% ggraph::geom_edge_link(color=colour_var)
+  my_graph <- igraph::graph_from_data_frame(d = data, directed = directed)
+  graph_chart <- ggraph::ggraph(my_graph, layout = "kk") + ggraph::geom_edge_link() + ggraph::geom_node_point()
+
+  if (!is.null(edge_col_var)) {
+    if (is.null(edge_col_palette)) {
+      colours <- get_colour_palette(data, edge_col_var)
+    } else {
+      colours <- edge_col_palette
+    }
+
+    graph_chart <- graph_chart %+%
+      ggraph::geom_edge_link(aes_string(color = edge_col_var)) %+%
+      ggraph::scale_edge_colour_manual(name = edge_col_var, values = colours)
   }
+
+  if (!is.null(node_col_var)) {
+    graph_chart <-
+      graph_chart %+% ggraph::geom_node_point(aes(color = node_col_var))
+  }
+  graph_chart
 }
 
 #Flow diagram

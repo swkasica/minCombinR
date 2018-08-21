@@ -85,7 +85,8 @@ get_limits <- function(specified_charts, var_name) {
   return(limits)
 }
 
-# ---- HELPER FUNCTION FOR REENCODEMENTS ----
+# ---- HELPER FUNCTION FOR COLOUR REENCODEMENTS ----
+# -- Get Colour Palette --
 #given a data (either gevitDataObj or data frame) and a colour_var,
 # return a vector with hex colours as elements and named by the colour_var value.
 #currently only using in some render functions!
@@ -163,7 +164,8 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                         #For phylogenetic tree reencodements
                         branch_col_var=NULL, branch_col_palette=NULL,
                         #For node link
-                        directed=FALSE,
+                        directed = FALSE, edge_col_var = NULL, edge_col_palette = NULL,
+                        node_col_var = NULL, node_col_palette = NULL,
                         #FOR COMPOSITE (only implemented for a few chart types)
                         flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
                         #FOR MANY TYPES LINKED
@@ -194,7 +196,14 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
 
          #TODO: many types linked and composite for non-common_stat_chart_types (and non ggplot2)
          #Relational
-         "node_link" = render_node_link(data, directed, colour_var),
+
+         "node_link" = render_node_link(data,
+                                        directed,
+                                        edge_col_var,
+                                        edge_col_palette,
+                                        node_col_var,
+                                        node_col_palette),
+
          "flow_diagram" = render_flow_diagram(data), #TODO
 
          #Temporal
