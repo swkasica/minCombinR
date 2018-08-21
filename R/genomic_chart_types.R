@@ -23,6 +23,8 @@ render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE, 
       get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
       colours <- get_palette(length(unique(meta[[branch_col_var]])))
       names(colours) <- unique(meta[[branch_col_var]])
+    } else {
+      colours <- branch_col_palette
     }
 
     #getting ready to merge into metadata
@@ -213,9 +215,12 @@ render_clonal_tree <- function(data, branch_col_var=NULL, branch_col_palette=NUL
   if (!is.null(branch_col_var)) {
     if (is.null(branch_col_palette)) {
       #TODO: consider what happens with more than 9 colors
+      #TODO: also consider different types of vairables!! (use get_limits function!)
       get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
       colours <- get_palette(length(unique(meta[[branch_col_var]])))
       names(colours) <- unique(meta[[branch_col_var]])
+    } else {
+      colours <- branch_col_palette
     }
 
     #getting ready to merge into metadata
@@ -232,11 +237,13 @@ render_clonal_tree <- function(data, branch_col_var=NULL, branch_col_palette=NUL
   }
 
   if (!is.null(node_col_var)) {
-    if (is.null(branch_col_palette)) {
+    if (is.null(node_col_palette)) {
       #TODO: consider what happens with more than 9 colors
       get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
-      colours <- get_palette(length(unique(meta[[branch_col_var]])))
-      names(colours) <- unique(meta[[branch_col_var]])
+      colours <- get_palette(length(unique(meta[[node_col_palette]])))
+      names(colours) <- unique(meta[[node_col_palette]])
+    } else {
+      colours <- node_col_palette
     }
 
     #getting ready to merge into metadata
@@ -244,9 +251,9 @@ render_clonal_tree <- function(data, branch_col_var=NULL, branch_col_palette=NUL
     tmp <- rownames(colours)
     colours <- cbind(tmp, data.frame(colours, row.names = NULL))
     #rename for joining
-    colnames(colours)[colnames(colours) == "tmp"] <- branch_col_var
+    colnames(colours)[colnames(colours) == "tmp"] <- node_col_var
     #join with metadata
-    metadata <- plyr::join(x=meta, y=colours, by=branch_col_var)
+    metadata <- plyr::join(x=meta, y=colours, by=node_col_var)
 
     gg_chart %<+% metadata + geom_point(aes(color=I(colours)))
   }

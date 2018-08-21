@@ -1,6 +1,7 @@
 #Helper functions for relational chart types
 
 #Node link
+#TODO: input function for graphs??
 render_node_link <- function(data, directed=FALSE, colour_var=NULL) {
   my_graph <- igraph::graph_from_data_frame(d=data, directed=directed)
   graph_chart <- ggraph::ggraph(my_graph) + ggraph::geom_edge_link() + ggraph::geom_node_point()

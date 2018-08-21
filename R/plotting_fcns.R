@@ -85,6 +85,55 @@ get_limits <- function(specified_charts, var_name) {
   return(limits)
 }
 
+# ---- HELPER FUNCTION FOR REENCODEMENTS ----
+#given a data (either gevitDataObj or data frame) and a colour_var,
+# return a vector with hex colours as elements and named by the colour_var value.
+#currently only using in some render functions!
+get_colour_palette <- function(data, colour_var) {
+  #Gets the data depending on the class
+  if (class(data)[1] == "gevitDataObj") {
+    ref_data <- data@data$metadata
+  } else {
+    ref_data <- get(as.character(chart$data))
+  }
+
+  #Gets the limits of the colour_var in data
+  limits <- c()
+  if (grepl("^as.factor\\({1}|\\){1}$", colour_var)) {
+    colour_var <- gsub("^as.factor\\({1}|\\){1}$", "", colour_var)
+    unique_vars <- unique(ref_data[[colour_var]])
+    limits <- unique(c(limits, as.vector(unique_vars)))
+  } else if (is.numeric(ref_data[[colour_var]])) {
+    unique_vars <- unique(ref_data[[colour_var]])
+    min <- min(unique_vars)
+    max <- max(unique_vars)
+    limits <- c(limits, min, max)
+  } else {
+    unique_vars <- unique(ref_data[[colour_var]])
+    limits <- unique(c(limits, as.vector(unique_vars)))
+  }
+
+  if (is.numeric(limits) &&
+      !grepl("^as.factor\\({1}|\\){1}$", colour_var)) {
+    min <- min(limits)
+    max <- max(limits)
+    limits <- c(min, max)
+  }
+
+  #Gets the colour match
+  # -- for a discrete scale
+  if (!is.numeric(limits)) {
+    get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
+    colour_limits <- get_palette(length(limits))
+    names(colour_limits) <- limits
+    # -- for a continuous scale
+  } else {
+    colour_limits <- limits
+  }
+
+  return(colour_limits)
+}
+
 #'Plot a base chart type
 #'
 #'This function will create a single chart object that can be passed into render_charts() to render.
@@ -526,6 +575,7 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
 #TODO: add manual colour options to non-common_statistical charts
 #TODO: only works on common statistical functions currently!
 #TODO: make sure that statistical transformations on colour_limits are performed if the colour_scale is transformed when generating chart.
+#TODO:
 #'Many Types Linked
 #'
 plot_many_linked <- function(link_var, link_mark_type="default", ...) {
