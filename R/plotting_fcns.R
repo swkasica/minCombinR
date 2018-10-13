@@ -61,42 +61,31 @@ get_data <- function(data) {
   data
 }
 
-#Get consistent variables (called limits in ggplot) for all of the specified charts
-#Note - specified_charts is a list of charts, with each chart only requiring fields chart_type and data
-#Note- The var_name has to be the same type in all the specified_charts
-#TODO: var_name can be "var" or "as.factor(var)" where var is the variable name
+
+#' Get consistent values for the var_name in specified_charts
+#' @param specified_charts A list of chart specifications
+#' @param var_name A string with the name of the variable to get the limits of. Must be the same name for all data.
+#' @param sum_var A string with the name of the variable to group for summing
 get_limits <- function(specified_charts, var_name, sum_var=NULL) {
   limits <- c()
 
   lapply(specified_charts, function(chart) {
-    #TODO: handle case where data is of gevitR object type!!!
-    # ref_data <- get(as.character(chart$data)) #TODO: some sort of try catch here to make sure the linking variable can be found (for each chart)
-
     ref_data <- get_data(chart$data)
 
     #TODO: using grep to remove as.factor() so I can get column... see if there is a better way to do this.
     if (grepl("^as.factor\\({1}|\\){1}$", var_name)) {
-      #If the var_name is as.factor, will remove this.
-      #TODO: maybe come up with a better way to handle this!
       var_name <- gsub("^as.factor\\({1}|\\){1}$", "", var_name)
       unique_vars <- unique(ref_data[[var_name]])
       limits <<- unique(c(limits, as.vector(unique_vars)))
     } else if (is.numeric(ref_data[[var_name]])) {
-      #For when the min and max value of var_name is calculated from its sum with another var
       if(!is.null(sum_var)) {
-        # unique_vars <- unique(ref_data %>%
-        #                         group_by_(var_name, sum) %>%
-        #                         summarise_(count_val = sum(var_name)))[["count_val"]]
-        #get the sum of the values
         unique_vars <- aggregate(ref_data[[var_name]], by = list(sum_var = ref_data[[sum_var]]), FUN=sum)
         unique_vars <- unique(unique_vars$x)
       } else {
         unique_vars <- unique(ref_data[[var_name]])
       }
 
-      #!!!
       #Exception: If the chart type is a bar chart, the min MUST be 0 for the y-axis
-      # Note: we are restricting the bar chart to only having a discrete axis.
       if (chart$chart_type == "bar") {
         min <- 0
       } else {
