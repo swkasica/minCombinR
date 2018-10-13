@@ -5,12 +5,12 @@
 # edge_col_var = a variable found in data that will be used to color the leaves
 # edge_col_palette = A NAMED vector of colors (hex) for labels; has to be named to choose which colour corresponds to which val.
 #Phylogenetic Tree
-render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE, edge_col_var=NULL, edge_col_palette=NULL) {
+render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE, default_colour_var=NULL, colour_scale=NULL) {
 
 
   if (class(data) != "gevitDataObj") {
     #TODO: allow for a nwk file as input too?
-    stop("phylogenetic tree must be first created using gevitR input functions.")
+    stop("phylogenetic tree must be first created using gevitR input function.")
   }
 
   tree <- data@data$tree
@@ -18,23 +18,29 @@ render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE, 
 
   gg_chart <- ggtree::ggtree(tree) + ggtree::geom_treescale()
 
-  if(!is.null(branch_col_var)) {
-    if (is.null(branch_col_palette)) {
-      colours <- get_colour_palette(data, branch_col_var)
+  if(!is.null(default_colour_var)) {
+    if (is.null(colour_scale)) {
+      colours <- get_colour_palette(data, default_colour_var)
     } else {
-      colours <- branch_col_palette
+      colours <- colour_scale
     }
 
-    #getting ready to merge into metadata
+    #getting ready to merge colours into metadata
     colours <- as.data.frame(colours)
     tmp <- rownames(colours)
     colours <- cbind(tmp, data.frame(colours, row.names = NULL))
     #rename for joining
-    colnames(colours)[colnames(colours) == "tmp"] <- branch_col_var
+    colnames(colours)[colnames(colours) == "tmp"] <- default_colour_var
     #join with metadata
-    metadata <- plyr::join(x=meta, y=colours, by=branch_col_var)
+    metadata <- plyr::join(x=meta, y=colours, by=default_colour_var)
 
-    gg_chart <- gg_chart %<+% metadata + aes(color=colours) + theme_tree()
+    #TODO: This is for coloring the node edges but tricky to color internal edges black.
+    # colour_scale <- c('0'='#000000', colour_scale)
+    # gg_chart <- gg_chart %<+% metadata + aes(color=colours) + theme(legend.position = "right") +
+    #   scale_color_manual(values=colour_scale)
+
+    gg_chart <- gg_chart %<+% metadata + geom_tippoint(color=metadata$colours) +
+      scale_color_manual(values = colour_scale)
 
     # tree_sample <- treeEBOV@data$tree
     # ggchart <- ggtree::ggtree(tree_sample) + ggtree::geom_treescale()
@@ -76,6 +82,8 @@ render_dendro <- function(data, labels=NULL,
                           leaf_col_var=NULL, leaf_col_palette=NULL,
                           tip_var=NULL, cluster_vars=NULL) {
 
+  # data <- get(as.character(data))
+
   #Subset the data frame to only contain the cluster_vars for clustering and the tip_var as the rownames(for labelling nodes)
   if (!is.null(tip_var) && !is.null(cluster_vars)) {
     data <- unique(data %>%
@@ -87,7 +95,7 @@ render_dendro <- function(data, labels=NULL,
     data[ , tip_var] <- NULL
   }
 
-  dend <- mtcars %>%
+  dend <- data %>%
     scale() %>%
     dist() %>%
     hclust() %>%
@@ -180,7 +188,6 @@ render_dendro <- function(data, labels=NULL,
     dendextend::labels_colors(dend) <- leaf_color_values
 
   }
-
 
   #plot using ggplot
   ggdend <- dendextend::as.ggdend(dend)

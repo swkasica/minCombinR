@@ -17,7 +17,7 @@ specify_base <- function(chart_type, data, x, y, z, ...) {
   all_chart_types <-  c(#common statistical
     "bar", "line", #"stacked_bar","divergent_bar",
     "heat_map","heatmap", "density", "scatter", "pie", "venn",
-    "histogram","pdf", "boxplot","box_plot","violin", "swarm",
+    "histogram","pdf", "boxplot","box_plot", "swarm",
     #relational
     "node_link", "flow_diagram",
     #temporal
@@ -61,29 +61,37 @@ specify_combo <- function(combo_type, ..., facet_by=NA, link_var=NA, link_mark_t
   return(lo_specs)
 }
 
+# TODO: Outlined in transition doc.
+#' @export
+add_mark <- function(base_spec, mark_type = 'default') {
+  #TODO: implement for all chart types (only done map so far)
+  #TODO: add options for mark types (only have default for map so far)
+  if (mark_type != 'default') {
+    stop("currently added marks only works for default mark types")
+  }
+  #TODO: add ability to add more than one mark type
+  base_spec$add_mark <- mark_type
+
+  return(base_spec)
+}
+
 #TODO Currently only works with the default mark type and the colour channel!!!
 #' Specify a reencoded mark
 #' @param mark_type A string that specifies the type of mark to reencode. default depends on the type of chart. Possible strings include: 'default', 'area', 'line', 'point' and 'text'
 #' @param channel_type A string that specifies the type of channel to reencode. Default is 'colour'. Possible strings include: 'colour' , size', 'shape', 'texture', 'font_face'
 #' @export
-specify_reencodement <- function(base_specification, reencode_var, mark_type='default', channel='colour', override = FALSE) {
+specify_reencoding <- function(base_specification, reencode_var, mark_type='default', channel='colour', override = FALSE) {
 
   #Set the variables for reencoded marks!:
 
-  no_default_reencodement <- list("heatmap", "heat_map", "density", "pie", "table", "category_stripe", "image")
+  no_default_reencoding <- list("heatmap", "heat_map", "density", "pie", "table", "category_stripe", "image")
 
-  #Could have this as a setter method if using R6 in the specify reencodement user fcn
+  #Could have this as a setter method if using R6 in the specify reencoding user fcn
   if (mark_type == "default") {
     if (channel == "color" || channel == "colour") {
-      if (!is.null(base_specification$colour_var) && override == FALSE) {
-        stop(paste("The colour channel for mark type: ", mark_type, " has already been set.
-                     To override the previous colour channel, use override == TRUE in the reencodement.
-                       ie. in reencode(..., override = TRUE)"))
-      } else {
-        base_specification$colour_var <- reencode_var
-      }
+      base_specification$default_colour_var <- reencode_var
     } else {
-      #could have this check in the setter method if using R6 in the specify reencodement user fcn
+      #could have this check in the setter method if using R6 in the specify reencoding user fcn
       stop("Have not implemented channels that are not colour for reencoded marks yet!")
     }
   } else {
@@ -121,9 +129,13 @@ plot <- function(specs) {
   #No combination!
   if(class(specs) == "call") {
     spec_list <- as.list(specs)
-    spec_list <- spec_list[spec_list != "specify_base"]
+    spec_list <- spec_list[-1]
+    # spec_list <- spec_list[spec_list != "specify_base"]
+    #Print this here *for now* to make it easy to see what the specs are
+    #TODO: remove print statement
+    print('spec_list')
     print(spec_list)
-    spec_plot <- do.call(plot_simple, spec_list)
+    spec_plot <- do.call(plot_simple, args = spec_list)
     return(arrange_plots(list(spec_plot)))
     # return(do.call(plot_simple, spec_list))
   }
@@ -134,6 +146,8 @@ plot <- function(specs) {
     #Find all combinations (currently only allowed one combo type so commented out)
     # combo_call <- specs[sapply(1:length(specs), function(x) {specs[[x]][1] == "specify_combo()"})]
     #Find the base calls for each of the charts in a combination
+
+    #TODO:should be able to wrap calls around specify_base() so this should be not specific to specify_base()!!!
     base_calls <- specs[sapply(1:length(specs),
                                function(x) {
                                  specs[[x]][1] == "specify_base()" && !is.na(as.list(specs[[x]][1]))

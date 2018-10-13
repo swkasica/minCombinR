@@ -6,7 +6,7 @@
 render_table <- function(data, flip_coord=FALSE, rownames=NA, x_limits=NA, y_limits=NA) {
 
   if(class(data)[1] == "gevitDataObj") {
-    data <- data$data
+    data <- data@data$table
   }
 
   if(!is.na(rownames)) {

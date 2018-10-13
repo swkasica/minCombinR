@@ -30,13 +30,21 @@ render_choropleth <- function(data, lat_var, long_var, fill, group, flip_coord=F
 # TODO: data frame with lat and lon
 #    Involves: Setting the view in leaflet to view all points and plotting all points (easy to do)
 #path is a path to a rds file.
-render_geographic_map <- function(data, lat_var, long_var) {
+render_geographic_map <- function(data, lat_var, long_var, add_mark=NULL) {
 
-  dat <- dplyr::rename(data, lat_var = "Lat", long_var = "Long")
-  leaflet(dat) %>%
+  dat <- dplyr::rename(data, lat = lat_var, long = long_var)
+
+  map_chart <- leaflet(dat) %>%
     addTiles() %>%
     fitBounds(~min(long), ~min(lat), ~max(long), ~max(lat))
-  #%>% addMarkers(~long, ~lat)
+
+  #Added marks
+  if (!is.null(add_mark)) {
+    if (add_mark == "default") {
+      map_chart <- map_chart %>% addCircleMarkers(~long, ~lat)
+    }
+  }
+
 
   #This is also a possibile implementation:
   # guinea_shp <- rgdal::readOGR("data//ebov_vis-master//Guinea-Admin1//GIN_adm1_1m_ocha.shp", "GIN_adm1_1m_ocha", TRUE)
@@ -46,6 +54,8 @@ render_geographic_map <- function(data, lat_var, long_var) {
   # leaflet::leaflet() %>%
   #   leaflet::addTiles() %>%
   #   leaflet::setView( lng = long, lat = lat, zoom = 8 )
+
+  map_chart
 }
 
 #For interior map just input the image

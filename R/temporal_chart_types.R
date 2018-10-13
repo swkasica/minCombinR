@@ -23,7 +23,7 @@ render_streamgraph <- function(data, key, value, date) {
 #The algorithm will make an annotated timeline if the data provided has a start, end and phase column or the start, end and phase paramaters are provided.
 #Otherwise, the algorithm will create a stacked version.
 #TODO: Are there better names for any of these inputs?
-render_timeline <- function(data, start=NA, end=NA, names=NA, events=NA, colour_var=NA, colour_scale=NA) {
+render_timeline <- function(data, start=NA, end=NA, names=NA, events=NA, default_colour_var=NA, colour_scale=NULL) {
 
   #PHASE in timelineG will stack
 

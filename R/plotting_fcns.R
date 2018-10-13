@@ -2,7 +2,7 @@
 all_chart_types <-  c(#common statistical
   "bar", "line", #"stack_by_bar", "divergent_bar",
   "heat_map", "heatmap", "density", "scatter", "pie", "venn",
-  "histogram","pdf", "boxplot","box_plot","violin", "swarm",
+  "histogram","pdf", "boxplot","box_plot","swarm",
   #relational
   "node_link", "flow_diagram",
   #temporal
@@ -40,14 +40,39 @@ check_valid_str <- function(str_in, valid_options) {
   }
 }
 
+#Helper that gets the data from the chart specification of the name of a gevitDataObj or data frame or the actual gevitDataObj or data frame
+#TODO: perhaps a better name would be get_metadata
+get_data <- function(data) {
+  data <- get(as.character(data))
+  if (class(data)[1] == "gevitDataObj") {
+    if (data@type == "table") {
+      data <- data@data$table
+    } else if (data@type == "tree") {
+      data <- data@data$metadata
+    } else if (data@type == "dna") {
+      data <- data@data$dnaBin
+    } else if (data@type == "spatial") {
+      data <- data@data$geometry
+    } else if (data@type == "image") {
+      data <- data@data$imgDetails
+    }
+  }
+
+  data
+}
+
 #Get consistent variables (called limits in ggplot) for all of the specified charts
 #Note - specified_charts is a list of charts, with each chart only requiring fields chart_type and data
 #Note- The var_name has to be the same type in all the specified_charts
 #TODO: var_name can be "var" or "as.factor(var)" where var is the variable name
-get_limits <- function(specified_charts, var_name) {
+get_limits <- function(specified_charts, var_name, sum_var=NULL) {
   limits <- c()
-  sapply(specified_charts, function(chart) {
-    ref_data <- get(as.character(chart$data)) #TODO: some sort of try catch here to make sure the linking variable can be found (for each chart)
+
+  lapply(specified_charts, function(chart) {
+    #TODO: handle case where data is of gevitR object type!!!
+    # ref_data <- get(as.character(chart$data)) #TODO: some sort of try catch here to make sure the linking variable can be found (for each chart)
+
+    ref_data <- get_data(chart$data)
 
     #TODO: using grep to remove as.factor() so I can get column... see if there is a better way to do this.
     if (grepl("^as.factor\\({1}|\\){1}$", var_name)) {
@@ -56,14 +81,23 @@ get_limits <- function(specified_charts, var_name) {
       var_name <- gsub("^as.factor\\({1}|\\){1}$", "", var_name)
       unique_vars <- unique(ref_data[[var_name]])
       limits <<- unique(c(limits, as.vector(unique_vars)))
-      print(limits)
     } else if (is.numeric(ref_data[[var_name]])) {
-      unique_vars <- unique(ref_data[[var_name]])
+      #For when the min and max value of var_name is calculated from its sum with another var
+      if(!is.null(sum_var)) {
+        # unique_vars <- unique(ref_data %>%
+        #                         group_by_(var_name, sum) %>%
+        #                         summarise_(count_val = sum(var_name)))[["count_val"]]
+        #get the sum of the values
+        unique_vars <- aggregate(ref_data[[var_name]], by = list(sum_var = ref_data[[sum_var]]), FUN=sum)
+        unique_vars <- unique(unique_vars$x)
+      } else {
+        unique_vars <- unique(ref_data[[var_name]])
+      }
 
       #!!!
       #Exception: If the chart type is a bar chart, the min MUST be 0 for the y-axis
       # Note: we are restricting the bar chart to only having a discrete axis.
-      if(chart$chart_type == "bar") {
+      if (chart$chart_type == "bar") {
         min <- 0
       } else {
         min <- min(unique_vars)
@@ -81,7 +115,7 @@ get_limits <- function(specified_charts, var_name) {
     max <- max(limits)
     limits <- c(min,max)
   }
-  print(limits)
+
   return(limits)
 }
 
@@ -92,11 +126,8 @@ get_limits <- function(specified_charts, var_name) {
 #currently only using in some render functions!
 get_colour_palette <- function(data, colour_var) {
   #Gets the data depending on the class
-  if (class(data)[1] == "gevitDataObj") {
-    ref_data <- data@data$metadata
-  } else {
-    ref_data <- get(as.character(chart$data))
-  }
+  ref_data <- get_data(data)
+
 
   #Gets the limits of the colour_var in data
   limits <- c()
@@ -161,38 +192,43 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                         labels=NULL,
                         labels_col_var=NULL, labels_col_values=NULL, labels_col_palette=NULL, labels_size=NULL,
                         leaf_col_var=NULL, leaf_col_palette=NULL,
-                        #For phylogenetic tree reencodements
-                        branch_col_var=NULL, branch_col_palette=NULL,
                         #For node link
-                        directed = FALSE, edge_col_var = NULL, edge_col_palette = NULL,
+                        directed = FALSE,
+                        #For node link reencodements
+                        edge_col_var = NULL, edge_col_palette = NULL,
                         node_col_var = NULL, node_col_palette = NULL,
                         #FOR COMPOSITE (only implemented for a few chart types)
                         flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
+                        #FOR DEFAULT REENCODINGS
+                        default_colour_var=NULL, colour_scale=NA,
+                        #FOR ADDED MARKS:
+                        add_mark=NULL,
                         #FOR MANY TYPES LINKED
-                        colour_var=NULL, colour_scale=NA, colour_mark_type=NA,
+                        colour_mark_type=NA,
                         #FOR SMALL MULTIPLES and composite
                         x_limits=NA, y_limits=NA) {
   check_valid_str(chart_type, all_chart_types)
+
   switch(chart_type,
          #Common Stat Chart Types
          "bar" = render_bar_chart(data, x, y, stack_by, layout, proportional,
                                   reference_vector, reference_var, title,
                                   flip_coord, rm_y_labels, rm_x_labels,
-                                  colour_var, colour_scale, x_limits, y_limits),
-         # "stacked_bar" = render_stacked_bar_chart(data, x, fill, title, colour_var, colour_scale),
-         # "divergent_bar" = render_divergent_bar_chart(data, title, colour_var, colour_scale, x_limits, y_limits),
-         "line" = render_line_chart(data, x, y, group, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "heat_map" = render_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "heatmap" = render_heatmap(data, x, y, z, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "density" = render_density_chart(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "scatter" = render_scatter(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "pie" = render_pie_chart(data, x, title, colour_var, colour_scale),
-         "histogram" = render_histogram(data, x, title, colour_var, colour_scale, x_limits),
-         "pdf" = render_pdf(data, x, title, colour_var, colour_scale, x_limits, flip_coord),
-         "boxplot" = render_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "box_plot" = render_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "violin" = render_violinplot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "swarm" = render_swarm_plot(data, x, y, title, colour_var, colour_scale, x_limits, y_limits, flip_coord),
+                                  default_colour_var, colour_scale, x_limits, y_limits),
+         # "stacked_bar" = render_stacked_bar_chart(data, x, fill, title, default_colour_var, colour_scale),
+         # "divergent_bar" = render_divergent_bar_chart(data, title, default_colour_var, colour_scale, x_limits, y_limits),
+         "line" = render_line_chart(data, x, y, group, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "heat_map" = render_heatmap(data, x, y, z, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "heatmap" = render_heatmap(data, x, y, z, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "density" = render_density_chart(data, x, y, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "scatter" = render_scatter(data, x, y, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "pie" = render_pie_chart(data, x, title, default_colour_var, colour_scale),
+         "histogram" = render_histogram(data, x, title, default_colour_var, colour_scale, x_limits),
+         "pdf" = render_pdf(data, x, title, default_colour_var, colour_scale, x_limits, flip_coord),
+         "boxplot" = render_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "box_plot" = render_boxplot(data, x, y, title, rm_y_labels, rm_x_labels, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         #"violin" = render_violinplot(data, x, y, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "swarm" = render_swarm_plot(data, x, y, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
 
          #TODO: many types linked and composite for non-common_stat_chart_types (and non ggplot2)
          #Relational
@@ -208,10 +244,12 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
 
          #Temporal
          "stream" = render_streamgraph(data, key, value, date), #TODO: change param names
-         "timeline" = render_timeline(data, start, end, names, events, colour_var, colour_scale),
+         "timeline" = render_timeline(data, start, end, names, events, default_colour_var, colour_scale),
 
          #Spatial
-         "geographic_map" = render_geographic_map(data, lat_var, long_var),
+         "geographic_map" = render_geographic_map(data, lat_var, long_var,
+                                                  add_mark,
+                                                  default_colour_var, colour_scale),
          "choropleth" = render_choropleth(data, lat_var, long_var, fill, group, flip_coord), #TODO: change input (see examples_obsandGenotype)
          "interior_map" = render_image(path), #TODO: maybe change if you use the magick package
 
@@ -222,7 +260,7 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
 
          #genomic
          "phylogenetic_tree" = render_phylo_tree(data, x_limits, y_limits, flip_coord,
-                                                 branch_col_var, branch_col_palette), #path is a path to a nwk_file
+                                                 default_colour_var, colour_scale), #path is a path to a nwk_file
          "dendrogram" = render_dendro(data, labels,
                                       labels_col_var, labels_col_values, labels_col_palette, labels_size,
                                       leaf_col_var, leaf_col_palette,
@@ -262,12 +300,16 @@ plot_many_types_general <- function(...) {
 #'@export
 plot_small_multiples <- function(chart_type, data, facet_by, x, y=NA, z=NA, fill=NA, group=NA) {
   chart_specs <- list(chart_type = chart_type, data = deparse(substitute(data)))
+  #TODO: use the infer_x and infer_y functions to get the proper names for these!
   x_limits <- unlist(get_limits(list(chart_specs), x))
   if(!is.na(y)) {
-    y_limits <- unlist(get_limits(list(chart_specs), y))
+    if (chart_type == "bar") {
+      y_limits <- unlist(get_limits(list(chart_specs), y, sum_var=x))
+    } else {
+      y_limits <- unlist(get_limits(list(chart_specs), y))
+    }
   }
 
-  #TODO: maybe just use facet_wrap for ggplot charts? (statistical chart types)
   #Create a list of data subsets according to the facetting variable
   facet_dat <- lapply(unique(data[[facet_by]]),
                       function(x) {dplyr::filter_(data, paste(facet_by, "==", quote(x)))})
@@ -280,7 +322,8 @@ plot_small_multiples <- function(chart_type, data, facet_by, x, y=NA, z=NA, fill
                                                             z = z,
                                                             fill = fill,
                                                             group = group,
-                                                            x_limits = x_limits))
+                                                            x_limits = x_limits,
+                                                            y_limits = y_limits))
   arrange_plots(all_plots, labels = "AUTO")
 }
 
@@ -305,8 +348,6 @@ infer_x <- function(chart_args) {
 
   #All other cases
   else {
-    print('!!!')
-    print(chart_args$x)
     return(chart_args$x)
   }
 
@@ -405,6 +446,8 @@ get_order <- function(chart_args_list, common_var) {
 check_combinable_composite <- function(chart_args_list) {
   chart_types <- lapply(chart_args_list, function(chart_args) {chart_args$chart_type})
   alignable_mat <- composite_matrix
+  rownames(alignable_mat) <- alignable_mat[,1]
+  alignable_mat[,1] <- NULL
 
   # ~Are charts in 'spatially alignable' category?
   lapply(chart_args_list, function(chart_args) {
@@ -415,17 +458,17 @@ check_combinable_composite <- function(chart_args_list) {
     })
 
   #For each chart combination,
-  lapply(1:(length(chart_args_list) - 1), function(n) {
-    lapply((n + 1):length(chart_args_list), function(m) {
+  lapply(1:(length(chart_args_list) - 1), function(outer_n) {
+    lapply((outer_n + 1):length(chart_args_list), function(inner_n) {
 
       #Get the chart arguments and axes for reuse
-      chartn <- chart_args_list[[n]]
-      chartm <- chart_args_list[[m]]
+      chartn <- chart_args_list[[outer_n]]
+      chartm <- chart_args_list[[inner_n]]
       chart_axes <- c(infer_x(chartn), infer_y(chartn), infer_x(chartm), infer_y(chartm))
 
       # ~Are charts spatially alignable?
-      if (alignable_mat[chart_types[[m]], chart_types[[n]]][1] != 1) {
-        stop(paste("Chart type:", as.character(chart_types[n]), "and", as.character(chart_types[m]),
+      if (alignable_mat[chart_types[[inner_n]], chart_types[[outer_n]]][1] != 1) {
+        stop(paste("Chart type:", as.character(chart_types[outer_n]), "and", as.character(chart_types[inner_n]),
                    "cannot be spatially combined through composites."))
       }
 
@@ -562,15 +605,15 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
 #   switch(chart_type,
 #          #Common Stat Chart Types
 #          "bar" = geom_bar(stat = "identity"), #TODO:assuming no stacked bar for now
-#          # "divergent_bar" = render_divergent_bar_chart(data, title, colour_var, colour_scale),
+#          # "divergent_bar" = render_divergent_bar_chart(data, title, default_colour_var, colour_scale),
 #          "line" = geom_line(), #TODO: assuming no groups
-#          # "heat_map" = render_heatmap(data, x, y, z, title, colour_var, colour_scale),
-#          # "heatmap" = render_heatmap(data, x, y, z, title, colour_var, colour_scale),
+#          # "heat_map" = render_heatmap(data, x, y, z, title, default_colour_var, colour_scale),
+#          # "heatmap" = render_heatmap(data, x, y, z, title, default_colour_var, colour_scale),
 #          "density" = stat_density_2d(aes(fill = ..level..), geom = "polygon"),
 #          "scatter" = geom_point(),
-#          # "pie" = render_pie_chart(data, x, title, colour_var, colour_scale),
+#          # "pie" = render_pie_chart(data, x, title, default_colour_var, colour_scale),
 #          # "histogram" = geom_histogram(), #TODO: Note: histogram doesn't have y axis in data (is computed)
-#          # "pdf" = render_pdf(data, x, title, colour_var, colour_scale),
+#          # "pdf" = render_pdf(data, x, title, default_colour_var, colour_scale),
 #          "boxplot" = geom_boxplot(),
 #          "box_plot" = geom_boxplot(),
 #          "violin" = geom_violin(),
@@ -588,9 +631,9 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
 #'Many Types Linked
 #'
 plot_many_linked <- function(link_var, link_mark_type="default", ...) {
-  specified_charts <- list(...)
-  limits <- get_limits(specified_charts, link_var)
-  # colour_var <- colour_info$var_name
+  spec_charts <- list(...)
+  limits <- get_limits(specified_charts = spec_charts, var_name = link_var)
+  # default_colour_var <- colour_info$var_name
   # limits <- colour_info$limits
 
   #Gets the colour match for a discrete scale_var
@@ -602,12 +645,12 @@ plot_many_linked <- function(link_var, link_mark_type="default", ...) {
     colour_limits <- limits
   }
 
-  plots <- lapply(specified_charts, function(chart) {
-    do.call(plot_simple, args = c(chart, list(colour_var = link_var,
+  plots <- lapply(spec_charts, function(chart) {
+    do.call(plot_simple, args = c(chart, list(default_colour_var = link_var,
                                               colour_scale = colour_limits,
                                               colour_mark_type = link_mark_type)))
   })
-
+  print(plots)
   arrange_plots(plots, labels = "AUTO")
 }
 
@@ -616,8 +659,7 @@ plot_many_linked <- function(link_var, link_mark_type="default", ...) {
 #'@param chart_list A list of charts
 #'
 #'@export
-#TODO: TEST THESE!!! THESE HAVE NOT BEEN TESTED
-#TODO: Make a list of all of the charts and how they are converted into a grob in a spreadsheet!!!
+#TODO: TEST THESE!!!
 arrange_plots <- function(chart_list, labels = NULL, shared_legend=FALSE) {
 
   chart_list <- lapply(chart_list, function(chart) {

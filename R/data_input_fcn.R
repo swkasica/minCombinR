@@ -208,7 +208,7 @@ input_fasta<-function(file=NA,...){
   return(data.frame(seq=samps,ID=names(samps)))
 }
 
-#Helpfer function : input spatial data
+#Helper function : input spatial data
 input_spatial<-function(file=NA,desc = NA,...){
 
   if(!stringr::str_detect(file,"shp$")){
@@ -217,8 +217,8 @@ input_spatial<-function(file=NA,desc = NA,...){
 
   nc <- sf::st_read(file, quiet = TRUE)
 
-  #convert everythign to same layer in event for multiple maps
-  #doesn't alway work well
+  #convert everything to same layer in event for multiple maps
+  #doesn't always work well
   nc<- sf::st_transform(nc, "+init=epsg:3857")
 
   if(asObj){
@@ -232,7 +232,7 @@ input_spatial<-function(file=NA,desc = NA,...){
   }
 }
 
-#Helpfer function: input tree
+#Helper function: input tree
 #' A helper function that reads in tree file data. Expecting either Newick or Nexus format
 #'
 #' @param file
@@ -307,7 +307,7 @@ input_phyloTree<-function(file = NA, desc = NA,sepLabel = NA,metadataFile=NULL,a
   }
 }
 
-#Helpder function : input_image
+#Helper function : input_image
 #' Input Image
 #' A helper function for input_data
 #' @param file
