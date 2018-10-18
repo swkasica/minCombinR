@@ -68,7 +68,7 @@ get_data <- function(data) {
 #' @param sum_var A string with the name of the variable to group for summing
 get_limits <- function(specified_charts, var_name, sum_var=NULL) {
 
-  limits <- purrr::reduce(specified_charts, function(limits, chart, .init=c()) {
+  get_chart_limits <- function(limits, chart) {
     ref_data <- get_data(chart$data)
 
     if (grepl("^as.factor\\({1}|\\){1}$", var_name)) {
@@ -95,7 +95,9 @@ get_limits <- function(specified_charts, var_name, sum_var=NULL) {
       unique_vars <- unique(ref_data[[var_name]])
       return(unique(c(limits, as.vector(unique_vars))))
     }
-  })
+  }
+
+  limits <- purrr::reduce(specified_charts, get_chart_limits, .init=c())
 
   if (is.numeric(limits) && !grepl("^as.factor\\({1}|\\){1}$", var_name)) {
     min <- min(limits)
