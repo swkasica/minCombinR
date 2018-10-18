@@ -15,7 +15,7 @@ plot_simple(chart_type, data, x = NA, y = NA, z = NA, stack_by = NA,
   edge_col_var = NULL, edge_col_palette = NULL, node_col_var = NULL,
   node_col_palette = NULL, flip_coord = FALSE, rm_y_labels = FALSE,
   rm_x_labels = FALSE, default_colour_var = NULL, colour_scale = NA,
-  colour_mark_type = NA, x_limits = NA, y_limits = NA)
+  add_mark = NULL, colour_mark_type = NA, x_limits = NA, y_limits = NA)
 }
 \description{
 This function will create a single chart object that can be passed into render_charts() to render.

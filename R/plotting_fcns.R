@@ -67,18 +67,16 @@ get_data <- function(data) {
 #' @param var_name A string with the name of the variable to get the limits of. Must be the same name for all data.
 #' @param sum_var A string with the name of the variable to group for summing
 get_limits <- function(specified_charts, var_name, sum_var=NULL) {
-  limits <- c()
 
-  lapply(specified_charts, function(chart) {
+  limits <- purrr::reduce(specified_charts, function(limits, chart, .init=c()) {
     ref_data <- get_data(chart$data)
 
-    #TODO: using grep to remove as.factor() so I can get column... see if there is a better way to do this.
     if (grepl("^as.factor\\({1}|\\){1}$", var_name)) {
       var_name <- gsub("^as.factor\\({1}|\\){1}$", "", var_name)
       unique_vars <- unique(ref_data[[var_name]])
-      limits <<- unique(c(limits, as.vector(unique_vars)))
+      return(unique(c(limits, as.vector(unique_vars))))
     } else if (is.numeric(ref_data[[var_name]])) {
-      if(!is.null(sum_var)) {
+      if (!is.null(sum_var)) {
         unique_vars <- aggregate(ref_data[[var_name]], by = list(sum_var = ref_data[[sum_var]]), FUN=sum)
         unique_vars <- unique(unique_vars$x)
       } else {
@@ -92,10 +90,10 @@ get_limits <- function(specified_charts, var_name, sum_var=NULL) {
         min <- min(unique_vars)
       }
       max <- max(unique_vars)
-      limits <<- c(limits, min, max)
+      return(c(limits, min, max))
     } else {
       unique_vars <- unique(ref_data[[var_name]])
-      limits <<- unique(c(limits, as.vector(unique_vars)))
+      return(unique(c(limits, as.vector(unique_vars))))
     }
   })
 
@@ -622,10 +620,7 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
 plot_many_linked <- function(link_var, link_mark_type="default", ...) {
   spec_charts <- list(...)
   limits <- get_limits(specified_charts = spec_charts, var_name = link_var)
-  # default_colour_var <- colour_info$var_name
-  # limits <- colour_info$limits
 
-  #Gets the colour match for a discrete scale_var
   if (!is.numeric(limits)) {
     get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
     colour_limits <- get_palette(length(limits))
@@ -639,7 +634,7 @@ plot_many_linked <- function(link_var, link_mark_type="default", ...) {
                                               colour_scale = colour_limits,
                                               colour_mark_type = link_mark_type)))
   })
-  print(plots)
+
   arrange_plots(plots, labels = "AUTO")
 }
 

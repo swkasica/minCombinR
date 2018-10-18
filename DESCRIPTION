@@ -33,6 +33,7 @@ Imports:
     multipanelfigure,
     pheatmap,
     png,
+    purrr,
     R6,
     timelineS,
     tm,

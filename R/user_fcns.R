@@ -130,22 +130,14 @@ plot <- function(specs) {
   if(class(specs) == "call") {
     spec_list <- as.list(specs)
     spec_list <- spec_list[-1]
-    # spec_list <- spec_list[spec_list != "specify_base"]
     #Print this here *for now* to make it easy to see what the specs are
-    #TODO: remove print statement
     print('spec_list')
     print(spec_list)
     spec_plot <- do.call(plot_simple, args = spec_list)
     return(arrange_plots(list(spec_plot)))
-    # return(do.call(plot_simple, spec_list))
   }
 
-  #TODO: clean
   else {
-    #Found a better way to do this so commented out but may be useful later.
-    #Find all combinations (currently only allowed one combo type so commented out)
-    # combo_call <- specs[sapply(1:length(specs), function(x) {specs[[x]][1] == "specify_combo()"})]
-    #Find the base calls for each of the charts in a combination
 
     #TODO:should be able to wrap calls around specify_base() so this should be not specific to specify_base()!!!
     base_calls <- specs[sapply(1:length(specs),
