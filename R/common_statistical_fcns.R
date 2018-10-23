@@ -132,13 +132,14 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
     #TODO: I added width=0.9 here because of a case with x as time, the columns overlap... and this fixes the problem.
     #   BUT it might be unneeded and maybe annoying in other cases so may have to change this later to a case basis
     gg_chart <- gg_chart %+% geom_bar(aes_string(fill = default_colour_var), width = 0.9)
+
+    if(!is.na(colour_scale)[1]) {
+      gg_chart <- gg_chart +
+        scale_fill_manual(name = default_colour_var, values = colour_scale)
+      # theme(legend.position = "none")
+    }
   }
 
-  if(!is.na(colour_scale)[1]) {
-    gg_chart <- gg_chart +
-      scale_fill_manual(name = default_colour_var, values = colour_scale)
-    # theme(legend.position = "none")
-  }
 
   if(!is.na(x_limits)[1]) {
     gg_chart <- gg_chart + xlim(x_limits)
@@ -517,6 +518,10 @@ render_pie_chart <- function(data, x, title, default_colour_var=NULL, colour_sca
     gg_chart <- gg_chart + ggtitle(title)
   }
 
+  if(!is.null(default_colour_var)) {
+    gg_chart <- gg_chart %+% aes_string(fill = default_colour_var)
+  }
+
   if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
       scale_fill_manual(name = default_colour_var, values = colour_scale)
@@ -723,6 +728,7 @@ render_swarm_plot <- function(data, x, y, title, default_colour_var=NULL, colour
     gg_chart <- gg_chart %+% aes_string(fill = default_colour_var)
   }
 
+  #TODO: put this inside of if(!is.null(default_colour_var)) check for all of the charts!!!
   if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
       scale_colour_manual(name = default_colour_var, values = colour_scale)

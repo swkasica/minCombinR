@@ -4,7 +4,7 @@ all_chart_types <-  c(#common statistical
   "heat_map", "heatmap", "density", "scatter", "pie", "venn",
   "histogram","pdf", "boxplot","box_plot","swarm",
   #relational
-  "node_link", "flow_diagram",
+  "node_link", "chord",
   #temporal
   "stream", "timeline",
   #spatial
@@ -18,7 +18,7 @@ all_chart_types <-  c(#common statistical
 )
 
 master_chart_types <- c(
-  "timeline", "histogram", "pdf", "flow_diagram",
+  "timeline", "histogram", "pdf", "chord",
   "stream", "geographic_map", "choropleth", "interior_map",
   "dendrogram", "phylogenetic_tree", #"alignment", #(alignment is just an image)
   "clonal_tree", "density_plot" #sequence_logo_plot" #(gel_image is just an image)
@@ -188,7 +188,8 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                         node_col_var = NULL, node_col_palette = NULL,
                         #FOR COMPOSITE (only implemented for a few chart types)
                         flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
-                        #FOR DEFAULT REENCODINGS
+                        #TODO: change this so it is split into reencode_var, mark_type, colour_scale and reencode_channel
+                        #FOR DEFAULT REENCODINGS of mark type = 'colour'
                         default_colour_var=NULL, colour_scale=NA,
                         #FOR ADDED MARKS:
                         add_mark=NULL,
@@ -229,7 +230,7 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                                         node_col_var,
                                         node_col_palette),
 
-         "flow_diagram" = render_flow_diagram(data), #TODO
+         "chord" = render_chord(data), #TODO
 
          #Temporal
          "stream" = render_streamgraph(data, key, value, date), #TODO: change param names
@@ -287,10 +288,14 @@ plot_many_types_general <- function(...) {
 #'@param facet_by
 #'
 #'@export
-plot_small_multiples <- function(chart_type, data, facet_by, x, y=NA, z=NA, fill=NA, group=NA) {
+plot_small_multiples <- function(chart_type, data, facet_by, x=NA, y=NA, z=NA, fill=NA, group=NA, directed=FALSE) {
   chart_specs <- list(chart_type = chart_type, data = deparse(substitute(data)))
-  #TODO: use the infer_x and infer_y functions to get the proper names for these!
-  x_limits <- unlist(get_limits(list(chart_specs), x))
+
+  #TODO: use the infer_x and infer_y functions to get the proper names for these rather than x and y!?
+  #   do I ever want this to be something other than x and y?
+  if(!is.na(x)) {
+    x_limits <- unlist(get_limits(list(chart_specs), x))
+  }
   if(!is.na(y)) {
     if (chart_type == "bar") {
       y_limits <- unlist(get_limits(list(chart_specs), y, sum_var=x))
@@ -455,8 +460,12 @@ check_combinable_composite <- function(chart_args_list) {
       chartm <- chart_args_list[[inner_n]]
       chart_axes <- c(infer_x(chartn), infer_y(chartn), infer_x(chartm), infer_y(chartm))
 
+      algn_val <- alignable_mat[chart_types[[inner_n]], chart_types[[outer_n]]][1]
+      if (is.na(algn_val)) {
+        algn_val <- alignable_mat[chart_types[[outer_n]], chart_types[[inner_n]]][1]
+      }
       # ~Are charts spatially alignable?
-      if (alignable_mat[chart_types[[inner_n]], chart_types[[outer_n]]][1] != 1) {
+      if (algn_val != 1) {
         stop(paste("Chart type:", as.character(chart_types[outer_n]), "and", as.character(chart_types[inner_n]),
                    "cannot be spatially combined through composites."))
       }
@@ -539,6 +548,16 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
     }
   }
 
+  #Want the relative height of a category stripe to be half of the other charts
+  if ("category_stripe" %in% lapply(chart_args_list, function(arg) {arg$chart_type})) {
+    rel_heights <- unname(sapply(chart_args_list, function(arg) {
+      if (arg$chart_type == "category_stripe") {return(0.5)}
+      else {return(1)}
+      }))
+  } else {
+    rel_heights <- 1
+  }
+
   # Is the global alignment vertical?
   if (alignment == 'vertical' || alignment == 'v') {
     #For each chart, does the x_axis have the common var?
@@ -556,8 +575,7 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
       }
     })
 
-    #arrange vertically
-    cowplot::plot_grid(plotlist = lo_plots, ncol = 1, align = "v")
+    arrange_plots(chart_list = lo_plots, ncol = 1, align = "v", rel_heights = rel_heights)
 
     #Is the alignment horizontal?
   } else if (alignment == 'horizontal' || alignment == 'h') {
@@ -571,8 +589,10 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
         do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE, x_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
       }
     })
-    #Arrange horizontally
-    cowplot::plot_grid(plotlist = lo_plots, nrow = 1, align = "h")
+
+    #TODO: test for rel_widths on category stripe
+    arrange_plots(chart_list = lo_plots, nrow = 1, align = "h", rel_widths = rel_heights)
+
   }
   #Other alignments (not implemented overlay)
   #TODO: implement overlay option
@@ -645,8 +665,7 @@ plot_many_linked <- function(link_var, link_mark_type="default", ...) {
 #'@param chart_list A list of charts
 #'
 #'@export
-#TODO: TEST THESE!!!
-arrange_plots <- function(chart_list, labels = NULL, shared_legend=FALSE) {
+arrange_plots <- function(chart_list, labels = NULL, ...) {
 
   chart_list <- lapply(chart_list, function(chart) {
     if('gg' %in% class(chart)) {
@@ -658,13 +677,7 @@ arrange_plots <- function(chart_list, labels = NULL, shared_legend=FALSE) {
     }
   })
 
-  #This is currently not being used because creating a shared legend for many_linked and small_multiples
-  #    may be more useful later. Right now, it is easier to make sure the fcns are doing waht they should
-  #    by looking at the legend for each chart.
-  if (shared_legend == TRUE) {
-    legend <- cowplot::get_legend(chart_list[[1]])
-    return(cowplot::plot_grid(plotlist = chart_list, labels = labels, legend = legend))
-  }
+#NOTES: in order to add a shared legend, pass in shared_legend = TRUE in the ...
 
-  cowplot::plot_grid(plotlist = chart_list, labels = labels)
+  cowplot::plot_grid(plotlist = chart_list, labels = labels, ...)
 }

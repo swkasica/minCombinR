@@ -31,13 +31,13 @@ render_node_link <- function(data,
   graph_chart
 }
 
-#Flow diagram
+#Chord diagram
 # TODO: I don't like this package. Find a new one or a way to fix it.
 # default colour_mark_type is grid
 #Use RCircos... and consider Sankey diagram
 #'@param colour_scale A vector of colors with named values
 #'@param colour_mark_type A character indicating the type of mark to colour, can be one of: "default" (outside grid) or "links"
-render_flow_diagram <- function(data, colour_scale=NA, colour_mark_type=NA) {
+render_chord <- function(data, colour_scale=NA, colour_mark_type=NA) {
 
   #TODO: This is an exception where the colour_scale has to have the grid or link values
   #Many typed linked options

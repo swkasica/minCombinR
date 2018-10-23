@@ -19,7 +19,7 @@ specify_base <- function(chart_type, data, x, y, z, ...) {
     "heat_map","heatmap", "density", "scatter", "pie", "venn",
     "histogram","pdf", "boxplot","box_plot", "swarm",
     #relational
-    "node_link", "flow_diagram",
+    "node_link", "chord",
     #temporal
     "stream", "timeline",
     #spatial
@@ -84,7 +84,7 @@ specify_reencoding <- function(base_specification, reencode_var, mark_type='defa
 
   #Set the variables for reencoded marks!:
 
-  no_default_reencoding <- list("heatmap", "heat_map", "density", "pie", "table", "category_stripe", "image")
+  no_default_reencoding <- list("heatmap", "heat_map", "density", "table", "category_stripe", "image")
 
   #Could have this as a setter method if using R6 in the specify reencoding user fcn
   if (mark_type == "default") {
@@ -134,7 +134,7 @@ plot <- function(specs) {
     print('spec_list')
     print(spec_list)
     spec_plot <- do.call(plot_simple, args = spec_list)
-    return(arrange_plots(list(spec_plot)))
+    return(arrange_plots(chart_list = list(spec_plot)))
   }
 
   else {
