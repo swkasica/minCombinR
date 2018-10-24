@@ -291,8 +291,7 @@ plot_many_types_general <- function(...) {
 plot_small_multiples <- function(chart_type, data, facet_by, x=NA, y=NA, z=NA, fill=NA, group=NA, directed=FALSE) {
   chart_specs <- list(chart_type = chart_type, data = deparse(substitute(data)))
 
-  #TODO: use the infer_x and infer_y functions to get the proper names for these rather than x and y!?
-  #   do I ever want this to be something other than x and y?
+  #If the chart has x and/or y axes, make sure they have the same limits
   if(!is.na(x)) {
     x_limits <- unlist(get_limits(list(chart_specs), x))
   }
@@ -304,21 +303,32 @@ plot_small_multiples <- function(chart_type, data, facet_by, x=NA, y=NA, z=NA, f
     }
   }
 
+  #If the charts are split by another variable, make sure they are consistent
+  #TODO
+
   #Create a list of data subsets according to the facetting variable
   facet_dat <- lapply(unique(data[[facet_by]]),
                       function(x) {dplyr::filter_(data, paste(facet_by, "==", quote(x)))})
   #Create a list of plots for each of the facet_dat subsets
   all_plots <- lapply(facet_dat,
-                      function(sub_dat) gevitR::plot_simple(chart_type = chart_type,
-                                                            data = select(sub_dat, -facet_by),
-                                                            x = x,
-                                                            y = y,
-                                                            z = z,
-                                                            fill = fill,
-                                                            group = group,
-                                                            x_limits = x_limits,
-                                                            y_limits = y_limits))
-  arrange_plots(all_plots, labels = "AUTO")
+                      function(sub_dat){
+                        gevitR::plot_simple(chart_type = chart_type,
+                                            data = select(sub_dat, -facet_by),
+                                            x = x,
+                                            y = y,
+                                            z = z,
+                                            fill = fill,
+                                            group = group,
+                                            x_limits = x_limits,
+                                            y_limits = y_limits)
+                      })
+
+  #TODO: chord scale is a temporary fix
+  if ("chord" %in% chart_specs) {
+    arrange_plots(all_plots, labels = "AUTO", scale = 0.8)
+  } else {
+    arrange_plots(all_plots, labels = "AUTO")
+  }
 }
 
 #Gets the values of the x axis from the chart in the chart_args input.
@@ -674,6 +684,8 @@ arrange_plots <- function(chart_list, labels = NULL, ...) {
       multipanelfigure::capture_base_plot(chart)
     } else if ('htmlwidget' %in% class(chart)) {
       grid::grid.grabExpr(print(chart))
+    } else {
+      chart
     }
   })
 

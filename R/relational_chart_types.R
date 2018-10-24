@@ -32,9 +32,7 @@ render_node_link <- function(data,
 }
 
 #Chord diagram
-# TODO: I don't like this package. Find a new one or a way to fix it.
 # default colour_mark_type is grid
-#Use RCircos... and consider Sankey diagram
 #'@param colour_scale A vector of colors with named values
 #'@param colour_mark_type A character indicating the type of mark to colour, can be one of: "default" (outside grid) or "links"
 render_chord <- function(data, colour_scale=NA, colour_mark_type=NA) {
@@ -45,13 +43,21 @@ render_chord <- function(data, colour_scale=NA, colour_mark_type=NA) {
     if (colour_mark_type == "default") {
       if (!is.na(colour_scale)[1]) {
         circlize::chordDiagram(data, grid.col = colour_scale, transparency=0.5)
+        tmp <- recordPlot()
+        circlize::circos.clear()
+        return(tmp)
       }
     } else if (colour_mark_type == "links") {
       circlize::chordDiagram(data, col = colour_scale, transparency=0.5)
+      tmp <- recordPlot()
+      circlize::circos.clear()
+      return(tmp)
     }
   }
 
   else {
-    circlize::chordDiagram(data, transparency=0.5)
+    tmp <- circlize::chordDiagram(data, transparency=0.5)
+    gridGraphics::grid.echo()
+    return(grid::grid.grab())
   }
 }
