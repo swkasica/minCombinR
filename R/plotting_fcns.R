@@ -294,9 +294,9 @@ plot_many_types_general <- function(...) {
 #'@param facet_by
 #'
 #'@export
-plot_small_multiples <- function(chart_type, data, facet_by, #...) {x=NA,
-                                 y=NA, z=NA, fill=NA, group=NA,
-                                 directed=FALSE, tip_var=NA, cluster_vars=NA,...) {
+plot_small_multiples <- function(chart_type, data, facet_by, ...) {
+                                # x=NA,y=NA, z=NA, fill=NA, group=NA,
+                                # directed=FALSE, tip_var=NA, cluster_vars=NA,...) {
 
   chart_specs <- list(chart_type = chart_type, data = deparse(substitute(data)))
 
@@ -307,43 +307,34 @@ plot_small_multiples <- function(chart_type, data, facet_by, #...) {x=NA,
     x_limits <- unlist(get_limits(list(chart_specs), extra_params$x))
   }
 
-
-  # #If the chart has x and/or y axes, make sure they have the same limits
-  # if(!is.na(x)) {
-  #   x_limits <- unlist(get_limits(list(chart_specs), x))
-  # }
-
-  #ALSO NEED X if bar
-  if(!is.na(y)) {
+  if ("y" %in% names(extra_params)) {
     if (chart_type == "bar") {
-      y_limits <- unlist(get_limits(list(chart_specs), y, sum_var=extra_params$x))
+      if (!"x" %in% names(extra_params)) {
+        stop("Must provide an x variable for bar chart")
+      }
+      y_limits <- unlist(get_limits(list(chart_specs), extra_params$y, sum_var=extra_params$x))
     } else {
-      y_limits <- unlist(get_limits(list(chart_specs), y))
+      y_limits <- unlist(get_limits(list(chart_specs), extra_params$y))
     }
   }
 
-  #If the charts are split by another variable, make sure they are consistent
-  #TODO
+  #TODO: If the charts are split by another variable, make sure they are consistent
 
   #Create a list of data subsets according to the facetting variable
   facet_dat <- lapply(unique(data[[facet_by]]),
-                      function(x) {dplyr::filter_(data, paste(facet_by, "==", quote(x)))})
+                      function(unq_var)
+                        dplyr::filter_(data, paste(facet_by, "==", quote(unq_var)))
+                      )
+
   #Create a list of plots for each of the facet_dat subsets
   all_plots <- lapply(facet_dat,
-                      function(sub_dat){
+                      function(sub_dat)
                         gevitR::plot_simple(chart_type = chart_type,
                                             data = select(sub_dat, -facet_by),
-                                            # x = x,
-                                            y = y,
-                                            z = z,
-                                            fill = fill,
-                                            group = group,
                                             x_limits = x_limits,
                                             y_limits = y_limits,
-                                            tip_var = tip_var,
-                                            cluster_vars = cluster_vars,
                                             ...)
-                      })
+                      )
 
   #TODO: chord scale is a temporary fix
   if ("chord" %in% chart_specs) {
