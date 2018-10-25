@@ -191,7 +191,7 @@ render_dendro <- function(data, labels=NULL,
 
   #plot using ggplot
   ggdend <- dendextend::as.ggdend(dend)
-  ggplot(ggdend) + ylim(-4, max(dendextend::get_branches_heights(dend))) #Changes the ylim to deal with long labels in ggplot2
+  ggplot(ggdend) + ylim(-0.4, max(dendextend::get_branches_heights(dend))) #Use ylim to deal with long labels in ggplot2
 }
 
 
@@ -212,6 +212,7 @@ render_clonal_tree <- function(data, branch_col_var=NULL, branch_col_palette=NUL
     #TODO: allow for a nwk file as input too?
     stop("phylogenetic tree must be first created using gevitR input functions.")
   }
+
   tree <- data@data$tree
   meta <- data@data$metadata
 

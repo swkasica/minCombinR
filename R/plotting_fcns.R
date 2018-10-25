@@ -196,8 +196,14 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                         #FOR MANY TYPES LINKED
                         colour_mark_type=NA,
                         #FOR SMALL MULTIPLES and composite
-                        x_limits=NA, y_limits=NA) {
+                        x_limits=NA, y_limits=NA,
+                        ...) {
   check_valid_str(chart_type, all_chart_types)
+
+  extra_vars <- list(...)
+  lapply(list(...), function(var) {
+    print(var)
+  })
 
   switch(chart_type,
          #Common Stat Chart Types
@@ -230,7 +236,7 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                                         node_col_var,
                                         node_col_palette),
 
-         "chord" = render_chord(data), #TODO
+         "chord" = render_chord(data),
 
          #Temporal
          "stream" = render_streamgraph(data, key, value, date), #TODO: change param names
@@ -276,7 +282,7 @@ plot_many_types_general <- function(...) {
 #TODO: Make the same x-axis and y-axis ranges.
 #TODO: If there is colour, make sure the colour_scale is the same for each of the facets!
 #TODO: only works on common statistical functions currently!
-#TODO: maybe change input to ... so it's consistent with the others
+#TODO: change input to ... so it's consistent with the others
 #' Small multiples
 #'
 #'@param chart_type A string indicating type of chart to generate. Options are:
@@ -284,20 +290,33 @@ plot_many_types_general <- function(...) {
 #'@param x optional for: ... required for: ...
 #'@param y optional for: ... required for: ...
 #'@param fill optional: ...
-#'@param group optional: ... not applciable for : ...
+#'@param group optional: ... not applicable for : ...
 #'@param facet_by
 #'
 #'@export
-plot_small_multiples <- function(chart_type, data, facet_by, x=NA, y=NA, z=NA, fill=NA, group=NA, directed=FALSE) {
+plot_small_multiples <- function(chart_type, data, facet_by, #...) {x=NA,
+                                 y=NA, z=NA, fill=NA, group=NA,
+                                 directed=FALSE, tip_var=NA, cluster_vars=NA,...) {
+
   chart_specs <- list(chart_type = chart_type, data = deparse(substitute(data)))
 
-  #If the chart has x and/or y axes, make sure they have the same limits
-  if(!is.na(x)) {
-    x_limits <- unlist(get_limits(list(chart_specs), x))
+  #Checks
+  extra_params <- list(...)
+
+  if ("x" %in% names(extra_params)) {
+    x_limits <- unlist(get_limits(list(chart_specs), extra_params$x))
   }
+
+
+  # #If the chart has x and/or y axes, make sure they have the same limits
+  # if(!is.na(x)) {
+  #   x_limits <- unlist(get_limits(list(chart_specs), x))
+  # }
+
+  #ALSO NEED X if bar
   if(!is.na(y)) {
     if (chart_type == "bar") {
-      y_limits <- unlist(get_limits(list(chart_specs), y, sum_var=x))
+      y_limits <- unlist(get_limits(list(chart_specs), y, sum_var=extra_params$x))
     } else {
       y_limits <- unlist(get_limits(list(chart_specs), y))
     }
@@ -314,13 +333,16 @@ plot_small_multiples <- function(chart_type, data, facet_by, x=NA, y=NA, z=NA, f
                       function(sub_dat){
                         gevitR::plot_simple(chart_type = chart_type,
                                             data = select(sub_dat, -facet_by),
-                                            x = x,
+                                            # x = x,
                                             y = y,
                                             z = z,
                                             fill = fill,
                                             group = group,
                                             x_limits = x_limits,
-                                            y_limits = y_limits)
+                                            y_limits = y_limits,
+                                            tip_var = tip_var,
+                                            cluster_vars = cluster_vars,
+                                            ...)
                       })
 
   #TODO: chord scale is a temporary fix

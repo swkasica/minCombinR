@@ -4,7 +4,7 @@
 \alias{arrange_plots}
 \title{render plots}
 \usage{
-arrange_plots(chart_list, labels = NULL, shared_legend = FALSE)
+arrange_plots(chart_list, labels = NULL, ...)
 }
 \arguments{
 \item{chart_list}{A list of charts}
