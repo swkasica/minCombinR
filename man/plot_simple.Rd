@@ -4,18 +4,20 @@
 \alias{plot_simple}
 \title{Plot a base chart type}
 \usage{
-plot_simple(chart_type, data, x = NA, y = NA, z = NA, stack_by = NA,
-  fill = NA, group = NA, title = NA, path, category,
-  cluster_vars = NULL, tip_var = NULL, comparisons, layout = "default",
-  proportional = FALSE, reference_vector, reference_var, key, value, date,
-  start = NA, end = NA, names = NA, events = NA, rownames = NA,
-  lat_var = NA, long_var = NA, labels = NULL, labels_col_var = NULL,
-  labels_col_values = NULL, labels_col_palette = NULL, labels_size = NULL,
-  leaf_col_var = NULL, leaf_col_palette = NULL, directed = FALSE,
-  edge_col_var = NULL, edge_col_palette = NULL, node_col_var = NULL,
-  node_col_palette = NULL, flip_coord = FALSE, rm_y_labels = FALSE,
-  rm_x_labels = FALSE, default_colour_var = NULL, colour_scale = NA,
-  add_mark = NULL, colour_mark_type = NA, x_limits = NA, y_limits = NA)
+plot_simple(chart_type, data, x = NA, y = NA, z = NA,
+  stack_by = NA, fill = NA, group = NA, title = NA, path, category,
+  cluster_vars = NULL, tip_var = NULL, comparisons,
+  proportional = FALSE, reference_vector, reference_var,
+  layout = "default", key, value, date, start = NA, end = NA,
+  names = NA, events = NA, rownames = NA, lat_var = NA,
+  long_var = NA, labels = NULL, labels_col_var = NULL,
+  labels_col_values = NULL, labels_col_palette = NULL,
+  labels_size = NULL, leaf_col_var = NULL, leaf_col_palette = NULL,
+  directed = FALSE, edge_col_var = NULL, edge_col_palette = NULL,
+  node_col_var = NULL, node_col_palette = NULL, flip_coord = FALSE,
+  rm_y_labels = FALSE, rm_x_labels = FALSE,
+  default_colour_var = NULL, colour_scale = NA, add_mark = NULL,
+  colour_mark_type = NA, x_limits = NA, y_limits = NA, ...)
 }
 \description{
 This function will create a single chart object that can be passed into render_charts() to render.

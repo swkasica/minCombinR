@@ -5,8 +5,14 @@
 # edge_col_var = a variable found in data that will be used to color the leaves
 # edge_col_palette = A NAMED vector of colors (hex) for labels; has to be named to choose which colour corresponds to which val.
 #Phylogenetic Tree
-render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE, default_colour_var=NULL, colour_scale=NULL) {
+render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE,
+                              default_colour_var=NULL, colour_scale=NULL, layout="default") {
 
+  #tree.data tells you the x/y coordinates
+  #get coordinates for everything that istip is true
+  #join tables with same col
+  #Use the y coordinate
+    #treat the y coordinate as a factor ?
 
   if (class(data) != "gevitDataObj") {
     #TODO: allow for a nwk file as input too?
@@ -16,7 +22,12 @@ render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE, 
   tree <- data@data$tree
   meta <- data@data$metadata
 
-  gg_chart <- ggtree::ggtree(tree) + ggtree::geom_treescale()
+  if (layout == "radial") {
+    gg_chart <- ggtree::ggtree(tree, layout = "radial") #+ ggtree::geom_treescale()
+  } else {
+    #TODO: added branch.length here so i could easily see but remove later
+    gg_chart <- ggtree::ggtree(tree, branch.length="none") + ggtree::geom_tiplab() #+ ggtree::geom_treescale()
+  }
 
   if(!is.null(default_colour_var)) {
     if (is.null(colour_scale)) {
@@ -63,7 +74,7 @@ render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE, 
   #   gg_chart <- gg_chart %+% ggtree(aes_string(color=colour_var))
   # }
 
-  gg_chart
+  gg_chart + theme(legend.position = "none") #added this for comp
 }
 
 # -- Render a Dendrogram --
@@ -210,7 +221,7 @@ render_clonal_tree <- function(data, branch_col_var=NULL, branch_col_palette=NUL
 
   if (class(data) != "gevitDataObj") {
     #TODO: allow for a nwk file as input too?
-    stop("phylogenetic tree must be first created using gevitR input functions.")
+    stop("clonal tree must be first created using gevitR input functions.")
   }
 
   tree <- data@data$tree

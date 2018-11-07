@@ -38,7 +38,9 @@ specify_base <- function(chart_type, data, x, y, z, ...) {
 
 #TODO: currently only allows for one combo_type. Account for complex combos later.
 # Note: I am not returning match.call() here because the ... only returns the name of the elements called (not the result)
-
+#Important note: for composite combo with a tree, you need to include all of the node tips in one of the variables that you are aligning to
+# For example: if you have a tree that has tip nodes A,B,C,D and you want to align it to a bar chart's x axis, then the
+# var for the x axis must have values A,B,C,D also.
 #' Specify a combination
 #'
 #' #'

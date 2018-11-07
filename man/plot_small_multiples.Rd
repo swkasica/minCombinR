@@ -4,8 +4,7 @@
 \alias{plot_small_multiples}
 \title{Small multiples}
 \usage{
-plot_small_multiples(chart_type, data, facet_by, x = NA, y = NA, z = NA,
-  fill = NA, group = NA, directed = FALSE)
+plot_small_multiples(chart_type, data, facet_by, ...)
 }
 \arguments{
 \item{chart_type}{A string indicating type of chart to generate. Options are:}
@@ -20,7 +19,7 @@ plot_small_multiples(chart_type, data, facet_by, x = NA, y = NA, z = NA,
 
 \item{fill}{optional: ...}
 
-\item{group}{optional: ... not applciable for : ...}
+\item{group}{optional: ... not applicable for : ...}
 }
 \description{
 Small multiples

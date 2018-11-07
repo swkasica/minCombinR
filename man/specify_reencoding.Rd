@@ -4,8 +4,8 @@
 \alias{specify_reencoding}
 \title{Specify a reencoded mark}
 \usage{
-specify_reencoding(base_specification, reencode_var, mark_type = "default",
-  channel = "colour", override = FALSE)
+specify_reencoding(base_specification, reencode_var,
+  mark_type = "default", channel = "colour", override = FALSE)
 }
 \arguments{
 \item{mark_type}{A string that specifies the type of mark to reencode. default depends on the type of chart. Possible strings include: 'default', 'area', 'line', 'point' and 'text'}

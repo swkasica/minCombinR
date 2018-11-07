@@ -41,7 +41,7 @@ check_valid_str <- function(str_in, valid_options) {
 }
 
 #Helper that gets the data from the chart specification of the name of a gevitDataObj or data frame or the actual gevitDataObj or data frame
-#TODO: perhaps a better name would be get_metadata
+#TODO: perhaps a better name would be get_metadata... this is something that should be done as getters in dataobj
 get_data <- function(data) {
   data <- get(as.character(data))
   if (class(data)[1] == "gevitDataObj") {
@@ -168,7 +168,9 @@ get_colour_palette <- function(data, colour_var) {
 plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA, group=NA, title=NA,
                         path, category, cluster_vars=NULL, tip_var=NULL, comparisons,
                         #For bar
-                        layout="default", proportional = FALSE, reference_vector, reference_var,
+                        proportional = FALSE, reference_vector, reference_var,
+                        #For bar and phylo
+                        layout="default",
                         #For stream
                         key, value, date,
                         #For timeline
@@ -256,7 +258,7 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
 
          #genomic
          "phylogenetic_tree" = render_phylo_tree(data, x_limits, y_limits, flip_coord,
-                                                 default_colour_var, colour_scale), #path is a path to a nwk_file
+                                                 default_colour_var, colour_scale, layout), #path used to be here too before adding gevit objects, where it was a path to a nwk file
          "dendrogram" = render_dendro(data, labels,
                                       labels_col_var, labels_col_values, labels_col_palette, labels_size,
                                       leaf_col_var, leaf_col_palette,
@@ -298,7 +300,7 @@ plot_small_multiples <- function(chart_type, data, facet_by, ...) {
                                 # x=NA,y=NA, z=NA, fill=NA, group=NA,
                                 # directed=FALSE, tip_var=NA, cluster_vars=NA,...) {
 
-  chart_specs <- list(chart_type = chart_type, data = deparse(substitute(data)))
+  chart_specs <- list(chart_type = chart_type, data = get_data(deparse(substitute(data))))
 
   #Checks
   extra_params <- list(...)
@@ -321,9 +323,9 @@ plot_small_multiples <- function(chart_type, data, facet_by, ...) {
   #TODO: If the charts are split by another variable, make sure they are consistent
 
   #Create a list of data subsets according to the facetting variable
-  facet_dat <- lapply(unique(data[[facet_by]]),
+  facet_dat <- lapply(unique(chart_specs$data[[facet_by]]),
                       function(unq_var)
-                        dplyr::filter_(data, paste(facet_by, "==", quote(unq_var)))
+                        dplyr::filter_(chart_specs$data, paste(facet_by, "==", quote(unq_var)))
                       )
 
   #Create a list of plots for each of the facet_dat subsets
@@ -372,13 +374,24 @@ infer_x <- function(chart_args) {
 
 #Gets the values of the y axis
 infer_y <- function(chart_args) {
+  #TODO: use the get_data fcn
   if (chart_args$chart_type == "table") {
     #TODO: for now, I am assuming the comp variable is the first column (this can be changed later and reoordered but requires extra checks)
     colnames(get(as.character(chart_args$data)))[1]
   } else if (chart_args$chart_type == "choropleth") {
     return(chart_args$long_var)
   } else if (chart_args$chart_type == "phylogenetic_tree") {
-    stop("TODO: This is a case where the tip_var is not defined in the data frame from nwk file and so have to have different way of determining if the same var")
+    tree_dat <- get(as.character(chart_args))
+    # tree <- treeio::
+
+    #This was an old method
+    # phylo_dat <- get_data(chart_args$data)
+    # candidates <- purrr::map(colnames(phylo_dat), function(col)
+    #   if (length(unique(phylo_dat[[col]])) == nrow(phylo_dat)) {
+    #     return(col)
+    #   })
+    # candidates <- plyr::compact(candidates)
+    return(candidates)
   } else if (chart_args$chart_type == "timeline") {
     return(chart_args$names)
   }
@@ -395,9 +408,14 @@ get_order <- function(chart_args_list, common_var) {
     #Phylogenetic tree tip ordering - always aligns on the y axis so don't need to know common_var
     if (chart_type == "phylogenetic_tree") {
       #TODO: fortify might be deprecated in the future!!! Find a new fcn for this in in the broom package (wasn't initially easy)
-      tree_dat  <- fortify(treeio::read.newick(chart_args$path))
-      tree_tips <- subset(tree_dat, isTip)
-      return(tree_tips$label[order(tree_tips$y, decreasing=TRUE)])
+      #This was used before having gevitr objects
+       # tree_dat  <- fortify(treeio::read.newick(chart_args$path))
+      # nwk <- get(as.character(chart_args$data))@source
+      # tree_dat <- fortify(treeio::read.newick())
+      # tree_tips <- subset(tree_dat, isTip)
+      # return(tree_tips$label[order(tree_tips$y, decreasing=TRUE)])
+      nwk <- get(as.character(chart_args$data))
+      return(nwk@data$tree$tip.label)
     }
     #Dendrogram tree tip ordering - always aligns on the y axis so don't need to know common_var
     #TODO: This is repeating some code from render_dendro - see if there is a way to get the tip var without having to access the data.
@@ -496,10 +514,59 @@ check_combinable_composite <- function(chart_args_list) {
       #Do the charts have the same var name for any axes combination?  (x+x, x+y or y+y)
       #If yes, skip
       if (!anyDuplicated(chart_axes)) {
-        #Charts have different data frames and don't have any axes combination the same
-        stop(paste("Charts",
-                   "are not spatially alignable because they do not have the common variable names on their x or y axes.",
-                   "Please change the x or y axes of the chart specifications to have the same variable name."))
+        # #If there is a phylogenetic tree, the user must either:
+        # #TODO: this could be solved if there was a way of labelling what var the tip labels came from.
+        # if("TREETIPS!" %in% chart_axes) {
+        #   #Remove "TREETIPS!" from chart_axes
+        #   candidates <- chart_axes[chart_axes != "TREETIPS!"]
+        #
+        #   #Check if phylo is chart n or m
+        #   if(chartn$chart_type == "phylogenetic_tree") {
+        #     #Get values at tips
+        #     tree_data <- getAllData(get(as.character(chartn$data)))$tree
+        #     tips <- tree_data$tip.label
+        #
+        #     #The data for chartm
+        #     chartm_data <- get_data(chartm$data)
+        #
+        #     #For each candidate var of chartm, check if it matches tips
+        #     is_same <- lapply(candidates, function(cand) {
+        #       all(tips %in% chartm_data[[cand]])
+        #     })
+        #
+        #     if (!(TRUE %in% is_same)) {
+        #       stop ("Charts are not spatially alignable because the tree tips of",
+        #             as.character(chartn),
+        #             "do not align with",
+        #             as.character(chartm))
+        #     }
+        #   } else {
+        #     #Get values at tips
+        #     tree_data <- getAllData(get(as.character(chartm$data)))$tree
+        #     tips <- tree_data$tip.label
+        #
+        #     #The data for chartm
+        #     chartn_data <- get_data(chartn$data)
+        #
+        #     #For each candidate var of chartm, check if it matches tips
+        #     is_same <- lapply(candidates, function(cand) {
+        #       all(tips %in% chartn_data[[cand]])
+        #     })
+        #
+        #     if (!(TRUE %in% is_same)) {
+        #       stop ("Charts are not spatially alignable because the tree tips of",
+        #             as.character(chartm),
+        #             "do not align with",
+        #             as.character(chartn))
+        #     }
+
+          # }
+        # } else {
+          #Charts have different data frames and don't have any axes combination the same
+          stop(paste("Charts",
+                     "are not spatially alignable because they do not have the common variable names on their x or y axes.",
+                     "Please change the x or y axes of the chart specifications to have the same variable name."))
+        # }
       }
     })
   })
@@ -540,7 +607,6 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
   if (!is.numeric(limits)) {
     #If order is not specified by user
     if (is.na(order)) {
-      #TODO: don't have this as a helper function (it's not very long)
       order <- get_order(chart_args_list, common_var)
     }
     #Add any values that are in limits that are not in order!
@@ -691,8 +757,11 @@ plot_many_linked <- function(link_var, link_mark_type="default", ...) {
 arrange_plots <- function(chart_list, labels = NULL, ...) {
 
   chart_list <- lapply(chart_list, function(chart) {
-    if('gg' %in% class(chart)) {
-      ggplotify::as.grob(chart)
+    if ('ggtree' %in% class(chart)) {
+      cowplot::plot_to_gtable(chart)
+    } else if('gg' %in% class(chart)) {
+      cowplot::plot_to_gtable(chart)
+      # ggplotify::as.grob(chart)
     } else if ('data.frame' %in% class(chart)){
       multipanelfigure::capture_base_plot(chart)
     } else if ('htmlwidget' %in% class(chart)) {
@@ -704,5 +773,5 @@ arrange_plots <- function(chart_list, labels = NULL, ...) {
 
 #NOTES: in order to add a shared legend, pass in shared_legend = TRUE in the ...
 
-  cowplot::plot_grid(plotlist = chart_list, labels = labels, ...)
+  cowplot::plot_grid(plotlist = chart_list, labels = labels, axis="tblr", ...)
 }
