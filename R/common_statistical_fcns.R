@@ -1,15 +1,16 @@
 #'@import ggplot2
 #'@import magrittr
+#'@import ggtree
 #'@importFrom graphics plot
 NULL
 
-#TODO: create a default axis labels rotation based on windows size.
+#TODO: create a default axis labels rotation or string wrapper (?) based on windows size.
 #TODO: clean the ggplot code to reduce repetitive code (ex. colour_scale)?
 #TODO: change colour_scale to colour_limits
 
 #Standard Bar Chart or Stacked Bar Chart (using stack_by)
 #TODO: Do we want option for grouping bars?
-#TODO: Decide on if we should split this into render_bar and render_divergent and render_stacked to make it easier for the user
+#TODO: Decide on if we should split this into render_bar and render_divergent and render_stacked
 
 #TODO: if colour_var, then change stack_by to colour_var and warn user
 #TODO: smart error messages for weird input values
@@ -23,7 +24,7 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
                              reference_vector, reference_var, title=NA,
                              flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
                              default_colour_var=NULL, colour_scale=NA,
-                             x_limits=NA, y_limits=NA) {
+                             x_limits=NA, y_limits=NA, ...) {
 
   gg_chart <- if (layout == "divergent") {
     if (is.na(stack_by)) {
@@ -148,6 +149,11 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
   if(!is.na(y_limits)[1]) {
     gg_chart <- gg_chart + ylim(y_limits)
   }
+
+  #For ...
+  # elip <- list(...)
+  # gg_chart <- gg_chart + elip
+
   gg_chart
 }
 

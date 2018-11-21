@@ -22,12 +22,19 @@ render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE,
   tree <- data@data$tree
   meta <- data@data$metadata
 
-  if (layout == "radial") {
-    gg_chart <- ggtree::ggtree(tree, layout = "radial") #+ ggtree::geom_treescale()
-  } else {
-    #TODO: added branch.length here so i could easily see but remove later
-    gg_chart <- ggtree::ggtree(tree, branch.length="none") + ggtree::geom_tiplab() #+ ggtree::geom_treescale()
-  }
+  #layout can be default, rooted, rooted radial (or radial), schematic, unrooted, unrooted radial OR any layouts available in ggtree
+  #Put the layout variable in the form that ggtree understands
+  layout <- switch(layout,
+                   "default" = "rectangular",
+                   "rooted" = "rectangular",
+                   "rooted_radial" = "circular",
+                   "radial" = "circular",
+                   "schematic" = "rectangular", #TODO: check this is correct
+                   "unrooted" = "slanted",
+                   "unrooted_radial" = "fan")
+
+  #TODO: added branch.length here so i could easily see but remove later
+  gg_chart <- ggtree::ggtree(tree, layout = layout, branch.length="none") + ggtree::geom_tiplab() #+ ggtree::geom_treescale()
 
   if(!is.null(default_colour_var)) {
     if (is.null(colour_scale)) {
@@ -121,7 +128,7 @@ render_dendro <- function(data, labels=NULL,
   #To reorder data frame according to clustering order
   # reordered_data <- arrange(data, clust_data$order)
 
-  # ------ REENCODEMENTS ------
+  # ------ reencodings ------
 
   # ---- LABELS COLOR CHANGES [MARK TYPE = TEXT] ----
 

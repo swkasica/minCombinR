@@ -108,7 +108,7 @@ get_limits <- function(specified_charts, var_name, sum_var=NULL) {
   return(limits)
 }
 
-# ---- HELPER FUNCTION FOR COLOUR REENCODEMENTS ----
+# ---- HELPER FUNCTION FOR COLOUR reencodings ----
 # -- Get Colour Palette --
 #given a data (either gevitDataObj or data frame) and a colour_var,
 # return a vector with hex colours as elements and named by the colour_var value.
@@ -179,13 +179,13 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                         rownames=NA,
                         #For geographic map
                         lat_var=NA, long_var=NA,
-                        #For dendro reencodements,
+                        #For dendro reencodings,
                         labels=NULL,
                         labels_col_var=NULL, labels_col_values=NULL, labels_col_palette=NULL, labels_size=NULL,
                         leaf_col_var=NULL, leaf_col_palette=NULL,
                         #For node link
                         directed = FALSE,
-                        #For node link reencodements
+                        #For node link reencodings
                         edge_col_var = NULL, edge_col_palette = NULL,
                         node_col_var = NULL, node_col_palette = NULL,
                         #FOR COMPOSITE (only implemented for a few chart types)
@@ -307,6 +307,7 @@ plot_small_multiples <- function(chart_type, data, facet_by, ...) {
 
   if ("x" %in% names(extra_params)) {
     x_limits <- unlist(get_limits(list(chart_specs), extra_params$x))
+    extra_params[[x_limits]] <- x_limits
   }
 
   if ("y" %in% names(extra_params)) {
@@ -315,28 +316,58 @@ plot_small_multiples <- function(chart_type, data, facet_by, ...) {
         stop("Must provide an x variable for bar chart")
       }
       y_limits <- unlist(get_limits(list(chart_specs), extra_params$y, sum_var=extra_params$x))
+      extra_params[[y_limits]] <- y_limits
     } else {
       y_limits <- unlist(get_limits(list(chart_specs), extra_params$y))
+      extra_params[[y_limits]] <- y_limits
     }
   }
 
-  #TODO: If the charts are split by another variable, make sure they are consistent
+  #Store all possible unique values of the facet_by variable
+  facet_values <- unique(chart_specs$data[[facet_by]])
 
-  #Create a list of data subsets according to the facetting variable
-  facet_dat <- lapply(unique(chart_specs$data[[facet_by]]),
-                      function(unq_var)
-                        dplyr::filter_(chart_specs$data, paste(facet_by, "==", quote(unq_var)))
-                      )
 
-  #Create a list of plots for each of the facet_dat subsets
-  all_plots <- lapply(facet_dat,
-                      function(sub_dat)
-                        gevitR::plot_simple(chart_type = chart_type,
-                                            data = select(sub_dat, -facet_by),
-                                            x_limits = x_limits,
-                                            y_limits = y_limits,
-                                            ...)
-                      )
+  #If chart type is a phylogenetic tree, then associate a color to each facet value
+  #then for each facet, make the color of the
+  if (chart_specs$chart_type == "phylogenetic_tree") {
+    coloured_facets <- get_colour_palette(deparse(substitute(data)), facet_by)
+
+    colour_vectors <- lapply(facet_values,
+                             function(facet_val){
+                               t <- c(rep("#FFFFFF", times=length(facet_values)))
+                               names(t) <- facet_values
+                               t[facet_val] <- coloured_facets[[facet_val]]
+                               t
+                             })
+  # and a list of plots for each facet var, each one with different colors
+    all_plots <- lapply(colour_vectors,
+                        function(colour_vector)
+                          gevitR::plot_simple(chart_type = chart_type,
+                                              data = data,
+                                              default_colour_var = facet_by,
+                                              colour_scale = colour_vector,
+                                              ...)
+                        )
+
+  } else {
+    #Create a list of data subsets according to the facetting variable
+    #TODO: put in else statement?
+    facet_dat <- lapply(facet_values,
+                        function(unq_var)
+                          dplyr::filter_(chart_specs$data, paste(facet_by, "==", quote(unq_var)))
+    )
+    #Create a list of plots for each of the facet_dat subsets
+    all_plots <- lapply(facet_dat,
+                        function(sub_dat)
+                          gevitR::plot_simple(chart_type = chart_type,
+                                              data = select(sub_dat, -facet_by),
+                                              #TODO comment out x_limits and y_limits becaue added to extra_param list
+                                              #TODO: test this
+                                              x_limits = x_limits,
+                                              y_limits = y_limits,
+                                              ...)
+                        )
+  }
 
   #TODO: chord scale is a temporary fix
   if ("chord" %in% chart_specs) {
@@ -381,17 +412,8 @@ infer_y <- function(chart_args) {
   } else if (chart_args$chart_type == "choropleth") {
     return(chart_args$long_var)
   } else if (chart_args$chart_type == "phylogenetic_tree") {
-    tree_dat <- get(as.character(chart_args))
-    # tree <- treeio::
-
-    #This was an old method
-    # phylo_dat <- get_data(chart_args$data)
-    # candidates <- purrr::map(colnames(phylo_dat), function(col)
-    #   if (length(unique(phylo_dat[[col]])) == nrow(phylo_dat)) {
-    #     return(col)
-    #   })
-    # candidates <- plyr::compact(candidates)
-    return(candidates)
+    #TODO: use getter
+    return(get(as.character(chart_args$data))@data$linkVar)
   } else if (chart_args$chart_type == "timeline") {
     return(chart_args$names)
   }
@@ -414,7 +436,10 @@ get_order <- function(chart_args_list, common_var) {
       # tree_dat <- fortify(treeio::read.newick())
       # tree_tips <- subset(tree_dat, isTip)
       # return(tree_tips$label[order(tree_tips$y, decreasing=TRUE)])
+
+      #TODO!!! use tree data
       nwk <- get(as.character(chart_args$data))
+
       return(nwk@data$tree$tip.label)
     }
     #Dendrogram tree tip ordering - always aligns on the y axis so don't need to know common_var
@@ -461,11 +486,10 @@ get_order <- function(chart_args_list, common_var) {
         if (!identical(get_order_from_chart(chart_args), master_ordering)) {
           stop ("These charts are not combinable by composite because both of them
                 have a fixed ordering that are not the same. Instead, try combining
-                these charts using many_types_linked.")
-        }
-        }
+                these charts using many_types_linked.")}
         }
       }
+    }
 
   #If there are no master charts, return the first charts order
   if (is.null(master_ordering)) {
@@ -602,7 +626,6 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
   #Set the global limits
   limits <- get_limits(chart_args_list, common_var)
 
-  #TODO: ?? put the below if statement into get_order() function!!
   #Make sure all categorical variables have the same order for the common_var
   if (!is.numeric(limits)) {
     #If order is not specified by user
@@ -637,8 +660,11 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
     }
   }
 
+  #Get all chart types for the exceptions below
+  all_chart_types <- lapply(chart_args_list, function(arg) {arg$chart_type})
+
   #Want the relative height of a category stripe to be half of the other charts
-  if ("category_stripe" %in% lapply(chart_args_list, function(arg) {arg$chart_type})) {
+  if ("category_stripe" %in% all_chart_types) {
     rel_heights <- unname(sapply(chart_args_list, function(arg) {
       if (arg$chart_type == "category_stripe") {return(0.5)}
       else {return(1)}
@@ -649,12 +675,42 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
 
   # Is the global alignment vertical?
   if (alignment == 'vertical' || alignment == 'v') {
+
+    #Phylo tree adjustments (master chart)
+    #get the chart_args of the tree in chart_args_list
+    #create and store the tree with plot_simple
+    #combine tree data with metadata (if there is any)
+    #make sure the x variable of the other chart is the common var
+    #make the y variable of the other chart
+
+    #TODO: test with no metadata
+
+    if ("phylogenetic_tree" %in% all_chart_types) {
+      #TODO: this is consistently a question I have... return one value from list without reduce or map
+      lapply(chart_args_list, function(chart_args) {
+        if(chart_args$chart_type == "phylogenetic_tree") {
+          # tree <- do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE)))
+          tree <- ggtree::ggtree(get(as.character(chart_args$data))@data$tree)
+          metadata <- get_data(chart_args$data)
+          tree <- tree%<+%metadata + geom_tippoint()
+          #TODO: id column was changed label now somehow?!
+          tree_dat <<- tree$data
+        }})
+      # tree_dat <- Filter(function(x) !is.null(x), tree)[[1]]$data
+    }
+
     #For each chart, does the x_axis have the common var?
     lo_plots <- lapply(chart_args_list, function(chart_args) {
       y_arg <- infer_y(chart_args)
 
       #If no, rotate
       if (!is.null(y_arg) && y_arg == common_var) {
+
+        if (!is.null(tree_dat)) {
+          scale_y <- scale_y_continous(breaks = sort(tree$data$y),
+                                       labels = levels(tree$data[[common_var]]))
+        }
+
         do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE))) #, y_limits=unlist(limits), rm_x_labels=TRUE)))
       }
 
@@ -668,6 +724,10 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
 
     #Is the alignment horizontal?
   } else if (alignment == 'horizontal' || alignment == 'h') {
+
+    if ("phylogenetic_tree" %in% all_chart_types) {
+      #TODO!!!
+    }
 
     #Generate each chart accordingly (with rotations if necessary)
     lo_plots <- lapply(chart_args_list, function(chart_args) {

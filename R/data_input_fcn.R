@@ -303,7 +303,7 @@ input_phyloTree<-function(file = NA, desc = NA,sepLabel = NA,metadataFile=NULL,a
 
     return(objDat)
   }else{
-    return(list(tree=tree,nodeDat = tipDat,metadata = metadata))
+    return(list(tree=tree, nodeDat=tipDat, metadata=metadata))
   }
 }
 
