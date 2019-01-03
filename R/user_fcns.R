@@ -98,7 +98,7 @@ specify_reencoding <- function(base_specification, reencode_var, mark_type='defa
     }
   } else {
 
-    stop("currently only works with default mark types!!!")
+    stop("currently only works with default mark types")
 
   }
 
@@ -146,6 +146,7 @@ plot <- function(specs) {
                                function(x) {
                                  specs[[x]][1] == "specify_base()" && !is.na(as.list(specs[[x]][1]))
                                })]
+
     #View multiple plots in a single view
     if (specs$combo_type == "small_multiple") {
       base_specs <- as.list(specs$'base_1')
@@ -174,7 +175,7 @@ plot <- function(specs) {
         x[[1]] <- NULL
         as.list(x)
       })
-      return(do.call(plot_composite, c(alignment = specs$alignment, common_var = specs$common_var, order = specs$order, base_specs)))
+      return(do.call(plot_composite, c(base_specs, alignment = specs$alignment, common_var = specs$common_var, order = specs$order)))
     }
 
   }

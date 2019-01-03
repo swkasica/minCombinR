@@ -31,7 +31,7 @@ render_table <- function(data, flip_coord=FALSE, rownames=NA, x_limits=NA, y_lim
 }
 
 #Category Stripe
-render_category_stripe <- function(data, x, category, x_limits=NA) {
+render_category_stripe <- function(data, x, category, x_limits=NA, scale_y_cont=NULL) {
   gg_chart <- ggplot(data, aes_string(x=x, y=shQuote("categories"), fill=category)) +
     geom_bin2d() +
     theme(axis.title.y = element_blank(),
@@ -45,6 +45,12 @@ render_category_stripe <- function(data, x, category, x_limits=NA) {
 
   if(!is.na(x_limits)[1]) {
     gg_chart <- gg_chart + xlim(x_limits)
+  }
+
+  if(!is.null(scale_y_cont)) {
+    print(scale_y_cont)
+    #TODO: make scale_y_continuous more generalizable (or maybe not b/c users can put in ...?)
+    # gg_chart <- gg_chart + scale_x_continuous(breaks=scale_y_cont$breaks, labels=scale_y_cont$labels)
   }
 
   gg_chart

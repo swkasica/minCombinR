@@ -24,7 +24,7 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
                              reference_vector, reference_var, title=NA,
                              flip_coord=FALSE, rm_y_labels=FALSE, rm_x_labels=FALSE,
                              default_colour_var=NULL, colour_scale=NA,
-                             x_limits=NA, y_limits=NA, ...) {
+                             x_limits=NA, y_limits=NA, scale_y_cont=NULL, ...) {
 
   gg_chart <- if (layout == "divergent") {
     if (is.na(stack_by)) {
@@ -150,9 +150,9 @@ render_bar_chart <- function(data, x, y=NA, stack_by=NA, layout="default",
     gg_chart <- gg_chart + ylim(y_limits)
   }
 
-  #For ...
-  # elip <- list(...)
-  # gg_chart <- gg_chart + elip
+  if(!is.na(scale_y_cont)) {
+    gg_chart <- gg_chart + scale_y_continuous(scale_y_cont)
+  }
 
   gg_chart
 }
@@ -448,10 +448,33 @@ render_density_chart <- function(data, x, y, title, default_colour_var=NULL, col
 # TODO: include geom_jitter?
 render_scatter <- function(data, x, y, title, default_colour_var=NULL, colour_scale=NA,
                            x_limits=NA, y_limits=NA, flip_coord=FALSE,
-                           rm_x_labels=FALSE, rm_y_labels=FALSE) {
+                           tree_dat=NA) {
 
-  gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
-    geom_point()
+  if(is.na(tree_dat)) {
+    gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
+      geom_point()
+  } else {
+    tmp<-dplyr::filter(tree_dat,isTip == TRUE)
+    gg_chart <- ggplot(tmp, aes_string(x=x, y='y')) +
+      geom_point()
+  }
+
+  if(!is.na(tree_dat)) {
+    #TODO: return warnings of overriding in this case
+    gg_chart <- gg_chart +
+      scale_x_discrete(na.translate=FALSE) +
+      scale_y_continuous(breaks = sort(tree_dat$y),
+                         labels = levels(tree_dat$id))+
+      theme_bw()+
+      theme(axis.text.y = element_blank(),
+            axis.title.y = element_blank(),
+            axis.ticks.y = element_blank(),
+            plot.margin = unit(c(0,0,0,0),"points"),
+            panel.grid.minor = element_blank(),
+            # panel.grid.major.y = element_blank(),
+            axis.text.x = element_text(angle=90))
+
+  }
 
   if(!is.na(title)) {
     gg_chart <- gg_chart + ggtitle(title)
@@ -479,16 +502,6 @@ render_scatter <- function(data, x, y, title, default_colour_var=NULL, colour_sc
 
   if(flip_coord) {
     gg_chart <- gg_chart + coord_flip()
-  }
-
-  if(rm_x_labels) {
-    gg_chart <- gg_chart +
-      theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
-  }
-
-  if(rm_y_labels) {
-    gg_chart <- gg_chart +
-      theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
   }
 
   gg_chart

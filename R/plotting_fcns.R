@@ -199,27 +199,32 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                         colour_mark_type=NA,
                         #FOR SMALL MULTIPLES and composite
                         x_limits=NA, y_limits=NA,
+                        #For composite with a tree
+                        tree_dat=NA,
+                        #TODO: find a way to include this in ...?
+                        # scale_y_cont=NULL,
                         ...) {
   check_valid_str(chart_type, all_chart_types)
 
-  extra_vars <- list(...)
-  lapply(list(...), function(var) {
-    print(var)
-  })
+  # extra_vars <- list(...)
+  # lapply(list(...), function(var) {
+  #   print(var)
+  # })
 
   switch(chart_type,
          #Common Stat Chart Types
          "bar" = render_bar_chart(data, x, y, stack_by, layout, proportional,
                                   reference_vector, reference_var, title,
                                   flip_coord, rm_y_labels, rm_x_labels,
-                                  default_colour_var, colour_scale, x_limits, y_limits),
+                                  default_colour_var, colour_scale, x_limits, y_limits,
+                                  scale_y_cont, tree_dat, ...),
          # "stacked_bar" = render_stacked_bar_chart(data, x, fill, title, default_colour_var, colour_scale),
          # "divergent_bar" = render_divergent_bar_chart(data, title, default_colour_var, colour_scale, x_limits, y_limits),
          "line" = render_line_chart(data, x, y, group, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
          "heat_map" = render_heatmap(data, x, y, z, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
          "heatmap" = render_heatmap(data, x, y, z, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
          "density" = render_density_chart(data, x, y, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "scatter" = render_scatter(data, x, y, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
+         "scatter" = render_scatter(data, x, y, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord, tree_dat),
          "pie" = render_pie_chart(data, x, title, default_colour_var, colour_scale),
          "histogram" = render_histogram(data, x, title, default_colour_var, colour_scale, x_limits),
          "pdf" = render_pdf(data, x, title, default_colour_var, colour_scale, x_limits, flip_coord),
@@ -253,7 +258,7 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
 
          #Other
          "table" = render_table(data, flip_coord, rownames),
-         "category_stripe" = render_category_stripe(data, x, category, x_limits),
+         "category_stripe" = render_category_stripe(data, x, category, x_limits, scale_y_cont),
          "image" = render_image(path), #TODO: maybe change if you use the magick package
 
          #genomic
@@ -500,7 +505,7 @@ get_order <- function(chart_args_list, common_var) {
   return(master_ordering)
     }
 
-#New algorithm developed with Ana to check if composites are combinable:
+#Algorithm developed with Ana to check if composites are combinable:
 #Returns nothing... will return errors for charts that are not combinable.
 check_combinable_composite <- function(chart_args_list) {
   chart_types <- lapply(chart_args_list, function(chart_args) {chart_args$chart_type})
@@ -612,7 +617,7 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
   all_vars[sapply(all_vars, is.null)] <- NULL
 
   #Determine the common variable name if not already specified
-  #TODO: return an error if there is no common_var
+  #TODO: return an error if there is no common_var? (consider phylo)
   if (is.na(common_var)) {
     common_var <- names(table(all_vars)[table(all_vars) > (length(chart_args_list) - 1)])[1] #If there is more than one common_var, then just combine on the first one (x).
   }
@@ -653,6 +658,7 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
     if (x_var_count == 0) {
       alignment <- 'horizontal'
     }
+    #By default: Will align vertically if the common_var has the same # of x and y axes
     if (x_var_count >= y_var_count) {
       alignment <- 'vertical'
     } else {
@@ -664,6 +670,7 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
   all_chart_types <- lapply(chart_args_list, function(arg) {arg$chart_type})
 
   #Want the relative height of a category stripe to be half of the other charts
+  #TODO: this could be optimized according to the other chart widths but not worrying about for now
   if ("category_stripe" %in% all_chart_types) {
     rel_heights <- unname(sapply(chart_args_list, function(arg) {
       if (arg$chart_type == "category_stripe") {return(0.5)}
@@ -695,6 +702,8 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
           tree <- tree%<+%metadata + geom_tippoint()
           #TODO: id column was changed label now somehow?!
           tree_dat <<- tree$data
+          #TODO: remove this line... filtering for this later
+          # tree_dat <<- dplyr::filter(tree$data,isTip == TRUE)
         }})
       # tree_dat <- Filter(function(x) !is.null(x), tree)[[1]]$data
     }
@@ -703,20 +712,29 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
     lo_plots <- lapply(chart_args_list, function(chart_args) {
       y_arg <- infer_y(chart_args)
 
+      # if (!is.null(tree_dat)) {
+      #   #TODO: Is the common var of a tree data always label?
+      #   scale_y_axis <- list(breaks = sort(tree_dat$y), labels = unique(tree_dat$label))
+      # }
+
       #If no, rotate
       if (!is.null(y_arg) && y_arg == common_var) {
 
-        if (!is.null(tree_dat)) {
-          scale_y <- scale_y_continous(breaks = sort(tree$data$y),
-                                       labels = levels(tree$data[[common_var]]))
-        }
+        # if (chart_args$chart_type == 'phylogenetic_tree') {
+        #   chart_args$data
+        # }
 
-        do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE))) #, y_limits=unlist(limits), rm_x_labels=TRUE)))
+        do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE,
+                                                       tree_dat=tree_dat)))
+                                                       # scale_y_cont=scale_y_axis))) #, y_limits=unlist(limits), rm_x_labels=TRUE)))
       }
 
       #If yes, do not rotate
       else {
-        do.call(plot_simple, args = c(chart_args, list(x_limits=unlist(limits)))) #, rm_x_labels=TRUE)))
+        #TODO: HANDLE THIS CASE WITH SCALE_X_CONT WITH TREE COMPOSITE
+        do.call(plot_simple, args = c(chart_args, list(x_limits=limits,
+                                                       tree_dat=tree_dat))) #unlist(limits)
+                                                       # scale_x_cont=scale_y_axis))) #, rm_x_labels=TRUE)))
       }
     })
 
@@ -726,16 +744,30 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
   } else if (alignment == 'horizontal' || alignment == 'h') {
 
     if ("phylogenetic_tree" %in% all_chart_types) {
-      #TODO!!!
+      lapply(chart_args_list, function(chart_args) {
+        if(chart_args$chart_type == "phylogenetic_tree") {
+          # tree <- do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE)))
+          tree <- ggtree::ggtree(get(as.character(chart_args$data))@data$tree)
+          metadata <- get_data(chart_args$data)
+          tree <- tree%<+%metadata + geom_tippoint()
+          #TODO: id column was changed label now somehow?!
+          tree_dat <<- tree$data
+          # tree_dat <<- dplyr::filter(tree$data,isTip == TRUE)
+        }})
     }
 
     #Generate each chart accordingly (with rotations if necessary)
     lo_plots <- lapply(chart_args_list, function(chart_args) {
       y_arg <- infer_y(chart_args)
       if (!is.null(y_arg) && y_arg == common_var) {
-        do.call(plot_simple, args = c(chart_args, list(y_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
+        do.call(plot_simple, args = c(chart_args, list(y_limits=unlist(limits),
+                                                       tree_dat=tree_dat)))
+                                                       #scale_y_cont=scale_y_cont))) #, rm_y_labels=TRUE)))
       } else {
-        do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE, x_limits=unlist(limits)))) #, rm_y_labels=TRUE)))
+        do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE,
+                                                       x_limits=unlist(limits),
+                                                       tree_dat=tree_dat)))
+                                                       # scale_y_cont=scale_y_cont))) #, rm_y_labels=TRUE)))
       }
     })
 

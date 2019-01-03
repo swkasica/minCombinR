@@ -6,13 +6,16 @@
 # edge_col_palette = A NAMED vector of colors (hex) for labels; has to be named to choose which colour corresponds to which val.
 #Phylogenetic Tree
 render_phylo_tree <- function(data, x_limits=NA, y_limits=NA, flip_coord=FALSE,
-                              default_colour_var=NULL, colour_scale=NULL, layout="default") {
+                              default_colour_var=NULL, colour_scale=NULL, layout="default",
+                              scale_y_cont=NULL) {
 
   #tree.data tells you the x/y coordinates
   #get coordinates for everything that istip is true
   #join tables with same col
   #Use the y coordinate
     #treat the y coordinate as a factor ?
+
+  #TODO: Do a check that scale_y_cont is the same here as it is in the chart it produces?
 
   if (class(data) != "gevitDataObj") {
     #TODO: allow for a nwk file as input too?
