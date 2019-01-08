@@ -448,7 +448,7 @@ render_density_chart <- function(data, x, y, title, default_colour_var=NULL, col
 # TODO: include geom_jitter?
 render_scatter <- function(data, x, y, title, default_colour_var=NULL, colour_scale=NA,
                            x_limits=NA, y_limits=NA, flip_coord=FALSE,
-                           tree_dat=NA) {
+                           tree_dat=NA, alignment=NA) {
 
   if(is.na(tree_dat)) {
     gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
@@ -459,20 +459,71 @@ render_scatter <- function(data, x, y, title, default_colour_var=NULL, colour_sc
       geom_point()
   }
 
+  #There are 4 scenarios for composite combination with a tree:
+  # bar chart coordinates flipped and aligning horizontally with tree (align scatter's x axis with tree's y axis)
+  # bar chart coord flipped and aligning vertically with tree (align scatter's y axis with tree's y axis)
+  # bar chart coord not flipped and aligning horizontally with tree (align scatter's y axis with tree's y axis)
+  # bar chart coord not flipped and aligning vertically with tree (align scatter's x axis with tree's y axis)
+  #TODO: return warnings of overriding in this case
   if(!is.na(tree_dat)) {
-    #TODO: return warnings of overriding in this case
-    gg_chart <- gg_chart +
-      scale_x_discrete(na.translate=FALSE) +
-      scale_y_continuous(breaks = sort(tree_dat$y),
-                         labels = levels(tree_dat$id))+
-      theme_bw()+
-      theme(axis.text.y = element_blank(),
-            axis.title.y = element_blank(),
-            axis.ticks.y = element_blank(),
-            plot.margin = unit(c(0,0,0,0),"points"),
-            panel.grid.minor = element_blank(),
-            # panel.grid.major.y = element_blank(),
-            axis.text.x = element_text(angle=90))
+    if (!is.na(flip_coord) && flip_coord == TRUE) {
+      if (alignment == "horizontal" || alignment == "h") {
+        gg_chart <- gg_chart +
+          scale_y_discrete(na.translate=FALSE) +
+          scale_x_continuous(breaks = sort(tree_dat$y),
+                             labels = levels(tree_dat$id))+
+          theme_bw()+
+          theme(axis.text.x = element_blank(),
+                axis.title.x = element_blank(),
+                axis.ticks.x = element_blank(),
+                plot.margin = unit(c(0,0,0,0),"points"),
+                panel.grid.minor = element_blank(),
+                # panel.grid.major.x = element_blank(),
+                axis.text.y = element_text(angle=90))
+      } else {
+        gg_chart <- gg_chart +
+          scale_x_discrete(na.translate=FALSE) +
+          scale_y_continuous(breaks = sort(tree_dat$y),
+                             labels = levels(tree_dat$id))+
+          theme_bw()+
+          theme(axis.text.y = element_blank(),
+                axis.title.y = element_blank(),
+                axis.ticks.y = element_blank(),
+                plot.margin = unit(c(0,0,0,0),"points"),
+                panel.grid.minor = element_blank(),
+                # panel.grid.major.y = element_blank(),
+                axis.text.x = element_text(angle=90))
+      }
+    } else {
+      if (alignment == "horizontal" || alignment == "h") {
+        #TODO: return warnings of overriding in this case
+        gg_chart <- gg_chart +
+          scale_x_discrete(na.translate=FALSE) +
+          scale_y_continuous(breaks = sort(tree_dat$y),
+                             labels = levels(tree_dat$id))+
+          theme_bw()+
+          theme(axis.text.y = element_blank(),
+                axis.title.y = element_blank(),
+                axis.ticks.y = element_blank(),
+                plot.margin = unit(c(0,0,0,0),"points"),
+                panel.grid.minor = element_blank(),
+                # panel.grid.major.y = element_blank(),
+                axis.text.x = element_text(angle=90))
+      } else {
+        gg_chart <- gg_chart +
+          scale_y_discrete(na.translate=FALSE) +
+          scale_x_continuous(breaks = sort(tree_dat$y),
+                             labels = levels(tree_dat$id))+
+          theme_bw()+
+          theme(axis.text.x = element_blank(),
+                axis.title.x = element_blank(),
+                axis.ticks.x = element_blank(),
+                plot.margin = unit(c(0,0,0,0),"points"),
+                panel.grid.minor = element_blank(),
+                # panel.grid.major.x = element_blank(),
+                axis.text.y = element_text(angle=90))
+      }
+    }
 
   }
 

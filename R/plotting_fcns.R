@@ -201,6 +201,8 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                         x_limits=NA, y_limits=NA,
                         #For composite with a tree
                         tree_dat=NA,
+                        alignment=NA,
+
                         #TODO: find a way to include this in ...?
                         # scale_y_cont=NULL,
                         ...) {
@@ -217,14 +219,14 @@ plot_simple <- function(chart_type, data, x=NA, y=NA, z=NA, stack_by=NA, fill=NA
                                   reference_vector, reference_var, title,
                                   flip_coord, rm_y_labels, rm_x_labels,
                                   default_colour_var, colour_scale, x_limits, y_limits,
-                                  scale_y_cont, tree_dat, ...),
+                                  scale_y_cont, tree_dat, alignment...),
          # "stacked_bar" = render_stacked_bar_chart(data, x, fill, title, default_colour_var, colour_scale),
          # "divergent_bar" = render_divergent_bar_chart(data, title, default_colour_var, colour_scale, x_limits, y_limits),
          "line" = render_line_chart(data, x, y, group, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
          "heat_map" = render_heatmap(data, x, y, z, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
          "heatmap" = render_heatmap(data, x, y, z, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
          "density" = render_density_chart(data, x, y, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord),
-         "scatter" = render_scatter(data, x, y, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord, tree_dat),
+         "scatter" = render_scatter(data, x, y, title, default_colour_var, colour_scale, x_limits, y_limits, flip_coord, tree_dat, alignment),
          "pie" = render_pie_chart(data, x, title, default_colour_var, colour_scale),
          "histogram" = render_histogram(data, x, title, default_colour_var, colour_scale, x_limits),
          "pdf" = render_pdf(data, x, title, default_colour_var, colour_scale, x_limits, flip_coord),
@@ -725,7 +727,8 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
         # }
 
         do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE,
-                                                       tree_dat=tree_dat)))
+                                                       tree_dat=tree_dat,
+                                                       alignment=alignment)))
                                                        # scale_y_cont=scale_y_axis))) #, y_limits=unlist(limits), rm_x_labels=TRUE)))
       }
 
@@ -733,7 +736,8 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
       else {
         #TODO: HANDLE THIS CASE WITH SCALE_X_CONT WITH TREE COMPOSITE
         do.call(plot_simple, args = c(chart_args, list(x_limits=limits,
-                                                       tree_dat=tree_dat))) #unlist(limits)
+                                                       tree_dat=tree_dat,
+                                                       alignment=alignment))) #unlist(limits)
                                                        # scale_x_cont=scale_y_axis))) #, rm_x_labels=TRUE)))
       }
     })
@@ -761,12 +765,14 @@ plot_composite <- function(..., alignment=NA, common_var=NA, order=NA) {
       y_arg <- infer_y(chart_args)
       if (!is.null(y_arg) && y_arg == common_var) {
         do.call(plot_simple, args = c(chart_args, list(y_limits=unlist(limits),
-                                                       tree_dat=tree_dat)))
+                                                       tree_dat=tree_dat,
+                                                       alignment=alignment)))
                                                        #scale_y_cont=scale_y_cont))) #, rm_y_labels=TRUE)))
       } else {
         do.call(plot_simple, args = c(chart_args, list(flip_coord = TRUE,
                                                        x_limits=unlist(limits),
-                                                       tree_dat=tree_dat)))
+                                                       tree_dat=tree_dat,
+                                                       alignment=alignment)))
                                                        # scale_y_cont=scale_y_cont))) #, rm_y_labels=TRUE)))
       }
     })
