@@ -142,15 +142,3 @@ annotate_app<-function(img,imgDetails){
   )
 
 }
-
-#---------------------------------------------------
-# Data conversion functions specific to dna inputs
-#---------------------------------------------------
-
-readVCF<-function(file = NULL){
-  print("READ VCF")
-}
-
-convAlignMat<-function(files=NULL){
-  print("ALGIN")
-}

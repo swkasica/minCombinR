@@ -1,0 +1,119 @@
+---
+title: "Simple Chart Type Examples"
+author: "Anamaria Crisan"
+date: '2019-01-08'
+output: html_document
+---
+
+This document demonstrates how to implement and plot different chart types using gevitR.
+
+## Inputting data using gevitR
+
+gevitR provides a simple input function that allows users to easily input various types of data. By using the gevitR input functions its possible standardize how data is represented and it makes it easier to plot your data.
+
+To load your own data, and get it ready for gevitR, you need to do the following:
+
+```{r,eval=FALSE,message=FALSE,warning=FALSE}
+input_data(file = "path/to/your/file.ext", dataType = "choose_data_type")
+
+# where choose_data_type can be one of table, tree, dna, spatial, or image
+```
+
+To demonstrate the features of gevitR we are using data from the 2014-2016 Ebola Outbreak. This data is available from several sources:
+
+Metadata and tree data is available via micoreact : 
+https://microreact.org/project/west-african-ebola-epidemic
+
+Genomic data (guinea only) is available via the following github repo: https://github.com/nickloman/ebov/tree/master/consensus/good
+
+Spatial (shape file) data is available via : https://data.humdata.org
+
+This data is automatically downloaded when gevitR is installed, and can be accessed using the commands below:
+
+```{r,message=FALSE,warning=FALSE}
+devtools::load_all() #temporary once things are done
+
+#Table data
+tab_dat<-input_data(file = system.file("extdata", "ebov_metadata.csv", package = "gevitR"),dataType = "table")
+
+#Tree data
+tree_dat<-input_data(file = system.file("extdata", "ebov_tree.nwk", package = "gevitR"),dataType = "tree")
+
+#Genomic data
+genomic_dat<-input_data(file = system.file("extdata", "ebov_GIN_genomic.fasta", package = "gevitR"),dataType = "dna")
+
+#Shape files
+#Shape files require that .shp,.shx,and .prj files at a minimun to be in the same directory
+#to add metadata to the shape file, you can also add .dbf files
+gin_shape_dat<-input_data(file = system.file("extdata", "gin_admbnda_adm1_ocha_itos.shp", package = "gevitR"),dataType = "spatial")
+lbr_shape_dat<-input_data(file = system.file("extdata", "lbr_admbnda_adm1_ocha.shp", package = "gevitR"),dataType = "spatial")
+sle_shape_dat<-input_data(file = system.file("extdata", "sle_admbnda_adm1_1m_gov_ocha_20161017.shp", package = "gevitR"),dataType = "spatial")
+```
+
+## Essential gevitR commands
+
+**Some helper commands**
+These commands let you know what you parameters you can provide each function to plot. To see examples of different charts type check out http://gevit.net
+```{r,message=FALSE,warning=FALSE}
+
+base_chart_types() #to see all of the supported chart types
+base_chart_specs(chart_type="bar") #to see all of the required and options specifications
+
+```
+
+## Common statistical charts
+
+```{r,message=FALSE,warning=FALSE,fig.height= 2,fig.width=2,units="in"}
+#
+# "swarmplot" => implemented specs for this
+
+#a bar chart of all the countries invovled in the ebola outbreak
+bar_chart<-specify_base(chart_type = "bar",data="tab_dat",x = "country")
+plot(bar_chart)
+
+scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "latitude",y="longitude",title = "Ebola Scatter Plot")
+plot(scatter_chart)
+
+histogram_chart<-specify_base(chart_type = "histogram",data="tab_dat",x = "latitude")
+plot(histogram_chart)
+
+pdf_chart<-specify_base(chart_type = "pdf",data="tab_dat",x = "latitude")
+plot(pdf_chart)
+
+#works but weird a bit
+boxplot_chart<-specify_base(chart_type = "boxplot",data="tab_dat",x = "latitude",y="country")
+plot(boxplot_chart)
+
+#we'll even let you make a pie chart
+pie_chart<-specify_base(chart_type = "pie",data="tab_dat",x = "country")
+plot(pie_chart)
+
+```
+
+gevitR can also work with data frames too, so you can perform some analyses and go ahead and plot the data. Here's an example using a line chart :
+
+```{r, message=FALSE,warning=FALSE,fig.height=2,fig.width=2,units="in"}
+library(dplyr)
+
+#lets use our tabular data
+ebov<-tab_dat@data[[1]] #make this nicer
+ebov_case_counts<-ebov %>% 
+  group_by(country,month) %>%
+  count()
+
+line_chart<-specify_base(chart_type = "line",data="ebov_case_counts",x = "month",y="n",group = "country")
+plot(line_chart)
+
+```
+
+## Colour charts
+
+## Relational charts
+
+## Spatial charts
+
+## Tree charts
+
+## Genomic charts
+
+## Temporal charts

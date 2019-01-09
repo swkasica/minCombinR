@@ -1,13 +1,20 @@
-#Helper functions for relational chart types
+#' Node-link diagram
+#' @title render_node_link
+#' @param ...
+#'
+#' @return
+render_node_link <- function(...) {
 
-# --- Render Node link ---
-#TODO: input function for graphs??
-render_node_link <- function(data,
-                             directed = FALSE,
-                             edge_col_var = NULL,
-                             edge_col_palette = NULL,
-                             node_col_var = NULL,
-                             node_col_palette = NULL) {
+  spec_list<-list(...)
+
+  #put the specification variables in a location environment
+  #so they can be accessed without using a list
+  list2env(spec_list,env=environment())
+
+  #if a character has been passed as the name, get that variable from the environment
+  if(!is.data.frame(data)  && (class(data) %in% c("character","factor"))){
+    data<-get(data,envir = globalenv())  #get data from the global environment
+  }
 
   my_graph <- igraph::graph_from_data_frame(d = data, directed = directed)
   graph_chart <- ggraph::ggraph(my_graph, layout = "kk") + ggraph::geom_edge_link() + ggraph::geom_node_point()
@@ -28,14 +35,28 @@ render_node_link <- function(data,
     graph_chart <-
       graph_chart %+% ggraph::geom_node_point(aes(color = node_col_var))
   }
-  graph_chart
+
+  return(graph_chart)
 }
 
-#Chord diagram
-# default colour_mark_type is grid
-#'@param colour_scale A vector of colors with named values
-#'@param colour_mark_type A character indicating the type of mark to colour, can be one of: "default" (outside grid) or "links"
-render_chord <- function(data, colour_scale=NA, colour_mark_type=NA) {
+
+#' Rendering a chord diagram
+#' @title render_chord
+#' @param ...
+#'
+#' @return
+render_chord <- function(...) {
+
+  spec_list<-list(...)
+
+  #put the specification variables in a location environment
+  #so they can be accessed without using a list
+  list2env(spec_list,env=environment())
+
+  #if a character has been passed as the name, get that variable from the environment
+  if(!is.data.frame(data)  && (class(data) %in% c("character","factor"))){
+    data<-get(data,envir = globalenv())  #get data from the global environment
+  }
 
   #TODO: This is an exception where the colour_scale has to have the grid or link values
   #Many typed linked options
