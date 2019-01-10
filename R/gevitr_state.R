@@ -66,8 +66,10 @@ gevitr_env$not_spatially_alignable<-.master_chart_types
     colour_mark_type=NA,
     #FOR SMALL MULTIPLES and composite
     x_limits=NA, y_limits=NA,
+    x_labels=NA, y_labels = NA,
     #For composite with a tree
-    tree_dat=NA
+    tree_dat=NA,
+    combo_type="simple"
 )
 
 gevitr_env$plot_param_defaults<-.plot_param_defaults

@@ -54,8 +54,19 @@ render_phylogenetic_tree <- function(...) {
 
   #plot that tree!
   #remove the branch length arugment, that is not correct
-  gg_chart <- ggtree::ggtree(tree,layout = layout) +
-    ggtree::geom_treescale()
+  #gg_chart <- ggtree::ggtree(tree,layout = layout) +
+  #  ggtree::geom_treescale()
+
+  gg_chart<-ggtree(tree,layout = layout)
+
+  if(combo_type == "small_multiple"){
+
+    gg_chart<- gg_chart %<+% metadata+ #adding metadata
+      geom_tippoint(aes(colour=show_var,alpha=show_var)) +
+      scale_alpha_manual(values=c(1,0))+
+      theme(legend.position = "top")
+  }
+
 
   #quick overwrite - don't show tip labels if you have more than 50 elements in the tree
   if(length(tree$tip.label)<=50){

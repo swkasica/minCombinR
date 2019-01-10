@@ -42,30 +42,36 @@ plot_simple<-function(...){
   }
 
   spec_list[["data"]]<-data
+
+  #getting rid of an empty element in the spec list
+  if(names(spec_list)[1] == ""){
+    spec_list<-spec_list[-1]
+  }
+
   #call the rendering functions to make a single chart
   chart<-switch(spec_list[["chart_type"]],
          #common statistical charts types
-         "bar" = do.call(render_bar,args = spec_list),
-         "pie" = do.call(render_pie,args = spec_list),
-         "line" = do.call(render_line,args = spec_list),
+         "bar" = do.call(render_bar,args = spec_list,envir = parent.frame()),
+         "pie" = do.call(render_pie,args = spec_list,envir = parent.frame()),
+         "line" = do.call(render_line,args = spec_list,envir = parent.frame()),
          "scatter" = do.call(render_scatter,args = spec_list,envir = parent.frame()),
-         "histogram" = do.call(render_histogram,args = spec_list),
-         "pdf" = do.call(render_1D_density,args = spec_list),
-         "boxplot" = do.call(render_boxplot,args = spec_list),
-         "swarmplot" = do.call(render_swarm_plot,args = spec_list),
+         "histogram" = do.call(render_histogram,args = spec_list,envir = parent.frame()),
+         "pdf" = do.call(render_1D_density,args = spec_list,envir = parent.frame()),
+         "boxplot" = do.call(render_boxplot,args = spec_list,envir = parent.frame()),
+         "swarmplot" = do.call(render_swarm_plot,args = spec_list,envir = parent.frame()),
          #colour charts types
-         "heatmap" = do.call(render_heatmap,args = spec_list),
-         "category stripe" = do.call(render_category_stripe,args = spec_list),
-         "density" = do.call(render_2D_density,args = spec_list),
+         "heatmap" = do.call(render_heatmap,args = spec_list,envir = parent.frame()),
+         "category stripe" = do.call(render_category_stripe,args = spec_list,envir = parent.frame()),
+         "density" = do.call(render_2D_density,args = spec_list,envir = parent.frame()),
          #tree chart types
-         "phylogenetic tree" = do.call(render_phylogenetic_tree,args = spec_list),
-         "dendrogram" = do.call(render_dendrogram,args = spec_list),
+         "phylogenetic tree" = do.call(render_phylogenetic_tree,args = spec_list,envir = parent.frame()),
+         "dendrogram" = do.call(render_dendrogram,args = spec_list,envir = parent.frame()),
          #relational chart types
-         "node-link" = do.call(render_node_link,args = spec_list),
-         "chord" = do.call(render_chord,args = spec_list),
+         "node-link" = do.call(render_node_link,args = spec_list,envir = parent.frame()),
+         "chord" = do.call(render_chord,args = spec_list,envir = parent.frame()),
          #spatial chart types - to revise
-          "choropleth" = do.call(render_choropleth,args = spec_list),
-          "geographic map"= do.call(render_geographic_map,args = spec_list),
+          "choropleth" = do.call(render_choropleth,args = spec_list,envir = parent.frame()),
+          "geographic map"= do.call(render_geographic_map,args = spec_list,envir = parent.frame()),
          #temporal chart types - to implement
          #genomic chart types - to implement
          #other char types  - to implement
@@ -87,17 +93,11 @@ plot_many_types_general <- function(...) {
   return(combo_plots)
 }
 
-#' Title
-#'
-#' @param chart_type
-#' @param data
-#' @param facet_by
+#' Plot small multiples
+#' @title plot_small_multiples
 #' @param ...
 #'
 #' @return
-#' @export
-#'
-#' @examples
 plot_small_multiples <- function(...) {
 
   spec_list<-list(...)#don't know why I have to do this
@@ -111,13 +111,20 @@ plot_small_multiples <- function(...) {
     data<-get(data,envir = globalenv())  #get data from the global environment
   }
 
-
   #now check if data is a gevitR object
   if(!is.data.frame(data)  && class(data) == "gevitDataObj"){
     data_type<-data@type
-    data<-data@data[[1]]
+    data<-data@data
+
+    if(!is.null(data$metadata)){
+      metadata<-data$metadata
+    }
+
+    data<-data[[1]]
+
   }else if(is.data.frame(data)){
     data_type<-"table"
+    metadata<-ifelse(is.na(spec_list$metadata),NA,spec_list$metadata)
   }else{
     data_type<-NA
   }
@@ -129,13 +136,16 @@ plot_small_multiples <- function(...) {
   #of the data on it, which for other charts types
   #means that some metadta must be associated with it
   #that is subsetable
+
+
+
   if(data_type == "table"){
     #make sure the data has the same points in x and y
     #then send it off
 
     all_data_plot<-do.call(plot_simple,spec_list,envir=parent.frame())
-    all_data_plot_info<-ggplot2::ggplot_build(all_data_plot)
-    all_data_plot_scales<-all_data_plot_info$layout$panel_params[[1]]
+    spec_list<-ggplot_scale_info(all_data_plot,spec_list)
+
 
     #generate charts for each subgroup
     facet_var<-spec_list$facet_by
@@ -143,18 +153,76 @@ plot_small_multiples <- function(...) {
     all_plots<-c()
     for(grpItem in unique(data[,facet_var])){
       tmp<-data %>% dplyr::filter_(.dots = paste0(facet_var, "=='", grpItem, "'"))
+
       spec_list$data<-tmp
-      spec_list$x_limits<-all_data_plot_scales$x.range
-      spec_list$y_limits<-all_data_plot_scales$y.range
       spec_list$title<-grpItem
       all_plots[[grpItem]]<-do.call(plot_simple,args=spec_list,envir = parent.frame())
     }
 
     combo_plots<-arrange_plots(all_plots)
-    return(combo_plots)
   }else{
-    print("TO DO")
+    #For non-tabular data types, you must provide some additional metadata
+    if(is.null(metadata)){
+      stop("To make a small multiple for this chart you need to provide additional metadata")
+    }
+
+    if(!(spec_list$chart_type %in% c("phylogenetic tree"))){
+      stop("Small multiples have not yet been implemented for you chart type")
+    }
+
+    #make a simple plot, but indicate that it's for a combination
+    spec_list$combo<-"small multiples"
+    #generate charts for each subgroup
+    facet_var<-spec_list$facet_by
+    all_plots<-c()
+
+    for(grpItem in unique(metadata[,facet_var])){
+      #works for phylo tree, but need to test on others
+      meta_sub<-metadata %>%
+        dplyr::mutate_(.dots = paste0("show_var = ifelse(",facet_var," =='", grpItem,"','",grpItem,"','Other')"))
+
+      #a small cheat
+      colnames(meta_sub)<-c(head(colnames(meta_sub),-1),"show_var")
+
+      spec_list$data<-data
+      spec_list$metadata<-meta_sub
+      spec_list$title<-grpItem
+
+      #just call a simple plot
+      all_plots[[grpItem]]<-do.call(plot_simple,args=spec_list,envir = parent.frame())
+    }
+    combo_plots<-arrange_plots(all_plots)
   }
+  return(combo_plots)
+}
+
+#' Helper function to extract x and y scales from ggplot entity
+#' @title ggplot_scale_info
+#' @param chart
+#'
+ggplot_scale_info<-function(chart = NULL,spec_list = NULL){
+  chart_info<-ggplot2::ggplot_build(chart)
+
+  x_scale<-chart_info$layout$panel_scales_x[[1]]
+  y_scale<-chart_info$layout$panel_scales_y[[1]]
+
+
+  #x axis
+  if("ScaleContinuous" %in% class(x_scale)){
+    spec_list$x_limits<-x_scale$range$range
+  }else if("ScaleDiscrete" %in% class(x_scale)){
+    spec_list$x_labels <- x_scale$range$range
+  }
+
+  #y axis
+  if("ScaleContinuous" %in% class(y_scale)){
+    spec_list$y_limits<-y_scale$range$range
+  }else if("ScaleDiscrete" %in% class(y_scale)){
+    spec_list$y_labels <- y_scale$range$range
+  }
+
+  return(spec_list)
+
 }
 
 

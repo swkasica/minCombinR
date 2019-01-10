@@ -15,7 +15,7 @@ render_bar<- function(...) {
   list2env(spec_list,env=environment())
 
   #generate the chart
-  gg_chart <- if (layout == "divergent") {
+  gg_chart <- if(layout == "divergent") {
     #CASE 1: Divergent bar chart (waterfall)
     if (is.na(stack_by)) {
       #If reference_var and reference_Vector is missing,
@@ -27,8 +27,8 @@ render_bar<- function(...) {
       data <- dplyr::arrange(data, desc(value))
 
       ggchart <- ggplot(data, aes_string(x=x, y=y)) +
-        geom_bar(stat = "identity") +
-        scale_x_discrete(limits = data[[x]])
+        geom_bar(stat = "identity") #+
+        #scale_x_discrete(limits = data[[x]])
 
     } else {
       if (proportional == TRUE) {
@@ -68,6 +68,7 @@ render_bar<- function(...) {
     if (is.na(y) && is.na(stack_by)) {
       #CASE 3: Bar Chart with y as count (geom_bar)
       gg_chart <- ggplot(data, aes_string(x=x)) + geom_bar()
+
     } else {
       if (proportional | !is.na(y) & y==1) {
         #CASE 6: Stacked proportional bar chart
@@ -92,7 +93,6 @@ render_bar<- function(...) {
           gg_chart <-
             ggplot(data, aes_string(x = x, y = y)) +
             geom_col()
-          # theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
         }
       }
     }
@@ -120,7 +120,9 @@ render_bar<- function(...) {
                                      x_limits=x_limits,
                                      scale_y_cont = scale_y_cont,
                                      rm_x_labels = rm_x_labels,
-                                     rm_y_labels = rm_y_labels)
+                                     rm_y_labels = rm_y_labels,
+                                     x_labels = x_labels,
+                                     y_labels = y_labels)
 
   #return the faithful ggplot object
   return(gg_chart)
@@ -220,11 +222,6 @@ render_line <- function(...) {
 render_scatter <- function(...) {
   spec_list<-list(...)
 
-
-  if(names(spec_list)[1] == ""){
-    spec_list<-spec_list[-1]
-  }
-
   #put the specification variables in a location environment
   #so they can be accessed without using a list
   list2env(spec_list,env=environment())
@@ -269,7 +266,9 @@ render_scatter <- function(...) {
                                      title=title,
                                      flip_coord = flip_coord,
                                      y_limits = y_limits,
-                                     x_limits=x_limits)
+                                     x_limits=x_limits,
+                                     x_labels = x_labels,
+                                     y_labels = y_labels)
   return(gg_chart)
 }
 
@@ -449,17 +448,19 @@ common_stats_aesethetics<-function(gg_chart=NA,
                                    flip_coord = FALSE,
                                    scale_y_cont = NA,
                                    rm_x_labels = FALSE,
-                                   rm_y_labels = FALSE){
+                                   rm_y_labels = FALSE,
+                                   x_labels = FALSE,
+                                   y_labels = FALSE){
 
   if(!is.na(title)) {
     gg_chart <- gg_chart + ggtitle(title)
   }
 
-  if(!is.na(x_limits)[1]) {
+  if(all(!is.na(x_limits))) {
     gg_chart <- gg_chart + xlim(x_limits)
   }
 
-  if(!is.na(y_limits)[1]) {
+  if(all(!is.na(y_limits))) {
     gg_chart <- gg_chart + ylim(y_limits)
   }
 
@@ -469,6 +470,14 @@ common_stats_aesethetics<-function(gg_chart=NA,
 
   if(!is.na(scale_y_cont)) {
     gg_chart <- gg_chart + scale_y_continuous(scale_y_cont)
+  }
+
+  if(all(!is.na(y_labels))) {
+    gg_chart <- gg_chart + scale_x_discrete(breaks = y_labels)
+  }
+
+  if(all(!is.na(x_labels))) {
+    gg_chart <- gg_chart + scale_x_discrete(breaks = x_labels)
   }
 
 

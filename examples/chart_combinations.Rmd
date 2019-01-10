@@ -42,21 +42,48 @@ scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "latitude"
 ### Many Types General
 Many types general are essentially when the you just want to put a bunch of plots together and there are no spatial or visual linkages between the plots themselves.
 
-```{r individual_charts,message=FALSE,warning=FALSE}
+```{r many_types_general,message=FALSE,warning=FALSE}
 mg_combo<-specify_combination(combo_type = "many_types_general",base_charts = c("bar_chart","phyloTree_chart","scatter_chart"))
-plot(mg)
+plot(mg_combo)
 ```
 
 ### Small Multiples
 Small multiple charts are visually linked because the show the same underlying chart type, however they show different aspects of the data.
 
-```{r individual_charts,message=FALSE,warning=FALSE}
+```{r small_multiples,message=FALSE,warning=FALSE}
 #set up the base chart type with all the data that you wish to use
 scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "latitude",y="longitude")
 
 #now specify the small multiple combination
-sm_combo<-specify_combination(combo_type = "small_multiple",base_charts = "scatter_chart",facet_by = "country")
-plot(sm_combo)
+sm_combo_scatter<-specify_combination(combo_type = "small_multiple",base_charts = "scatter_chart",facet_by = "country")
+plot(sm_combo_scatter)
+
+sm_combo_bar<-specify_combination(combo_type = "small_multiple",base_charts = "bar_chart",facet_by = "country")
+plot(sm_combo_bar)
+
+#let's try a more interesting bar_chart small multiple
+bar_chart_alt<-specify_base(chart_type = "bar",data="tab_dat",x = "year",title="All together")
+sm_combo_bar_alt<-specify_combination(combo_type = "small_multiple",base_charts = "bar_chart_alt",facet_by = "country")
+plot(bar_chart_alt)
+plot(sm_combo_bar_alt)
+
+```
+
+Other chart types cannot be easily subsetted. For example, it's not straight forward to make a small multiple of a phylogenetic tree while only showing a subset of the tree, the same is generally true for maps, and networks. Yes there are ways to truely subset them, but it's messy and in the whole network structure matters, so here you get the whole network structure.
+
+In the current implementation of gevitR, there needs to be some tablular data assocaited with non-tabular data in order to be able to understand what should be visualized in the first place.
+
+```{r small_multiples_complex,message=FALSE,warning=FALSE}
+#Tree data
+tree_dat<-input_data(file = system.file("extdata", "ebov_tree.nwk", package = "gevitR"),dataType = "tree")
+
+tree_dat_meta<-input_data(file = system.file("extdata", "ebov_tree.nwk", package = "gevitR"),dataType = "tree",metadata = system.file("extdata", "ebov_metadata.csv", package = "gevitR"))
+
+tree_chart<-specify_base(chart_type = "phylogenetic tree",data="tree_dat_meta")
+plot(tree_chart)
+
+sm_combo_tree<-specify_combination(combo_type = "small_multiple",base_charts = "tree_chart",facet_by = "country")
+plot(sm_combo_tree)
 
 ```
 
