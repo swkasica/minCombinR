@@ -220,6 +220,11 @@ render_line <- function(...) {
 render_scatter <- function(...) {
   spec_list<-list(...)
 
+
+  if(names(spec_list)[1] == ""){
+    spec_list<-spec_list[-1]
+  }
+
   #put the specification variables in a location environment
   #so they can be accessed without using a list
   list2env(spec_list,env=environment())

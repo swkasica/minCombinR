@@ -22,7 +22,7 @@ render_heatmap <- function(...) {
 
   #To scale colour (called from many_types_linked and small_multiple)
   if (!is.na(colour_scale)[1]) {
-    if (default_colour_var != z && !(is.null(default_colour_var))) {
+    if (default_colour_var != z && !(is.na(default_colour_var))) {
       warning("z is masking link_var because link_var and z have to be the same for a heat_map when linking with colour")
     }
     get_palette <- colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))
@@ -57,12 +57,6 @@ render_2D_density <- function(...) {
   #so they can be accessed without using a list
   list2env(spec_list,env=environment())
 
-  #if a character has been passed as the name, get that variable from the environment
-  if(!is.data.frame(data)  && (class(data) %in% c("character","factor"))){
-    data<-get(data,envir = globalenv())  #get data from the global environment
-  }
-
-
   gg_chart <- ggplot(data, aes_string(x=x, y=y) ) +
     stat_density_2d(aes(fill = ..level..), geom = "polygon")
 
@@ -90,11 +84,6 @@ render_category_stripe <- function(...) {
   #so they can be accessed without using a list
   list2env(spec_list,env=environment())
 
-  #if a character has been passed as the name, get that variable from the environment
-  if(!is.data.frame(data)  && (class(data) %in% c("character","factor"))){
-    data<-get(data,envir = globalenv())  #get data from the global environment
-  }
-
   gg_chart <- ggplot(data, aes_string(x=x, y=shQuote("categories"), fill=category)) +
     geom_bin2d() +
     theme(axis.title.y = element_blank(),
@@ -110,7 +99,7 @@ render_category_stripe <- function(...) {
                                      x_limits=x_limits)
 
   #Figure out what's going on here
-  if(!is.null(scale_y_cont)) {
+  if(!is.na(scale_y_cont)) {
     print(scale_y_cont)
     #TODO: make scale_y_continuous more generalizable (or maybe not b/c users can put in ...?)
     # gg_chart <- gg_chart + scale_x_continuous(breaks=scale_y_cont$breaks, labels=scale_y_cont$labels)

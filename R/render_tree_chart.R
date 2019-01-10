@@ -10,18 +10,12 @@ render_phylogenetic_tree <- function(...) {
   #put the specification variables in a location environment
   #so they can be accessed without using a list
   list2env(spec_list,env=environment())
-
-  #if a character has been passed as the name, get that variable from the environment
-  if(!is.data.frame(data)  && (class(data) %in% c("character","factor"))){
-    data<-get(data,envir = globalenv())  #get data from the global environment
-  }
-
   data_class<-class(data)
 
   #Establish the type of data that the user has passed to the function
   if(data_class == "gevitDataObj"){
     #extract data from the gevitr object
-    tree <- data@data$tree
+    tree <- data@data[[1]]
     metadata <- ifelse(is.null(data@data$metadata),NA,data@data$metadata)
   }else if(data_class == "phylo"){
     #can plot a phylo object only
@@ -53,17 +47,23 @@ render_phylogenetic_tree <- function(...) {
                    "unrooted" = "slanted",
                    "unrooted_radial" = "fan",
                    NULL)
-  if(is.null(layout)){
+  if(is.na(layout)){
     warning("Unrecognized tree layout. Defaulting to rectangular lay out. Possible layout types include: rooted, rooted_radial, unrooted, and unrooted_radial" )
     layout<-"rectangular"
   }
 
   #plot that tree!
-  gg_chart <- ggtree::ggtree(tree, layout = layout, branch.length="none") +
-    ggtree::geom_tiplab() #+ ggtree::geom_treescale()
+  #remove the branch length arugment, that is not correct
+  gg_chart <- ggtree::ggtree(tree,layout = layout) +
+    ggtree::geom_treescale()
 
-  if(!is.null(default_colour_var)) {
-    if (is.null(colour_scale)) {
+  #quick overwrite - don't show tip labels if you have more than 50 elements in the tree
+  if(length(tree$tip.label)<=50){
+    gg_chart <- gg_chart + ggtree::geom_tiplab()
+  }
+
+  if(!is.na(default_colour_var)) {
+    if (is.na(colour_scale)) {
       colours <- get_colour_palette(data, default_colour_var)
     } else {
       colours <- colour_scale
@@ -78,7 +78,7 @@ render_phylogenetic_tree <- function(...) {
     colnames(colours)[colnames(colours) == "tmp"] <- default_colour_var
 
     #join with metadata
-    metadata <- plyr::join(x=meta, y=colours, by=default_colour_var)
+    metadata <- plyr::join(x=metadata, y=colours, by=default_colour_var)
 
     gg_chart <- gg_chart %<+% metadata + geom_tippoint(color=metadata$colours) +
       scale_color_manual(values = colour_scale)
@@ -119,7 +119,7 @@ render_dendrogram <- function(...) {
 
 
   #Subset the data frame to only contain the cluster_vars for clustering and the tip_var as the rownames(for labelling nodes)
-  if (!is.null(tip_var) && !is.null(cluster_vars)) {
+  if (!is.na(tip_var) && !is.na(cluster_vars)) {
     data <- unique(data %>%
                      group_by_(tip_var) %>%
                      select(c(tip_var, cluster_vars)))
@@ -140,19 +140,19 @@ render_dendrogram <- function(...) {
   # ---- LABELS COLOR CHANGES [MARK TYPE = TEXT] ----
 
   #add labels
-  if (!is.null(labels)) {
+  if (!is.na(labels)) {
     dend <- dend %>% dendextend::set("labels", labels)
   }
 
   #TODO: should check if both labels_col_var and labels_col_values are set and return an error or warning if so (in check fcns)
 
   #add variable of color to legend
-  if (!is.null(labels_col_var)) {
+  if (!is.na(labels_col_var)) {
     # -- set label color according to var
     label_color_values <- as.numeric(data[[labels_color]])
     label_color_values <- label_color_values[order.dendrogram(dend)]
 
-    if (!is.null(labels_col_palette)) {
+    if (!is.na(labels_col_palette)) {
       #TODO: if not provided with colour_palette then generate with get_colour_palette()!!!
       #to show how palette will be generated in many types linked
       # get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
@@ -168,9 +168,9 @@ render_dendrogram <- function(...) {
   }
 
   #Add values of colors to legend
-  if (!is.null(labels_col_values)) {
+  if (!is.na(labels_col_values)) {
 
-    if (!is.null(labels_col_palette)) {
+    if (!is.na(labels_col_palette)) {
       #TODO: if not provided with colour_palette then generate with get_colour_palette()!!!
       #to show how palette will be generated in many types linked
       # get_palette <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
@@ -186,7 +186,7 @@ render_dendrogram <- function(...) {
 
   #dend <- dend %>% dendextend::set(...)
 
-  if(!is.null(labels_size)) {
+  if(!is.na(labels_size)) {
     label_size_values <- as.numeric(data[[labels_size]])
     label_size_values <- label_size_values[order.dendrogram(dend)]
     dend <- dend %>% dendextend::set("labels_cex", labels_size_values)
@@ -197,12 +197,12 @@ render_dendrogram <- function(...) {
 
   # ---- LEAF CHANGES [MARK TYPE = LINE] ----
 
-  if (!is.null(leaf_col_var)) {
+  if (!is.na(leaf_col_var)) {
     # -- set leaf color according to var
     leaf_color_values <- as.numeric(data[[leaf_col_var]])
     leaf_col_values <- leaf_color_values[order.dendrogram(dend)]
 
-    if (!is.null(leaf_col_palette)) {
+    if (!is.na(leaf_col_palette)) {
       #map palette to variable values vector and make color
       leaf_col_values <- plyr::mapvalues(leaf_col_values, from = names(leaf_col_palette), to = leaf_col_palette)
     }

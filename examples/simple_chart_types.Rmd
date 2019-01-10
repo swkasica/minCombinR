@@ -5,33 +5,11 @@ date: '2019-01-08'
 output: html_document
 ---
 
-This document demonstrates how to implement and plot different chart types using gevitR.
-
-## Inputting data using gevitR
-
-gevitR provides a simple input function that allows users to easily input various types of data. By using the gevitR input functions its possible standardize how data is represented and it makes it easier to plot your data.
-
-To load your own data, and get it ready for gevitR, you need to do the following:
-
-```{r,eval=FALSE,message=FALSE,warning=FALSE}
-input_data(file = "path/to/your/file.ext", dataType = "choose_data_type")
-
-# where choose_data_type can be one of table, tree, dna, spatial, or image
-```
-
-To demonstrate the features of gevitR we are using data from the 2014-2016 Ebola Outbreak. This data is available from several sources:
-
-Metadata and tree data is available via micoreact : 
-https://microreact.org/project/west-african-ebola-epidemic
-
-Genomic data (guinea only) is available via the following github repo: https://github.com/nickloman/ebov/tree/master/consensus/good
-
-Spatial (shape file) data is available via : https://data.humdata.org
-
-This data is automatically downloaded when gevitR is installed, and can be accessed using the commands below:
+This document demonstrates how to implement and plot different chart types using gevitR. This document assumes that you have already run the "Getting started with gevitR" and that the necessary data as already been loaded into your R workspace.
 
 ```{r,message=FALSE,warning=FALSE}
 devtools::load_all() #temporary once things are done
+library(dplyr)
 
 #Table data
 tab_dat<-input_data(file = system.file("extdata", "ebov_metadata.csv", package = "gevitR"),dataType = "table")
@@ -49,21 +27,9 @@ gin_shape_dat<-input_data(file = system.file("extdata", "gin_admbnda_adm1_ocha_i
 lbr_shape_dat<-input_data(file = system.file("extdata", "lbr_admbnda_adm1_ocha.shp", package = "gevitR"),dataType = "spatial")
 sle_shape_dat<-input_data(file = system.file("extdata", "sle_admbnda_adm1_1m_gov_ocha_20161017.shp", package = "gevitR"),dataType = "spatial")
 ```
-
-## Essential gevitR commands
-
-**Some helper commands**
-These commands let you know what you parameters you can provide each function to plot. To see examples of different charts type check out http://gevit.net
-```{r,message=FALSE,warning=FALSE}
-
-base_chart_types() #to see all of the supported chart types
-base_chart_specs(chart_type="bar") #to see all of the required and options specifications
-
-```
-
 ## Common statistical charts
 
-```{r,message=FALSE,warning=FALSE,fig.height= 2,fig.width=2,units="in"}
+```{r common_stats_one,message=FALSE,warning=FALSE,fig.height= 2,fig.width=2,units="in"}
 #
 # "swarmplot" => implemented specs for this
 
@@ -92,8 +58,7 @@ plot(pie_chart)
 
 gevitR can also work with data frames too, so you can perform some analyses and go ahead and plot the data. Here's an example using a line chart :
 
-```{r, message=FALSE,warning=FALSE,fig.height=2,fig.width=2,units="in"}
-library(dplyr)
+```{r common_stats_two, message=FALSE,warning=FALSE,fig.height=2,fig.width=2,units="in"}
 
 #lets use our tabular data
 ebov<-tab_dat@data[[1]] #make this nicer
@@ -108,11 +73,44 @@ plot(line_chart)
 
 ## Colour charts
 
+Colour charts are common statistical charts those that fundamentally require colour to communicate communicate their results. By comparsion, adding colour to a common statistical chart can be seen as an enhancements (a nice to have, not a need to have).
+
+```{r color_charts,message=FALSE,warning=FALSE,fig.height=2,fig.width=2,units="in"}
+# "category stripe" = do.call(render_category_stripe,args = spec_list),
+
+ebov<-tab_dat@data[[1]] #make this nicer
+ebov_heat_data<-ebov %>% 
+  group_by(country,month) %>%
+  count()
+
+heatmap_chart<-specify_base(chart_type = "heatmap",data="ebov_heat_data",x = "country",y="month",z = "n")
+plot(heatmap_chart)
+
+density_chart<-specify_base(chart_type = "density",data="tab_dat",x = "latitude",y="longitude")
+plot(density_chart)
+
+```
+
+Category stripes are not really meant to be stand alone chart types, they are generally meant to be enhancements, typically for phylogenetic trees, where adding a category stripe is a common paradigm.
+But it's possible to generate a category stripe on its own.
+
+```{r color_charts_two,message=FALSE,warning=FALSE,fig.height=2,fig.width=2,units="in",eval=FALSE}
+#this doesn't quite work when there are a lot of labels
+#maybe the answer here is just a 1D tile plot..
+cat_stripe_chart<-specify_base(chart_type = "category stripe",data="tab_dat",x = "site.id",y="bob",category="country")
+plot(cat_stripe_chart)
+
+```
+
 ## Relational charts
 
 ## Spatial charts
 
 ## Tree charts
+```{r tree_charts,message=FALSE,warning=FALSE,fig.height=2,fig.width=2,units="in"}
+phyloTree_chart<-specify_base(chart_type = "phylogenetic tree",data="tree_dat")
+plot(phyloTree_chart)
+```
 
 ## Genomic charts
 

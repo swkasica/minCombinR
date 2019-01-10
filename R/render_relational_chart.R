@@ -19,8 +19,8 @@ render_node_link <- function(...) {
   my_graph <- igraph::graph_from_data_frame(d = data, directed = directed)
   graph_chart <- ggraph::ggraph(my_graph, layout = "kk") + ggraph::geom_edge_link() + ggraph::geom_node_point()
 
-  if (!is.null(edge_col_var)) {
-    if (is.null(edge_col_palette)) {
+  if (!is.na(edge_col_var)) {
+    if (is.na(edge_col_palette)) {
       colours <- get_colour_palette(data, edge_col_var)
     } else {
       colours <- edge_col_palette
@@ -31,7 +31,7 @@ render_node_link <- function(...) {
       ggraph::scale_edge_colour_manual(name = edge_col_var, values = colours)
   }
 
-  if (!is.null(node_col_var)) {
+  if (!is.na(node_col_var)) {
     graph_chart <-
       graph_chart %+% ggraph::geom_node_point(aes(color = node_col_var))
   }

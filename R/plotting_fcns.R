@@ -28,6 +28,7 @@ plot_simple<-function(...){
     data<-get(data,envir = globalenv())  #get data from the global environment
   }
 
+
   #now check if data is a gevitR object
   if(!is.data.frame(data)  && class(data) == "gevitDataObj"){
     tmp<-data@data[[1]]
@@ -41,14 +42,13 @@ plot_simple<-function(...){
   }
 
   spec_list[["data"]]<-data
-
   #call the rendering functions to make a single chart
   chart<-switch(spec_list[["chart_type"]],
          #common statistical charts types
          "bar" = do.call(render_bar,args = spec_list),
          "pie" = do.call(render_pie,args = spec_list),
          "line" = do.call(render_line,args = spec_list),
-         "scatter" = do.call(render_scatter,args = spec_list),
+         "scatter" = do.call(render_scatter,args = spec_list,envir = parent.frame()),
          "histogram" = do.call(render_histogram,args = spec_list),
          "pdf" = do.call(render_1D_density,args = spec_list),
          "boxplot" = do.call(render_boxplot,args = spec_list),
@@ -74,3 +74,114 @@ plot_simple<-function(...){
 
     return(chart)
 }
+
+#'Many types general plot
+#'
+#'@param ... Any number of lists of arguments to generate a plot
+#'@return plots to display
+plot_many_types_general <- function(...) {
+  args_list <- list(...)
+  #all_plots <- lapply(args_list, function(x) {do.call(plot_simple, x)})
+  combo_plots<-arrange_plots(args_list, labels = "AUTO")
+
+  return(combo_plots)
+}
+
+#' Title
+#'
+#' @param chart_type
+#' @param data
+#' @param facet_by
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
+plot_small_multiples <- function(...) {
+
+  spec_list<-list(...)#don't know why I have to do this
+
+  #getting the data into a workable form
+  #check if user has provided a gevitR object or not
+  data<-spec_list[["data"]]
+
+  #if a character has been passed as the name, get that variable from the environment
+  if(!is.data.frame(data)  && (class(data) %in% c("character","factor"))){
+    data<-get(data,envir = globalenv())  #get data from the global environment
+  }
+
+
+  #now check if data is a gevitR object
+  if(!is.data.frame(data)  && class(data) == "gevitDataObj"){
+    data_type<-data@type
+    data<-data@data[[1]]
+  }else if(is.data.frame(data)){
+    data_type<-"table"
+  }else{
+    data_type<-NA
+  }
+
+
+  #Only tabular data can be meaningfully subsetted
+  #other data types, cannot be, and the whole original
+  #chart must be shown, but only with specific subsets
+  #of the data on it, which for other charts types
+  #means that some metadta must be associated with it
+  #that is subsetable
+  if(data_type == "table"){
+    #make sure the data has the same points in x and y
+    #then send it off
+
+    all_data_plot<-do.call(plot_simple,spec_list,envir=parent.frame())
+    all_data_plot_info<-ggplot2::ggplot_build(all_data_plot)
+    all_data_plot_scales<-all_data_plot_info$layout$panel_params[[1]]
+
+    #generate charts for each subgroup
+    facet_var<-spec_list$facet_by
+
+    all_plots<-c()
+    for(grpItem in unique(data[,facet_var])){
+      tmp<-data %>% dplyr::filter_(.dots = paste0(facet_var, "=='", grpItem, "'"))
+      spec_list$data<-tmp
+      spec_list$x_limits<-all_data_plot_scales$x.range
+      spec_list$y_limits<-all_data_plot_scales$y.range
+      spec_list$title<-grpItem
+      all_plots[[grpItem]]<-do.call(plot_simple,args=spec_list,envir = parent.frame())
+    }
+
+    combo_plots<-arrange_plots(all_plots)
+    return(combo_plots)
+  }else{
+    print("TO DO")
+  }
+}
+
+
+#'Helper function to arrange plots for displaying
+#'@title arrange_plots
+#'@param chart_list A list of charts
+arrange_plots <- function(chart_list, labels = NULL, ...) {
+
+  chart_list <- lapply(chart_list, function(chart) {
+    if ('ggtree' %in% class(chart)) {
+      cowplot::plot_to_gtable(chart)
+    } else if('gg' %in% class(chart)) {
+      cowplot::plot_to_gtable(chart)
+      # ggplotify::as.grob(chart)
+    } else if ('data.frame' %in% class(chart)){
+      multipanelfigure::capture_base_plot(chart)
+    } else if ('htmlwidget' %in% class(chart)) {
+      grid::grid.grabExpr(print(chart))
+    } else {
+      chart
+    }
+  })
+
+  #NOTES: in order to add a shared legend, pass in shared_legend = TRUE in the ...
+  combo<-cowplot::plot_grid(plotlist = chart_list, labels = labels, axis="tblr", ...)
+  return(combo)
+}
+
+
+

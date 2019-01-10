@@ -1,0 +1,62 @@
+---
+title: "Chart Combinations"
+author: "Anamaria Crisan"
+date: '2019-01-09'
+output: html_document
+---
+
+
+This document demonstrates how to combine and plot different chart types using gevitR. This document assumes that you have already run the "Getting started with gevitR" and the "Simpel Chart Types" and that the necessary data as already been loaded into your R workspace.
+
+## Loading data
+```{r,message=FALSE,warning=FALSE}
+devtools::load_all() #temporary once things are done
+library(dplyr)
+
+#Table data
+tab_dat<-input_data(file = system.file("extdata", "ebov_metadata.csv", package = "gevitR"),dataType = "table")
+
+#Tree data
+tree_dat<-input_data(file = system.file("extdata", "ebov_tree.nwk", package = "gevitR"),dataType = "tree")
+
+#Genomic data
+genomic_dat<-input_data(file = system.file("extdata", "ebov_GIN_genomic.fasta", package = "gevitR"),dataType = "dna")
+
+#Shape files
+#Shape files require that .shp,.shx,and .prj files at a minimun to be in the same directory
+#to add metadata to the shape file, you can also add .dbf files
+gin_shape_dat<-input_data(file = system.file("extdata", "gin_admbnda_adm1_ocha_itos.shp", package = "gevitR"),dataType = "spatial")
+lbr_shape_dat<-input_data(file = system.file("extdata", "lbr_admbnda_adm1_ocha.shp", package = "gevitR"),dataType = "spatial")
+sle_shape_dat<-input_data(file = system.file("extdata", "sle_admbnda_adm1_1m_gov_ocha_20161017.shp", package = "gevitR"),dataType = "spatial")
+```
+
+## Chart Combinations
+
+First, let's create a few charts that can be used
+```{r individual_charts,message=FALSE,warning=FALSE}
+bar_chart<-specify_base(chart_type = "bar",data="tab_dat",x = "country")
+phyloTree_chart<-specify_base(chart_type = "phylogenetic tree",data="tree_dat")
+scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "latitude",y="longitude",title = "Ebola Scatter Plot")
+```
+
+### Many Types General
+Many types general are essentially when the you just want to put a bunch of plots together and there are no spatial or visual linkages between the plots themselves.
+
+```{r individual_charts,message=FALSE,warning=FALSE}
+mg_combo<-specify_combination(combo_type = "many_types_general",base_charts = c("bar_chart","phyloTree_chart","scatter_chart"))
+plot(mg)
+```
+
+### Small Multiples
+Small multiple charts are visually linked because the show the same underlying chart type, however they show different aspects of the data.
+
+```{r individual_charts,message=FALSE,warning=FALSE}
+#set up the base chart type with all the data that you wish to use
+scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "latitude",y="longitude")
+
+#now specify the small multiple combination
+sm_combo<-specify_combination(combo_type = "small_multiple",base_charts = "scatter_chart",facet_by = "country")
+plot(sm_combo)
+
+```
+
