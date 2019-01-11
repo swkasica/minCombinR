@@ -141,8 +141,72 @@ specify_combination<-function(combo_type=NA,
     if(!(all(c("link_var","line_mark_type") %in% combo_spec_passed)))
       stop("Not all parameters specified for many types linked")
   }else if(combo_type == "composite"){
-    if(!(all(c("alignment","common_var","ordered") %in% combo_spec_passed)))
-      stop("Not all parameters specified for composite")
+    #if(!(all(c("alignment","common_var","ordered") %in% combo_spec_passed)))
+    #  stop("Not all parameters specified for composite")
+    #check that all charts passed are combinable, if not, only return those that are
+    chart_info<-c()
+    for(chart in base_charts){
+      base_specs<-get(chart,envir = globalenv())
+      chart_info<-rbind(chart_info,c(chart,gsub("\\s+","_",tolower(base_specs$chart_type))))
+    }
+
+    chart_info<-data.frame(chart_name=chart_info[,1],type=chart_info[,2],stringsAsFactors = FALSE)
+    #1. check if any charts are not alignable
+    not_align<-dplyr::filter(chart_info,type %in% gevitr_env$not_spatially_alignable)
+    if(nrow(not_align)>1){
+      base_charts<-setdiff(base_charts,not_align$chart_name)
+      warning("The following chart types cannot form a composite combination %s. They have been removed from the specifications.",paste(not_align$chart_name,sep=","))
+      chart_info<-dplyr::filter(chart_info,chart_name %in% base_charts)
+
+      if(length(base_charts) == 0){
+        stop("None of these charts are compatible in a composite")
+      }
+      combo_specs$base_charts<-base_charts
+    }
+    #2. Compatability check
+    #comp_matrix lives inside sysdata of the package
+    sub_mat<-comp_matrix[chart_info$type,chart_info$type]
+
+    lead_charts<-dplyr::filter(chart_info,type %in% gevitr_env$master_chart_types)
+
+    if(nrow(lead_charts)>1){
+      #for each master chart, return a set of suggested specification
+      #to user the user, then exit function with an error
+      suggested_specs<-c()
+
+      warning("There are multiple *charts types* listed that are not compatible in a composite combination. Please see the suggested comptabilities below. Please re-run this command with one of these suggestions.")
+
+      for(i in 1:nrow(lead_charts)){
+        #Find compatible charts with the master
+        lead_chart<-lead_charts[i,'type']
+        tmp<-sub_mat[m_chart,] #return the vector just for that master chart
+        compat<-names(tmp)[tmp==1]
+
+        #get the names of other compatible charts
+        tmp_info<-dplyr::filter(chart_info, type %in% compat)
+        compt_oth<-paste((setdiff(tmp_info$chart_name,lead_charts[i,'chart_name'])),collapse=", ")
+
+        #return a friendly message
+        sprintf("%s is compatible with: %s",lead_charts[i,'chart_name'],compt_oth,collapse=", ")
+      }
+      stop()
+    }
+
+    #finally_check that all charts are compatible with each other, it at least come order
+    idx_not_compat<-which(rowSums(sub_mat) == 1)
+
+    if(length(idx_not_compat)>0){
+      not_compat<-dplyr::filter(chart_info,type %in% colnames(sub_mat)[idx_not_compat])
+      base_charts<-setdiff(base_charts,not_compat$chart_name)
+
+      if(length(base_specs)==0){
+        stop("None of these charts are compatible for a composite combination")
+      }else{
+        combo_specs$base_charts<-base_charts
+        warning(sprintf("The following charts are not compatible with any other chart types and have been removed from the specification: %s", paste(not_compat$chart_name,collapse = ", ")))
+      }
+    }
+
   }
 
   class(combo_specs)<-c(class(combo_specs),"gevitSpec","comboSpecs")

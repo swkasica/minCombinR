@@ -70,8 +70,8 @@ plot_simple<-function(...){
          "node-link" = do.call(render_node_link,args = spec_list,envir = parent.frame()),
          "chord" = do.call(render_chord,args = spec_list,envir = parent.frame()),
          #spatial chart types - to revise
-          "choropleth" = do.call(render_choropleth,args = spec_list,envir = parent.frame()),
-          "geographic map"= do.call(render_geographic_map,args = spec_list,envir = parent.frame()),
+         "choropleth" = do.call(render_choropleth,args = spec_list,envir = parent.frame()),
+         "geographic map"= do.call(render_geographic_map,args = spec_list,envir = parent.frame()),
          #temporal chart types - to implement
          #genomic chart types - to implement
          #other char types  - to implement
@@ -136,16 +136,11 @@ plot_small_multiples <- function(...) {
   #of the data on it, which for other charts types
   #means that some metadta must be associated with it
   #that is subsetable
-
-
-
   if(data_type == "table"){
     #make sure the data has the same points in x and y
     #then send it off
-
     all_data_plot<-do.call(plot_simple,spec_list,envir=parent.frame())
     spec_list<-ggplot_scale_info(all_data_plot,spec_list)
-
 
     #generate charts for each subgroup
     facet_var<-spec_list$facet_by
@@ -183,6 +178,7 @@ plot_small_multiples <- function(...) {
 
       #a small cheat
       colnames(meta_sub)<-c(head(colnames(meta_sub),-1),"show_var")
+      meta_sub$show_var<-factor(meta_sub$show_var,levels=c(grpItem,"Other"))
 
       spec_list$data<-data
       spec_list$metadata<-meta_sub
@@ -195,6 +191,12 @@ plot_small_multiples <- function(...) {
   }
   return(combo_plots)
 }
+
+
+plot_composite<-function(...){
+
+}
+
 
 #' Helper function to extract x and y scales from ggplot entity
 #' @title ggplot_scale_info

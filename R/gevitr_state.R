@@ -6,7 +6,7 @@ gevitr_env<-new.env(parent = emptyenv())
 
 
 # a summary of all supported chart types
-.all_chart_types<-unique(chart_specifications$chart_type) #obtain specif table from sysdata.R
+.all_chart_types<-c(unique(chart_specifications$chart_type),"clonal tree") #obtain specif table from sysdata.R
 gevitr_env$all_chart_types <- .all_chart_types
 
 #keep track of chart types that are no spatially alignable
@@ -17,11 +17,10 @@ gevitr_env$not_spatially_alignable <-.not_spatially_alignable
 .master_chart_types <- c(
   "timeline", "histogram", "pdf", "chord",
   "stream", "geographic_map", "choropleth", "interior_map",
-  "dendrogram", "phylogenetic_tree", #"alignment", #(alignment is just an image)
-  "clonal_tree", "density_plot" #sequence_logo_plot" #(gel_image is just an image)
+  "dendrogram", "phylogenetic_tree","clonal tree", "density_plot"
 )
 
-gevitr_env$not_spatially_alignable<-.master_chart_types
+gevitr_env$master_chart_types<-.master_chart_types
 
 
 #storing some parameter defaults so that they don't have to be constantly repeated
@@ -67,6 +66,8 @@ gevitr_env$not_spatially_alignable<-.master_chart_types
     #FOR SMALL MULTIPLES and composite
     x_limits=NA, y_limits=NA,
     x_labels=NA, y_labels = NA,
+    #Composite generak
+    alignment=NA,common_var=NA,order=NA,
     #For composite with a tree
     tree_dat=NA,
     combo_type="simple"

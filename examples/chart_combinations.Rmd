@@ -87,3 +87,12 @@ plot(sm_combo_tree)
 
 ```
 
+### Composite combinations
+```{r composite,message=FALSE,warning=FALSE}
+
+fake_clonal<-tree_dat_meta@type<-"clonal_tree"
+fake_tree_chart<-specify_base(chart_type = "clonal tree",data="tree_dat_meta")
+
+
+composite_combo<-specify_combination(combo_type = "composite",base_charts = c("tree_chart","bar_chart_alt","scatter_chart","fake_tree_chart"))
+```
