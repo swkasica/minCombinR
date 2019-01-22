@@ -88,11 +88,46 @@ plot(sm_combo_tree)
 ```
 
 ### Composite combinations
-```{r composite,message=FALSE,warning=FALSE}
 
-fake_clonal<-tree_dat_meta@type<-"clonal_tree"
-fake_tree_chart<-specify_base(chart_type = "clonal tree",data="tree_dat_meta")
+*This example will work without any errors*
+```{r composite_no_error,message=FALSE,warning=FALSE}
+
+phyloTree_chart<-specify_base(chart_type = "phylogenetic tree",data="tree_dat")
+scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "longitude",y="site.id")
+scatter_chart_two<-specify_base(chart_type = "scatter",data="tab_dat",x = "country",y="site.id")
 
 
-composite_combo<-specify_combination(combo_type = "composite",base_charts = c("tree_chart","bar_chart_alt","scatter_chart","fake_tree_chart"))
+composite_combo<-specify_combination(combo_type = "composite",
+                                     base_charts = c("phyloTree_chart","scatter_chart","scatter_chart_two"))
+
+plot(composite_combo)
+
+```
+
+Example without the phylogenetic tree
+
+
+*This example will have an error because pie charts cannot be part of composite combinations*
+Pie chart should be autonatically removed from the specifications
+```{r composite_no_error,message=FALSE,warning=FALSE,}
+
+pie_chart<-specify_base(chart_type = "pie",data="tab_dat",x = "country")
+
+devtools::load_all()
+composite_combo<-specify_combination(combo_type = "composite",
+                                     base_charts = c("phyloTree_chart","scatter_chart","scatter_chart_two","pie_chart"))
+
+
+plot(composite_combo)
+
+```
+
+```{r}
+bar_alt<-specify_base(chart_type = "bar",data="tab_dat",x = "site.id",y="longitude",rm_x_label=TRUE)
+
+composite_combo<-specify_combination(combo_type = "composite",
+                                     base_charts = c("phyloTree_chart","bar_alt","scatter_chart_two"))
+
+plot(composite_combo)
+
 ```

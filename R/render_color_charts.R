@@ -97,13 +97,5 @@ render_category_stripe <- function(...) {
   gg_chart<-common_stats_aesethetics(gg_chart,
                                      title=title,
                                      x_limits=x_limits)
-
-  #Figure out what's going on here
-  if(!is.na(scale_y_cont)) {
-    print(scale_y_cont)
-    #TODO: make scale_y_continuous more generalizable (or maybe not b/c users can put in ...?)
-    # gg_chart <- gg_chart + scale_x_continuous(breaks=scale_y_cont$breaks, labels=scale_y_cont$labels)
-  }
-
   gg_chart
 }

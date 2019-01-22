@@ -57,7 +57,7 @@ render_phylogenetic_tree <- function(...) {
   #gg_chart <- ggtree::ggtree(tree,layout = layout) +
   #  ggtree::geom_treescale()
 
-  gg_chart<-ggtree(tree,layout = layout)
+  gg_chart<-ggtree::ggtree(tree,layout = layout)
 
   if(combo_type == "small_multiple"){
     gg_chart<- gg_chart %<+% metadata+ #adding metadata

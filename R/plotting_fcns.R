@@ -8,9 +8,16 @@ plot_simple<-function(...){
 
   spec_list<-list(...)
 
+  #getting rid of an empty element in the spec list
+  if(names(spec_list)[1] == ""){
+    spec_list<-spec_list[-1]
+  }
+
+
   #check, has the user specified anything that overwrites the default parameters?
   default_specs<-gevitr_env$plot_param_defaults
   over_write_default_idx<-match(names(spec_list),names(default_specs))
+  over_write_default_idx<-over_write_default_idx[!is.na(over_write_default_idx)]
 
   #if yes, then use user's specification and not default
   if(length(over_write_default_idx)>0){
@@ -43,10 +50,6 @@ plot_simple<-function(...){
 
   spec_list[["data"]]<-data
 
-  #getting rid of an empty element in the spec list
-  if(names(spec_list)[1] == ""){
-    spec_list<-spec_list[-1]
-  }
 
   #call the rendering functions to make a single chart
   chart<-switch(spec_list[["chart_type"]],
@@ -75,7 +78,6 @@ plot_simple<-function(...){
          #temporal chart types - to implement
          #genomic chart types - to implement
          #other char types  - to implement
-
           NULL)
 
     return(chart)
@@ -100,7 +102,7 @@ plot_many_types_general <- function(...) {
 #' @return
 plot_small_multiples <- function(...) {
 
-  spec_list<-list(...)#don't know why I have to do this
+  spec_list<-list(...)
 
   #getting the data into a workable form
   #check if user has provided a gevitR object or not
@@ -194,7 +196,137 @@ plot_small_multiples <- function(...) {
 
 
 plot_composite<-function(...){
+  spec_list<-list(...)
 
+  chart_info <- spec_list$chart_info %>%
+    dplyr::mutate(isLead = ifelse(chart_type %in% gevitr_env$master_chart_types,TRUE,FALSE)) %>%
+    dplyr::arrange(desc(isLead))
+
+  # CHART ORDER
+  # order charts, beginning with lead chart in initital position
+  # data frame is already ordered from the arrange step
+  # all specifications are valid with only one lead chart
+  # all charts must align on a common variable
+  chart_order<-chart_info$chart_name
+
+
+  # FLIP COORD
+  #Make sure that all chart co-ordinates are flipped to match
+  #the lead chart - this will depend upon alignment direction
+  #default is horizontal (align all the y-axis)
+  align_dir<-"h"
+
+  if(!is.null(spec_list$alignment)){
+    align_dir<-ifelse(tolower(spec_list$alignment) %in% c("h","v"),
+                      spec_list$alignment,
+                      "h")
+  }
+
+  if(align_dir == "h"){
+    chart_info<- chart_info %>%
+      mutate(flip_coord = ifelse(y == spec_list$common_var | is.na(y),FALSE,
+                                ifelse(grepl("gevitR_checkID",x),
+                                       FALSE,TRUE)))
+  }else{
+    chart_info<- chart_info %>%
+      mutate(flip_coord = ifelse(x == spec_list$common_var | is.na(x),FALSE,
+                                ifelse(grepl("gevitR_checkID",x),
+                                       FALSE,TRUE)))
+  }
+
+  # Generate individual charts - these will be modified and re-ordered
+  all_plots<-c()
+  for(chart in chart_order){
+
+     baseSpecs<-get(chart,envir = globalenv())
+     tmp_info<-dplyr::filter(chart_info,chart_name == chart)
+
+     #modifying chart specifications
+     baseSpecs$flip_coord<-tmp_info$flip_coord
+
+     #if support chart
+     if(!tmp_info$isLead){
+       if(align_dir == "h"){
+         baseSpecs$rm_y_labels<-TRUE
+       }else{
+         baseSpecs$rm_x_labels<-TRUE
+       }
+     }
+
+     #generate the single chart
+     tmp<-do.call(plot_simple,args=baseSpecs,envir = parent.frame())
+     all_plots[[chart]]<-list(plotItem = tmp) #need to store as list
+  }
+
+  combo_plots<-arrange_plots(chart_list = all_plots,align_dir = align_dir)
+
+  return(combo_plots)
+
+}
+
+#' Helped function to extract axis information
+#'
+#' @param chart_list
+#'
+#' @return axis infor
+
+get_axis_info<-function(chart_list=NULL){
+
+  chart<-chart_list[[1]]$plotItem
+  chart_class<-class(chart)
+
+  if("ggtree" %in% chart_chart_class){
+    #trees are different, although they have continous y
+    #the important thing is to actually match of their tip labels
+    #those tip labels are not continous variables
+    chart_info<-filter(chart$data,isTip = TRUE)
+    y_axis<-chart_info$label
+    y_axis_cat<-NULL
+    x_axis<-chart_info$x
+  } else if("ggplot" %in% chart_class){
+    chart_info<-ggplot_build(chart)
+  }else{
+    print("Not currently supported")
+  }
+}
+
+
+#'Helper function to arrange plots for displaying
+#'@title arrange_plots
+#'@param chart_list A list of charts
+arrange_plots <- function(chart_list, labels = NULL,align_dir=NULL, ...) {
+
+  chart_list <- lapply(chart_list, function(chart) {
+    chart<-if(class(chart) == "list") chart[[1]] else chart
+    chart_class<-class(chart)
+
+    if ('ggtree' %in% chart_class) {
+      cowplot::plot_to_gtable(chart)
+    } else if('gg' %in% chart_class) {
+      cowplot::plot_to_gtable(chart)
+      # ggplotify::as.grob(chart)
+    } else if ('data.frame' %in% chart_class){
+      multipanelfigure::capture_base_plot(chart)
+    } else if ('htmlwidget' %in% chart_class) {
+      grid::grid.grabExpr(print(chart))
+    } else {
+      chart
+    }
+  })
+
+
+  #NOTES: in order to add a shared legend, pass in shared_legend = TRUE in the ...
+  if(!is.null(align_dir)){
+    if(align_dir == "h"){
+      combo<-cowplot::plot_grid(plotlist = chart_list, labels = labels, nrow=1,axis="tblr", ...)
+    }else if(algin_dir == "v"){
+
+    }
+  }else{
+    combo<-cowplot::plot_grid(plotlist = chart_list, ncol=1,labels = labels, axis="tblr", ...)
+  }
+
+  return(combo)
 }
 
 
@@ -226,32 +358,5 @@ ggplot_scale_info<-function(chart = NULL,spec_list = NULL){
   return(spec_list)
 
 }
-
-
-#'Helper function to arrange plots for displaying
-#'@title arrange_plots
-#'@param chart_list A list of charts
-arrange_plots <- function(chart_list, labels = NULL, ...) {
-
-  chart_list <- lapply(chart_list, function(chart) {
-    if ('ggtree' %in% class(chart)) {
-      cowplot::plot_to_gtable(chart)
-    } else if('gg' %in% class(chart)) {
-      cowplot::plot_to_gtable(chart)
-      # ggplotify::as.grob(chart)
-    } else if ('data.frame' %in% class(chart)){
-      multipanelfigure::capture_base_plot(chart)
-    } else if ('htmlwidget' %in% class(chart)) {
-      grid::grid.grabExpr(print(chart))
-    } else {
-      chart
-    }
-  })
-
-  #NOTES: in order to add a shared legend, pass in shared_legend = TRUE in the ...
-  combo<-cowplot::plot_grid(plotlist = chart_list, labels = labels, axis="tblr", ...)
-  return(combo)
-}
-
 
 

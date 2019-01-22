@@ -262,13 +262,17 @@ render_scatter <- function(...) {
       scale_colour_manual(name = default_colour_var, values = colour_scale)
   }
 
+
+
   gg_chart<-common_stats_aesethetics(gg_chart,
                                      title=title,
                                      flip_coord = flip_coord,
                                      y_limits = y_limits,
                                      x_limits=x_limits,
                                      x_labels = x_labels,
-                                     y_labels = y_labels)
+                                     y_labels = y_labels,
+                                     rm_x_labels = rm_x_labels,
+                                     rm_y_labels = rm_y_labels)
   return(gg_chart)
 }
 
@@ -456,6 +460,7 @@ common_stats_aesethetics<-function(gg_chart=NA,
     gg_chart <- gg_chart + ggtitle(title)
   }
 
+
   if(all(!is.na(x_limits))) {
     gg_chart <- gg_chart + xlim(x_limits)
   }
@@ -483,12 +488,16 @@ common_stats_aesethetics<-function(gg_chart=NA,
 
   if(rm_x_labels) {
     gg_chart <- gg_chart +
-      theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
+      theme(axis.title.x = element_blank(),
+            axis.text.x = element_blank(),
+            axis.ticks.x = element_blank())
   }
 
   if(rm_y_labels) {
     gg_chart <- gg_chart +
-      theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
+      theme(axis.title.y = element_blank(),
+            axis.text.y = element_blank(),
+            axis.ticks.y = element_blank())
   }
 
   return(gg_chart)

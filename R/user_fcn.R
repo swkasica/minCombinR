@@ -134,28 +134,48 @@ specify_combination<-function(combo_type=NA,
   combo_spec_passed<-names(combo_specs)
 
   #making sure all the necessary parameters are passed for specfic types of combinations
+
+  # ------- Small Multiples  -------
   if(combo_type == "small_multiple"){
     if(!(all("facet_by" %in% combo_spec_passed)))
     stop("Not all parameters specified for small multiples")
+
+  # ------- Many Types Linked  -------
   }else if(combo_type == "many_types_linked"){
     if(!(all(c("link_var","line_mark_type") %in% combo_spec_passed)))
       stop("Not all parameters specified for many types linked")
+
+  # ------- Composite  ------
   }else if(combo_type == "composite"){
     #if(!(all(c("alignment","common_var","ordered") %in% combo_spec_passed)))
     #  stop("Not all parameters specified for composite")
     #check that all charts passed are combinable, if not, only return those that are
-    chart_info<-c()
-    for(chart in base_charts){
-      base_specs<-get(chart,envir = globalenv())
-      chart_info<-rbind(chart_info,c(chart,gsub("\\s+","_",tolower(base_specs$chart_type))))
+    chart_info<-data.frame(data=NULL,
+                           chart_type=NULL,
+                           x=NULL,
+                           y=NULL,
+                           stringsAsFactors = FALSE)
+
+    for(spec in base_charts){
+      chart_specs<-get(spec,envir=globalenv())
+      spec_info<-data.frame(chart_name = spec,
+                            data = chart_specs$data,
+                            chart_type = gsub("\\s+","_",tolower(chart_specs$chart_type)),
+                            x = ifelse(!is.null(chart_specs$x),chart_specs$x,paste(spec,"gevitr_checkID",sep="_")), #id is a special place holder that says "look up the id from the chart type"
+                            y = ifelse(!is.null(chart_specs$y),chart_specs$y,NA),
+                            stringsAsFactors = FALSE)
+
+      chart_info<-rbind(chart_info,spec_info)
     }
 
-    chart_info<-data.frame(chart_name=chart_info[,1],type=chart_info[,2],stringsAsFactors = FALSE)
     #1. check if any charts are not alignable
-    not_align<-dplyr::filter(chart_info,type %in% gevitr_env$not_spatially_alignable)
-    if(nrow(not_align)>1){
+    not_align<-dplyr::filter(chart_info,chart_type %in% gevitr_env$not_spatially_alignable)
+
+    if(nrow(not_align)>=1){
       base_charts<-setdiff(base_charts,not_align$chart_name)
-      warning("The following chart types cannot form a composite combination %s. They have been removed from the specifications.",paste(not_align$chart_name,sep=","))
+
+      print(sprintf("The following chart types cannot form a composite combination: %s. Composite combination will be formed with the following charts only: %s",paste(not_align$chart_name,collapse=","),paste(base_charts,collapse=", ")))
+
       chart_info<-dplyr::filter(chart_info,chart_name %in% base_charts)
 
       if(length(base_charts) == 0){
@@ -163,22 +183,23 @@ specify_combination<-function(combo_type=NA,
       }
       combo_specs$base_charts<-base_charts
     }
+
     #2. Compatability check
     #comp_matrix lives inside sysdata of the package
-    sub_mat<-comp_matrix[chart_info$type,chart_info$type]
+    sub_mat<-comp_matrix[chart_info$chart_type,chart_info$chart_type]
 
-    lead_charts<-dplyr::filter(chart_info,type %in% gevitr_env$master_chart_types)
+    lead_charts<-dplyr::filter(chart_info,chart_type %in% gevitr_env$master_chart_types)
 
     if(nrow(lead_charts)>1){
       #for each master chart, return a set of suggested specification
       #to user the user, then exit function with an error
       suggested_specs<-c()
 
-      warning("There are multiple *charts types* listed that are not compatible in a composite combination. Please see the suggested comptabilities below. Please re-run this command with one of these suggestions.")
+      warning("There are multiple *charts types* listed that are not compatible in a composite combination. Please see the suggested comptabilities below. Please re-run this command with one of these suggestions:")
 
       for(i in 1:nrow(lead_charts)){
         #Find compatible charts with the master
-        lead_chart<-lead_charts[i,'type']
+        lead_chart<-lead_charts[i,'chart_type']
         tmp<-sub_mat[m_chart,] #return the vector just for that master chart
         compat<-names(tmp)[tmp==1]
 
@@ -187,12 +208,12 @@ specify_combination<-function(combo_type=NA,
         compt_oth<-paste((setdiff(tmp_info$chart_name,lead_charts[i,'chart_name'])),collapse=", ")
 
         #return a friendly message
-        sprintf("%s is compatible with: %s",lead_charts[i,'chart_name'],compt_oth,collapse=", ")
+        print(sprintf("%s is compatible with: %s",lead_charts[i,'chart_name'],compt_oth,collapse=", "))
       }
       stop()
     }
 
-    #finally_check that all charts are compatible with each other, it at least come order
+    #check that all chart types of the chart are compatible with each other, it at least come order
     idx_not_compat<-which(rowSums(sub_mat) == 1)
 
     if(length(idx_not_compat)>0){
@@ -206,6 +227,15 @@ specify_combination<-function(combo_type=NA,
         warning(sprintf("The following charts are not compatible with any other chart types and have been removed from the specification: %s", paste(not_compat$chart_name,collapse = ", ")))
       }
     }
+
+    #finally, quickly confirm that the charts have some common variable to spatially align on
+    chart_info<-dplyr::filter(chart_info,chart_name %in% base_charts)
+
+    compat_charts<-return_compatible_chart_link(chart_info)
+    combo_specs$base_charts<-unique(unlist(compat_charts[,c(1,2)])) #final set of compatible chart types
+    combo_specs$common_var<-unique(compat_charts$link)
+    combo_specs$chart_info<-chart_info #useful for ordering and arranging plots
+
 
   }
 
@@ -232,7 +262,7 @@ plot.gevitSpec<-function(specs = NULL,do_not_display=FALSE){
   if(!("gevitSpec" %in% class(specs)))
     stop("Please create chart specifications. See ?specify_base for details.")
 
-
+  # ------- Single Chart  ------
   if("baseSpecs" %in% class(specs)){ #single plot
     #First, generate all the basic charts that will be plotted
     spec_list<-as.list(specs)[-1]#don't need the function call moving forwards
@@ -242,7 +272,7 @@ plot.gevitSpec<-function(specs = NULL,do_not_display=FALSE){
   }else if("comboSpecs" %in% class(specs)){ #multiple plots
     #instead of just making a simple specification, the user wants a combination
 
-    # 1. Many Types General Combinations
+    # ------- Many Types General  ------
     #"Many types genera"l means you just want to put a bunch of plots together
     #and they are not spatially or visually linked in any way
     if (specs$combo_type == "many_types_general") {
@@ -254,7 +284,7 @@ plot.gevitSpec<-function(specs = NULL,do_not_display=FALSE){
       spec_plot<-do.call(plot_many_types_general, args = base_specs)
     }
 
-    #2. SMALL MULTIPLE COMBINATION
+    # ------- Small Multiples  ------
     # ggplot supports this using the facet command, but here
     # the design decision was to do this all via cowplots to
     # keep the interface consistent with different packages
@@ -269,6 +299,11 @@ plot.gevitSpec<-function(specs = NULL,do_not_display=FALSE){
       spec_plot<-do.call(plot_small_multiples,args = base_specs,envir = parent.frame())
     }
 
+    # ------- Composite  ------
+    if (specs$combo_type == "composite") {
+      spec_plot<-do.call(plot_composite,args = specs, envir = parent.frame())
+    }
+
   }
 
   # For combinations, may not want to display plot
@@ -278,7 +313,8 @@ plot.gevitSpec<-function(specs = NULL,do_not_display=FALSE){
   }
 
   #Display the plot to the screen
-  plot(spec_plot)
+  #plot(spec_plot)
+  return(spec_plot)
 
 }
 
