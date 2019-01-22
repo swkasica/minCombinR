@@ -70,7 +70,8 @@ gevitr_env$master_chart_types<-.master_chart_types
     alignment=NA,common_var=NA,order=NA,
     #For composite with a tree
     tree_dat=NA,
-    combo_type="simple"
+    combo_type="simple",
+    shrink_plot_margin = FALSE
 )
 
 gevitr_env$plot_param_defaults<-.plot_param_defaults

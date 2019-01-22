@@ -48,6 +48,19 @@ plot_simple<-function(...){
     data<-tmp
   }
 
+  # check if there is a directive from the combo to overwrite any of the data
+  # in favour the axis data provided by the combo function
+  if(!(is.null(spec_list$combo_axis_var))){
+    if(is.data.frame(data)){
+      #add a new variable to the data
+      data$combo_axis_var<-spec_list$combo_axis_var$var
+      spec_list[[spec_list$combo_axis_var$var_match]]<-"combo_axis_var"
+    }else{
+      print("Axis modification for non-tabular data currently not supported")
+    }
+  }
+
+
   spec_list[["data"]]<-data
 
 
@@ -198,6 +211,8 @@ plot_small_multiples <- function(...) {
 plot_composite<-function(...){
   spec_list<-list(...)
 
+  all_plots<-c()
+
   chart_info <- spec_list$chart_info %>%
     dplyr::mutate(isLead = ifelse(chart_type %in% gevitr_env$master_chart_types,TRUE,FALSE)) %>%
     dplyr::arrange(desc(isLead))
@@ -208,7 +223,6 @@ plot_composite<-function(...){
   # all specifications are valid with only one lead chart
   # all charts must align on a common variable
   chart_order<-chart_info$chart_name
-
 
   # FLIP COORD
   #Make sure that all chart co-ordinates are flipped to match
@@ -234,30 +248,64 @@ plot_composite<-function(...){
                                        FALSE,TRUE)))
   }
 
-  # Generate individual charts - these will be modified and re-ordered
-  all_plots<-c()
+  # PLOTTING FUNCTIONS
+  # Generate the lead plot first, use that information to modify axis
+  leadChart<-chart_info[which(chart_info$isLead),]$chart_name
+
+  if(length(leadChart)>1){
+    stop("For some reason, this specification has two lead charts. This is not correct - specify_combination should have caught this error.")
+  }else if(length(leadChart)==0){
+    #If there's not lead chart, take the first chart and assign to be lead
+   leadChart<-chart_order[1]
+  }
+
+  #If there is a lead chart, plot that first
+  leadChart_baseSpecs<-get(leadChart,envir = globalenv())
+  leadChart_baseSpecs$shrink_plot_margin<-TRUE
+
+  all_plots[[leadChart]]<-list(plotItem = do.call(plot_simple,args=leadChart_baseSpecs,envir = parent.frame()))
+  lead_axis_info<-get_axis_info(all_plots[[leadChart]]$plotItem,align = align_dir)
+
+
+
+  # Generate individual support charts - these will be modified to properly line-up with the lead chart
+  support_chart<-setdiff(chart_order,leadChart)
+
+  #re-generate *all* charts. Its not enough to just use the lead
+  #chart as is, need to pass explicit param to it too
+
   for(chart in chart_order){
 
      baseSpecs<-get(chart,envir = globalenv())
      tmp_info<-dplyr::filter(chart_info,chart_name == chart)
 
-     #modifying chart specifications
+     #make sure axes align with leadChart breaks (if there is a lead chart)
+     #again, assume primarily categorical variables, should change to support continous alignments
+     var_match<-c("x","y")[match(spec_list$common_var,unlist(tmp_info[,c("x","y")]))]
+     baseSpecs$combo_axis_var<-list(var = lead_axis_info$y_break, var_match=var_match)
+
+
+     #flip chart co-ordinates if necessary
      baseSpecs$flip_coord<-tmp_info$flip_coord
 
-     #if support chart
-     if(!tmp_info$isLead){
-       if(align_dir == "h"){
-         baseSpecs$rm_y_labels<-TRUE
+     #remove axis labels
+      if(align_dir == "h"){
+          baseSpecs$rm_y_labels<-TRUE
        }else{
          baseSpecs$rm_x_labels<-TRUE
        }
-     }
+
+     #shrink plot margins on all combinations
+     baseSpecs$shrink_plot_margin <-TRUE
 
      #generate the single chart
+
      tmp<-do.call(plot_simple,args=baseSpecs,envir = parent.frame())
      all_plots[[chart]]<-list(plotItem = tmp) #need to store as list
   }
 
+
+  #return the composite plot
   combo_plots<-arrange_plots(chart_list = all_plots,align_dir = align_dir)
 
   return(combo_plots)
@@ -270,25 +318,7 @@ plot_composite<-function(...){
 #'
 #' @return axis infor
 
-get_axis_info<-function(chart_list=NULL){
 
-  chart<-chart_list[[1]]$plotItem
-  chart_class<-class(chart)
-
-  if("ggtree" %in% chart_chart_class){
-    #trees are different, although they have continous y
-    #the important thing is to actually match of their tip labels
-    #those tip labels are not continous variables
-    chart_info<-filter(chart$data,isTip = TRUE)
-    y_axis<-chart_info$label
-    y_axis_cat<-NULL
-    x_axis<-chart_info$x
-  } else if("ggplot" %in% chart_class){
-    chart_info<-ggplot_build(chart)
-  }else{
-    print("Not currently supported")
-  }
-}
 
 
 #'Helper function to arrange plots for displaying
@@ -318,18 +348,18 @@ arrange_plots <- function(chart_list, labels = NULL,align_dir=NULL, ...) {
   #NOTES: in order to add a shared legend, pass in shared_legend = TRUE in the ...
   if(!is.null(align_dir)){
     if(align_dir == "h"){
-      combo<-cowplot::plot_grid(plotlist = chart_list, labels = labels, nrow=1,axis="tblr", ...)
+      combo<-cowplot::plot_grid(plotlist = chart_list, labels = labels, nrow=1,align  = "h",scale=0.97)
     }else if(algin_dir == "v"){
-
+      combo<-cowplot::plot_grid(plotlist = chart_list, ncol=1,labels = labels, align="v")
     }
   }else{
-    combo<-cowplot::plot_grid(plotlist = chart_list, ncol=1,labels = labels, axis="tblr", ...)
+    combo<-cowplot::plot_grid(plotlist = chart_list,labels = labels)
   }
 
   return(combo)
 }
 
-
+#'
 #' Helper function to extract x and y scales from ggplot entity
 #' @title ggplot_scale_info
 #' @param chart

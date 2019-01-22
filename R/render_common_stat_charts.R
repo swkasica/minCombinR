@@ -122,7 +122,8 @@ render_bar<- function(...) {
                                      rm_x_labels = rm_x_labels,
                                      rm_y_labels = rm_y_labels,
                                      x_labels = x_labels,
-                                     y_labels = y_labels)
+                                     y_labels = y_labels,
+                                     shrink_plot_margin = shrink_plot_margin)
 
   #return the faithful ggplot object
   return(gg_chart)
@@ -208,48 +209,24 @@ render_line <- function(...) {
                                      title=title,
                                      flip_coord = flip_coord,
                                      y_limits = y_limits,
-                                     x_limits=x_limits)
+                                     x_limits=x_limits,
+                                     shrink_plot_margin = shrink_plot_margin)
 
   return(gg_chart)
 }
 
-#' Rendering a scatter plot
-#'
-#' @title render_scatter
-#' @param ...
-#'
-#' @return
+
 render_scatter <- function(...) {
   spec_list<-list(...)
 
+  #There's a bunch of stuff here that has nothing to do with a scatter plot..
+  #so need to take that out
   #put the specification variables in a location environment
   #so they can be accessed without using a list
   list2env(spec_list,env=environment())
 
-  if(is.na(tree_dat)) {
-    gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
-      geom_point()
-  } else {
-    tmp<-dplyr::filter(tree_dat,isTip == TRUE)
-    gg_chart <- ggplot(tmp, aes_string(x=x, y='y')) +
-      geom_point()
-  }
-
-  if(!is.na(tree_dat)) {
-    #TODO: return warnings of overriding in this case
-    gg_chart <- gg_chart +
-      scale_x_discrete(na.translate=FALSE) +
-      scale_y_continuous(breaks = sort(tree_dat$y),
-                         labels = levels(tree_dat$id))+
-      theme_bw()+
-      theme(axis.text.y = element_blank(),
-            axis.title.y = element_blank(),
-            axis.ticks.y = element_blank(),
-            plot.margin = unit(c(0,0,0,0),"points"),
-            panel.grid.minor = element_blank(),
-            axis.text.x = element_text(angle=90))
-
-  }
+  gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
+    geom_point()
 
   if(!is.na(default_colour_var)) {
     #Add colour variable
@@ -272,10 +249,10 @@ render_scatter <- function(...) {
                                      x_labels = x_labels,
                                      y_labels = y_labels,
                                      rm_x_labels = rm_x_labels,
-                                     rm_y_labels = rm_y_labels)
+                                     rm_y_labels = rm_y_labels,
+                                     shrink_plot_margin = shrink_plot_margin)
   return(gg_chart)
 }
-
 
 #' Render Histogram
 #' @title render_histogram
@@ -310,7 +287,8 @@ render_histogram<- function(...) {
                                      title=title,
                                      flip_coord = flip_coord,
                                      x_limits=x_limits,
-                                     rm_x_labels= rm_x_labels)
+                                     rm_x_labels= rm_x_labels,
+                                     shrink_plot_margin = shrink_plot_margin)
 
   gg_chart
 }
@@ -333,7 +311,8 @@ render_1D_density <- function(...) {
                                      title=title,
                                      flip_coord = flip_coord,
                                      x_limits=x_limits,
-                                     rm_x_labels= rm_x_labels)
+                                     rm_x_labels= rm_x_labels,
+                                     shrink_plot_margin = shrink_plot_margin)
 
 
   if(!is.na(default_colour_var)) {
@@ -383,7 +362,8 @@ render_boxplot <- function(...) {
                                      y_limits = y_limits,
                                      x_limits=x_limits,
                                      rm_x_labels= rm_x_labels,
-                                     rm_y_labels=  rm_y_labels)
+                                     rm_y_labels=  rm_y_labels,
+                                     shrink_plot_margin = shrink_plot_margin)
 
   gg_chart
 }
@@ -423,7 +403,8 @@ render_swarm_plot <- function(...) {
                                      y_limits = y_limits,
                                      x_limits=x_limits,
                                      rm_x_labels= rm_x_labels,
-                                     rm_y_labels=  rm_y_labels)
+                                     rm_y_labels=  rm_y_labels,
+                                     shrink_plot_margin = shrink_plot_margin)
 
   gg_chart
 }
@@ -454,51 +435,65 @@ common_stats_aesethetics<-function(gg_chart=NA,
                                    rm_x_labels = FALSE,
                                    rm_y_labels = FALSE,
                                    x_labels = FALSE,
-                                   y_labels = FALSE){
+                                   y_labels = FALSE,
+                                   x_breaks = FALSE,
+                                   y_breaks = FALSE,
+                                   shrink_plot_margin=FALSE){
+
+
 
   if(!is.na(title)) {
     gg_chart <- gg_chart + ggtitle(title)
   }
 
 
-  if(all(!is.na(x_limits))) {
-    gg_chart <- gg_chart + xlim(x_limits)
-  }
-
-  if(all(!is.na(y_limits))) {
-    gg_chart <- gg_chart + ylim(y_limits)
-  }
-
+  # if(all(!is.na(x_limits))) {
+  #   gg_chart <- gg_chart + xlim(x_limits)
+  # }
+  #
+  # if(all(!is.na(y_limits))) {
+  #   gg_chart <- gg_chart + ylim(y_limits)
+  # }
+  #
   if(flip_coord) {
     gg_chart <- gg_chart + coord_flip()
   }
+  #
+  # if(!is.na(scale_y_cont)) {
+  #   gg_chart <- gg_chart + scale_y_continuous(scale_y_cont)
+  # }
 
-  if(!is.na(scale_y_cont)) {
-    gg_chart <- gg_chart + scale_y_continuous(scale_y_cont)
-  }
-
-  if(all(!is.na(y_labels))) {
-    gg_chart <- gg_chart + scale_x_discrete(breaks = y_labels)
-  }
-
-  if(all(!is.na(x_labels))) {
-    gg_chart <- gg_chart + scale_x_discrete(breaks = x_labels)
-  }
+  #this is not a good way to do this, and needs to be addressed
+  #it only modifies discrete axes
+  # if(all(!is.na(y_labels))) {
+  #   gg_chart <- gg_chart + scale_y_discrete(breaks = y_breaks,labels = y_labels)
+  # }
+  #
+  # if(all(!is.na(x_labels))) {
+  #   gg_chart <- gg_chart + scale_x_discrete(breaks = x_breaks,labels = x_labels)
+  # }
 
 
   if(rm_x_labels) {
     gg_chart <- gg_chart +
-      theme(axis.title.x = element_blank(),
+      ggplot2::theme_update(axis.title.x = element_blank(),
             axis.text.x = element_blank(),
             axis.ticks.x = element_blank())
   }
 
   if(rm_y_labels) {
     gg_chart <- gg_chart +
-      theme(axis.title.y = element_blank(),
+      ggplot2::theme_update(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
             axis.ticks.y = element_blank())
   }
+
+  # if(shrink_plot_margin){
+  #   gg_chart<-gg_chart +
+  #     ggplot2::theme_update(plot.margin = unit(c(0,0,0,0),"points"))
+  # }
+
+  #gg_chart<-gg_chart+theme_bw()
 
   return(gg_chart)
 }

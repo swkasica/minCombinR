@@ -91,9 +91,8 @@ plot(sm_combo_tree)
 
 *This example will work without any errors*
 ```{r composite_no_error,message=FALSE,warning=FALSE}
-
 phyloTree_chart<-specify_base(chart_type = "phylogenetic tree",data="tree_dat")
-scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "longitude",y="site.id")
+scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "month",y="site.id")
 scatter_chart_two<-specify_base(chart_type = "scatter",data="tab_dat",x = "country",y="site.id")
 
 
@@ -112,8 +111,6 @@ Pie chart should be autonatically removed from the specifications
 ```{r composite_no_error,message=FALSE,warning=FALSE,}
 
 pie_chart<-specify_base(chart_type = "pie",data="tab_dat",x = "country")
-
-devtools::load_all()
 composite_combo<-specify_combination(combo_type = "composite",
                                      base_charts = c("phyloTree_chart","scatter_chart","scatter_chart_two","pie_chart"))
 
@@ -123,10 +120,19 @@ plot(composite_combo)
 ```
 
 ```{r}
-bar_alt<-specify_base(chart_type = "bar",data="tab_dat",x = "site.id",y="longitude",rm_x_label=TRUE)
+bar_alt<-specify_base(chart_type = "bar",data="tab_dat",x = "site.id",y="month",rm_x_label=TRUE)
 
 composite_combo<-specify_combination(combo_type = "composite",
                                      base_charts = c("phyloTree_chart","bar_alt","scatter_chart_two"))
+
+plot(composite_combo)
+
+```
+
+*It also works when there isn't a tree invovled.
+```{r}
+composite_combo<-specify_combination(combo_type = "composite",
+                                     base_charts = c("scatter_chart","bar_alt","scatter_chart_two"))
 
 plot(composite_combo)
 

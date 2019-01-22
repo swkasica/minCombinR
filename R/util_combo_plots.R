@@ -197,3 +197,42 @@ return_compatible_chart_link<-function(chart_info = NA,only_top = TRUE){
 
   return(compat_info)
 }
+
+
+#' Helper function to get axis information from charts
+#'
+#' @param chart
+#' @param align
+#'
+#' @return
+get_axis_info<-function(chart=NULL,align=NULL){
+
+  chart_class<-class(chart)
+  label<-NA
+  breaks<-NA
+  axis_type<-NA
+  align_dir<-align
+
+  if("ggtree" %in% chart_class){
+    #trees are different, although they have continous y
+    #the important thing is to actually match of their tip labels
+    #those tip labels are not continous variables
+    chart_build<-dplyr::filter(chart$data,isTip == TRUE)
+    label <- chart_build$label
+    breaks<- chart_build$y
+    axis_type = "discrete"
+  }else if("ggplot" %in% chart_class){
+
+    chart_build<-ggplot2::ggplot_build(chart)
+    if(align == "h"){
+      label<- chart_build$layout$panel_params[[1]]$y.labels
+      breaks<-chart_build$layout$panel_params[[1]]$y.major_source
+    }else if(algin =="v"){
+      label<- chart_build$layout$panel_params[[1]]$x.labels
+      breaks<-chart_build$layout$panel_params[[1]]$x.major
+    }
+  }
+
+  return(list(y_labels = label,y_break = breaks))
+
+}
