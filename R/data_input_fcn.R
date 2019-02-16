@@ -348,17 +348,9 @@ input_image<-function(file=NA,asObj=TRUE,dataID=NA,desc=NA,...){
   img<-magick::image_resize(img, "1000x1000")
 
   #get details for later
-  imgDetails<-capture.output(img)
+  imgDetails<-magick::image_info(img)
 
-  #cleaning up the image details
-  imgDetails<-data.frame(headerInfo= factor(c("img",unlist(strsplit(trimws(imgDetails[1]),"\\s+")))),
-                         values = c(file,unlist(strsplit(trimws(imgDetails[2]),"\\s+"))[-1]))
-
-  imgDetails<-tidyr::spread(imgDetails,headerInfo,values)
-  imgDetails$width<-as.numeric(as.character(imgDetails$width))
-  imgDetails$height<-as.numeric(as.character(imgDetails$height))
-
-  #just return the image
+    #just return the image
   warning("To use this image, please be sure to have separate file that links the image to data in pixel space. If you would like to CREATE an annotation file, run the 'annotate_image' command.")
 
   if(asObj){
@@ -366,25 +358,25 @@ input_image<-function(file=NA,asObj=TRUE,dataID=NA,desc=NA,...){
                 id  = paste("image",dataID,sep="_"),
                 type = "image",
                 source = file,
-                data = list(img=img,imgDetails = imgDetails)
+                data = list(data=img,imgDetails = imgDetails,metadata = NULL)
     )
 
     return(objDat)
   }else{
-    return(list(img=img,imgDetails = imgDetails))
+    return(list(data=img,imgDetails = imgDetails,metadata=NULL))
   }
 }
 
 #helper method to annotate FEATURES within an image
 #'@export
-annotate_image<-function(img = NULL,imgDetails=NULL,outfile = NULL){
+annotate_image<-function(img = NULL,imgDetails=NULL,outfile = NULL,overwrite_meta=FALSE){
   # If user does not provide a file name, make one up
   if(is.null(outfile)){
     outfile="annotated_image_file.csv"
   }
 
   if(class(img) == "gevitDataObj"){
-    annote_dat<-runApp(annotate_app(img@data$img,img@data$imgDetails))
+    annote_dat<-runApp(annotate_app(img@data$data,img@data$imgDetails))
     #
   }else{
     annote_dat<-runApp(annotate_image_app(img,imgDetails))
@@ -400,12 +392,17 @@ annotate_image<-function(img = NULL,imgDetails=NULL,outfile = NULL){
                          stringsAsFactors = FALSE)
 
   if(class(img) == "gevitDataObj"){
-    img@data$annotate<-annote_dat
+    if(!is.null(img@data$metadata) & !overwrite_meta){
+      # ------- TO DO: IF IT CAN'T RBIND DIE GRACEFULLY # -------
+      #if there's existing metadata, add to it, don't overwrite it
+      annote_dat<-rbind(img@data$metadata,annote_dat)
+    }
+
+    img@data$metadata<-annote_dat
     return(img)
   }else{
     return(annote_dat)
   }
-
 }
 
 #***************************************************************

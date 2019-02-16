@@ -16,7 +16,7 @@ render_phylogenetic_tree <- function(...) {
   if(data_class == "gevitDataObj"){
     #extract data from the gevitr object
     tree <- data@data[[1]]
-    metadata <- ifelse(is.null(data@data$metadata),NA,data@data$metadata)
+    metadata <- if(is.null(data@data$metadata)) NA else data@data$metadata
   }else if(data_class == "phylo"){
     #can plot a phylo object only
     tree<-data
@@ -38,6 +38,8 @@ render_phylogenetic_tree <- function(...) {
 
   #layout can be default, rooted, rooted radial (or radial), schematic, unrooted, unrooted radial OR any layouts available in ggtree
   #Put the layout variable in the form that ggtree understands
+  layout<-if(is.na(layout)) "default" else layout
+
   layout <- switch(layout,
                    "default" = "rectangular",
                    "rooted" = "rectangular",
@@ -47,6 +49,7 @@ render_phylogenetic_tree <- function(...) {
                    "unrooted" = "slanted",
                    "unrooted_radial" = "fan",
                    NULL)
+
   if(is.na(layout)){
     warning("Unrecognized tree layout. Defaulting to rectangular lay out. Possible layout types include: rooted, rooted_radial, unrooted, and unrooted_radial" )
     layout<-"rectangular"

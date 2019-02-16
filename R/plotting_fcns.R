@@ -15,7 +15,7 @@ plot_simple<-function(...){
 
 
   #check, has the user specified anything that overwrites the default parameters?
-  default_specs<-gevitr_env$plot_param_defaults
+  default_specs<-append(gevitr_env$plot_param_defaults,gevitr_env$plot_internal_defaults)
   over_write_default_idx<-match(names(spec_list),names(default_specs))
   over_write_default_idx<-over_write_default_idx[!is.na(over_write_default_idx)]
 
@@ -42,9 +42,14 @@ plot_simple<-function(...){
     #if the user hasn't specific any metadata,
     #check if there's some already associated with the object
     if(is.na(spec_list[["metadata"]]) & length(data@data)>1){
-      metadata<-ifelse(!is.null(data@data[["metadata"]]),data@data[["metadata"]],NA)
+      metadata<-if (!is.null(data@data$metadata)) data@data$metadata else NA
       spec_list[["metadata"]]<-metadata
     }
+    #if its an image, also include the image details
+    if(spec_list[["chart_type"]] == "image"){
+      spec_list[["imgDetails"]]<-data@data$imgDetails
+    }
+
     data<-tmp
   }
 
@@ -91,6 +96,7 @@ plot_simple<-function(...){
          #temporal chart types - to implement
          #genomic chart types - to implement
          #other char types  - to implement
+         "image" = do.call(render_image,args = spec_list,envir = parent.frame()),
           NULL)
 
     return(chart)
@@ -267,10 +273,6 @@ plot_composite<-function(...){
   lead_axis_info<-get_axis_info(all_plots[[leadChart]]$plotItem,align = align_dir)
 
 
-
-  # Generate individual support charts - these will be modified to properly line-up with the lead chart
-  support_chart<-setdiff(chart_order,leadChart)
-
   #re-generate *all* charts. Its not enough to just use the lead
   #chart as is, need to pass explicit param to it too
 
@@ -312,14 +314,12 @@ plot_composite<-function(...){
 
 }
 
-#' Helped function to extract axis information
-#'
-#' @param chart_list
-#'
-#' @return axis infor
 
+plot_many_linked<-function(...){
+  spec_list<-list(...)
+  all_plots<-c()
 
-
+}
 
 #'Helper function to arrange plots for displaying
 #'@title arrange_plots

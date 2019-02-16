@@ -14,6 +14,16 @@ render_bar<- function(...) {
   #so they can be accessed without using a list
   list2env(spec_list,env=environment())
 
+  if(is.na(layout)){
+    layout <-"default"
+  }
+
+  stack_by<- if(!is.na(group)) group else NA
+
+  #TO DO: there's no good common way to pass this
+  proportional<-FALSE
+
+
   #generate the chart
   gg_chart <- if(layout == "divergent") {
     #CASE 1: Divergent bar chart (waterfall)

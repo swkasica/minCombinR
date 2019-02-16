@@ -50,6 +50,32 @@ base_chart_specs<-function(chart_type = NULL){
   return(spec_txt)
 }
 
+
+#' Method that checks a user has provided a valid parameter to the specification
+#'
+#' @title check_param
+#' @param ...
+#'
+#' @return
+
+check_param<-function(...){
+  params<-list(...)
+  incorrect<-setdiff(names(params),gevitr_env$param_defaults)
+
+  if(length(incorrect)>0){
+    print("The following parameters are not valid and will be ignored : %s",paste(incorrect,sep=", "))
+    print("To see the full list of valid parameters type get_params()")
+
+    for(item in incorrect){
+      params[[item]]<-NULL
+      params<-Filter(Negate(is.null), params)
+    }
+    return(list(invalid = TRUE, revised_args = params))
+  }
+
+  return(list(invalid = FALSE, revised_args = NULL))
+}
+
 #************************************************************************************
 #
 # Primary user functions
@@ -78,6 +104,17 @@ specify_base<-function(chart_type=NULL, data=NULL,...){
   if(!exists(data))
     stop("Please specify data that you've already loaded into this R session")
 
+  # ---- a special check for image data ---
+  if(chart_type == "image"){
+    tmpDat<-get(data,envir=globalenv())
+    if(class(tmpDat) !="gevitDataObj"){
+      stop("For image data, only items created by this package are supported. See online resources to learn more")
+    }
+    rm(tmpDat)
+    gc()
+
+  }
+
   #Check that the user has specified all the required variables for the base chart type
   arg_vals<-as.list(match.call(expand.dots = TRUE))
 
@@ -94,6 +131,13 @@ specify_base<-function(chart_type=NULL, data=NULL,...){
     stop(sprintf("The following parameters MUST be specified: %s",paste(required_specs$param[missing_param],collapse = ", ")))
   }
 
+  #finally, check that the user has passed valid parameters overall
+  checkValid<-check_param(arg_vals)
+
+  if(checkValid$invalid){
+    arg_vals<-checkValid$revised_args
+  }
+
   #arg_vals$call<-match.call()
   class(arg_vals)<-c(class(arg_vals),"gevitSpec","baseSpecs")
 
@@ -107,9 +151,7 @@ specify_combination<-function(combo_type=NA,
                               facet_by=NA,
                               link_var=NA,
                               link_mark_type="default",
-                              alignment = NA,
-                              common_var=NA,
-                              order=NA){
+                              alignment = NA){
 
   if(is.na(combo_type) | length(combo_type)>1)
     stop("Please specify a combination that is either: small_multiple, composite, many_types_linked, many_types_general. Please see www.gevit.net for examples of each type of combination")
@@ -133,6 +175,7 @@ specify_combination<-function(combo_type=NA,
 
   combo_spec_passed<-names(combo_specs)
 
+
   #making sure all the necessary parameters are passed for specfic types of combinations
 
   # ------- Small Multiples  -------
@@ -141,9 +184,33 @@ specify_combination<-function(combo_type=NA,
     stop("Not all parameters specified for small multiples")
 
   # ------- Many Types Linked  -------
-  }else if(combo_type == "many_types_linked"){
-    if(!(all(c("link_var","line_mark_type") %in% combo_spec_passed)))
-      stop("Not all parameters specified for many types linked")
+  }else if(combo_type == "color_linked"){
+    if(!(all(c("link_var") %in% combo_spec_passed))){
+      stop("Stop! You must specifcy a linking variable for many types linked")
+    }
+
+    chart_info<-data.frame(data=NULL,
+                           chart_type=NULL,
+                           chart_var=NULL,
+                           stringsAsFactors = FALSE)
+
+    for(spec in base_charts){
+      chart_specs<-get(spec,envir=globalenv())
+      spec_info<-data.frame(chart_name = spec,
+                            data = chart_specs$data,
+                            chart_type = gsub("\\s+","_",tolower(chart_specs$chart_type)),
+                            #x = ifelse(!is.null(chart_specs$x),chart_specs$x,paste(spec,"gevitr_checkID",sep="_")), #id is a special place holder that says "look up the id from the chart type"
+                            y = ifelse(!is.null(chart_specs$y),chart_specs$y,NA),
+                            stringsAsFactors = FALSE)
+
+      chart_info<-rbind(chart_info,spec_info)
+    }
+
+
+    #return all charts that are linkable because there is a common variable
+    compat_charts<-return_compatible_chart_link(chart_info,combo_type = "many_linked")
+
+
 
   # ------- Composite  ------
   }else if(combo_type == "composite"){
@@ -193,7 +260,7 @@ specify_combination<-function(combo_type=NA,
     if(nrow(lead_charts)>1){
       #for each master chart, return a set of suggested specification
       #to user the user, then exit function with an error
-      suggested_specs<-c()
+      #suggested_specs<-c()
 
       warning("There are multiple *charts types* listed that are not compatible in a composite combination. Please see the suggested comptabilities below. Please re-run this command with one of these suggestions:")
 
@@ -231,7 +298,7 @@ specify_combination<-function(combo_type=NA,
     #finally, quickly confirm that the charts have some common variable to spatially align on
     chart_info<-dplyr::filter(chart_info,chart_name %in% base_charts)
 
-    compat_charts<-return_compatible_chart_link(chart_info)
+    compat_charts<-return_compatible_chart_link(chart_info,combo_type = "composite")
     combo_specs$base_charts<-unique(unlist(compat_charts[,c(1,2)])) #final set of compatible chart types
     combo_specs$common_var<-unique(compat_charts$link)
     combo_specs$chart_info<-chart_info #useful for ordering and arranging plots

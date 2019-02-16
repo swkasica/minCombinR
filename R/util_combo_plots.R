@@ -85,7 +85,7 @@ check_link<-function(item_one = NA,item_two=NA){
 #' @param chart_info
 #'
 #' @return data frame for compatible charts and their linking variable
-return_compatible_chart_link<-function(chart_info = NA,only_top = TRUE){
+return_compatible_chart_link<-function(chart_info = NA,combo_type = NA){
 
   data_layer<-unique(chart_info$data)
   variable_layer<-unname(unlist(chart_info[,4:ncol(chart_info)]))
@@ -154,6 +154,9 @@ return_compatible_chart_link<-function(chart_info = NA,only_top = TRUE){
 
   }
 
+  compat_info<-NULL
+  if(combo_type == "composite"){
+
   #Create a graph that can be traversed
   chart_graph<-igraph::graph_from_data_frame(edge_list,directed = FALSE)
 
@@ -182,14 +185,13 @@ return_compatible_chart_link<-function(chart_info = NA,only_top = TRUE){
   compat_info<-data.frame(cbind(chart_comp),pathStep, stringsAsFactors = FALSE)
   colnames(compat_info)<-c("chart_one","chart_two","link")
 
-  if(only_top){
-    #For when there should be only one link for all chart types
-    #and it has to link across the majority of charts
-    link_item<-compat_info %>%
-      dplyr::filter(!is.na(link)) %>%
-      group_by(link) %>%
-      tally() %>%
-      top_n(1)
+  #For when there should be only one link for all chart types
+  #and it has to link across the majority of charts
+  link_item<-compat_info %>%
+    dplyr::filter(!is.na(link)) %>%
+    group_by(link) %>%
+    tally() %>%
+    top_n(1)
 
     #compatible charts
     compat_info<-dplyr::filter(compat_info,link == link_item$link)
