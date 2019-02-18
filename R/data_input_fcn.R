@@ -379,7 +379,7 @@ annotate_image<-function(img = NULL,imgDetails=NULL,outfile = NULL,overwrite_met
     annote_dat<-runApp(annotate_app(img@data$data,img@data$imgDetails))
     #
   }else{
-    annote_dat<-runApp(annotate_image_app(img,imgDetails))
+    annote_dat<-shiny::runApp(annotate_image_app(img,imgDetails))
   }
   #cleaning up the annotatation data
   annote_dat<-data.frame(elemID =annote_dat[,1],
@@ -393,7 +393,7 @@ annotate_image<-function(img = NULL,imgDetails=NULL,outfile = NULL,overwrite_met
 
   if(class(img) == "gevitDataObj"){
     if(!is.null(img@data$metadata) & !overwrite_meta){
-      # ------- TO DO: IF IT CAN'T RBIND DIE GRACEFULLY # -------
+      # ------- TO DO: IF IT CAN'T RBIND ..then ... DIE GRACEFULLY # -------
       #if there's existing metadata, add to it, don't overwrite it
       annote_dat<-rbind(img@data$metadata,annote_dat)
     }

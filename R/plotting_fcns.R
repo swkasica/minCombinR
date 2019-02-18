@@ -93,11 +93,12 @@ plot_simple<-function(...){
          #spatial chart types - to revise
          "choropleth" = do.call(render_choropleth,args = spec_list,envir = parent.frame()),
          "geographic map"= do.call(render_geographic_map,args = spec_list,envir = parent.frame()),
-         #temporal chart types - to implement
+         #temporal chart types
          "timeline" = do.call(render_timeline,args = spec_list,envir = parent.frame()),
-         #genomic chart types - to implement
+         #genomic chart types
          "alignment" = do.call(render_alignment,args = spec_list,envir = parent.frame()),
-         #other char types  - to implement
+         "sequence logo" = do.call(render_seqlogo,args = spec_list,envir = parent.frame()),
+         #other char types
          "image" = do.call(render_image,args = spec_list,envir = parent.frame()),
           NULL)
 

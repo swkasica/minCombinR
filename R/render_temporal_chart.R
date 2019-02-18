@@ -36,10 +36,17 @@ render_timeline<-function(...){
     date_tmp[,start]<-as.Date(date_tmp[,start])
   }
 
-  if(!is.na(end) && class(date_tmp[,end]) %in% c("Date")){
-    aes_val<-aes_string(x = start, y = y , xend = end)
-    warning("Start date is not a date class. Will try to automatically convert it - unintended side effects may occur.")
-    date_tmp[,end]<-as.Date(date_tmp[,end])
+  if(!is.na(end)){
+    aes_val<-aes_string(x = start, y = y , xend = end,yend = y)
+    if(!(class(date_tmp[,end]) %in% c("Date"))){
+      warning("End date is not a date class. Will try to automatically convert it - unintended side effects may occur.")
+      date_tmp[,end]<-as.Date(date_tmp[,end])
+    }
+  }
+
+  #if the user has defined color
+  if(!is.na(color)){
+    aes_val<-aes_val + aes_string(color = color)
   }
 
   p<-NULL
@@ -57,8 +64,8 @@ render_timeline<-function(...){
     df_range<-dplyr::filter(date_tmp,!is.na(!!sym(end)))
 
     p<- ggplot()+
-      geom_point(data = df_point,aes_string(x = start,y=y))+
-      geom_segment(data = df_range,aes_string(x = start,xend = end,y=y,yend=y))+
+      geom_point(data = df_point,aes_val)+
+      geom_segment(data = df_range,aes_val)+
       theme_bw()+
       theme(axis.text.y = element_blank())
   }

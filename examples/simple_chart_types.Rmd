@@ -10,6 +10,7 @@ This document demonstrates how to implement and plot different chart types using
 ```{r,message=FALSE,warning=FALSE}
 devtools::load_all() #temporary once things are done
 library(dplyr)
+library(shiny)
 
 #Table data
 tab_dat<-input_data(file = system.file("extdata", "ebov_metadata.csv", package = "gevitR"),dataType = "table")
@@ -119,9 +120,32 @@ plot(phyloTree_chart)
 ```
 
 ## Genomic charts
+
+A very standard alignment chart. This tends to still work if you've got very long sequences. There are some options to simply the output too. It's possible to pass a **diff_only** parameter, which will only show variant positions.
 ```{r genomic_map}
 genome_chart<-specify_base(data = "genomic_dat",chart_type = "alignment")
 plot(genome_chart)
+```
+
+Sequence logo plots are also supported. These work well when there are a small number of variant positions, but when there are many, it's actually not a very nice visual. The user will recieve a prompt in those circumstances.
+
+```{r}
+seqlogo_chart<-specify_base(data = "genomic_dat",chart_type = "sequence logo")
+plot(seqlogo_chart)
+```
+
+See? Too many. Instead, it might be better to select a few specific regions to show that the user might know about. In the first case, there will be a warning the nothing is very different and the plot won't show:
+
+```{r}
+seqlogo_chart<-specify_base(data = "genomic_dat",chart_type = "sequence logo",show_pos = 1:20)
+plot(seqlogo_chart)
+```
+
+But there is a slightly more clever way to go about this too:
+```{r}
+diff_seq<-get_diff_pos(genomic_dat)
+seqlogo_chart<-specify_base(data = "genomic_dat",chart_type = "sequence logo",show_pos = diff_seq[1:20])
+plot(seqlogo_chart)
 ```
 
 ## Temporal charts
@@ -133,9 +157,9 @@ tmp<-tab_dat@data[[1]]
 tmp$collection_date<-as.Date(tmp$collection_date)
 
 #let's add some end dates to keep it interesting
-tmp$collection_date_end<-tmp$collection_date + sample(10:30,nrow(date_tmp),replace = TRUE)
+tmp$collection_date_end<-tmp$collection_date + sample(10:30,nrow(tmp),replace = TRUE)
 
-tmp$collection_date_end<-sapply(as.character(date_tmp$collection_date_end),function(x){
+tmp$collection_date_end<-sapply(as.character(tmp$collection_date_end),function(x){
    if(runif(1)>0.9)
      return(x)
     return(NA)
@@ -146,8 +170,13 @@ plot(timeline_chart)
 ```
 
 
-Since there's a lot going on, let's subset this to get a better view of what is going on
+Since there's a lot going on because there are a lot of different things here, let's subset this to get a better view of what is going on. So here, only plotting those items that are ranges.
+
 ```{r}
+tmp_sub<-dplyr::filter(tmp,!is.na(collection_date_end))
+
+timeline_chart<-specify_base(chart_type = "timeline",data="tmp_sub",start = "collection_date", end ="collection_date_end", y = "site.id",color = "country")
+plot(timeline_chart)
 ```
 
 ## Images
@@ -167,7 +196,7 @@ plot(img_chart)
 
 But it's nice to do something more useful with a picture, so... the error is to remind the user that there needs to be some image file loaded. So, now we'll run the special app. Note that in building this markdown file, this particular line of code is not run:
 
-```{r imageOne_two, eval=FALSE, include=FALSE}
+```{r imageOne_two, eval=FALSE}
 interior_img<-annotate_image(interior_img)
 
 #the annotations are automatically there now:

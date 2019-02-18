@@ -6,7 +6,7 @@ gevitr_env<-new.env(parent = emptyenv())
 
 
 # a summary of all supported chart types
-.all_chart_types<-c(unique(chart_specifications$chart_type),"timeline","alignment") #obtain specif table from sysdata.R
+.all_chart_types<-c(unique(chart_specifications$chart_type),"timeline","alignment","sequence logo") #obtain specif table from sysdata.R
 gevitr_env$all_chart_types <- .all_chart_types
 
 #keep track of chart types that are no spatially alignable
