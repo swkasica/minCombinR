@@ -8,6 +8,9 @@ output: html_document
 
 This document demonstrates how to combine and plot different chart types using gevitR. This document assumes that you have already run the "Getting started with gevitR" and the "Simpel Chart Types" and that the necessary data as already been loaded into your R workspace.
 
+Another good option for data: https://datadryad.org/bitstream/handle/10255/dryad.111738/ZIKV_with1966_strict_skyline_ctmc.xml?sequence=1
+Also exists in microreact
+
 ## Loading data
 ```{r,message=FALSE,warning=FALSE}
 devtools::load_all() #temporary once things are done
@@ -35,8 +38,11 @@ sle_shape_dat<-input_data(file = system.file("extdata", "sle_admbnda_adm1_1m_gov
 First, let's create a few charts that can be used
 ```{r individual_charts,message=FALSE,warning=FALSE}
 bar_chart<-specify_base(chart_type = "bar",data="tab_dat",x = "country")
+
 phyloTree_chart<-specify_base(chart_type = "phylogenetic tree",data="tree_dat")
+
 scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "latitude",y="longitude",title = "Ebola Scatter Plot")
+
 ```
 
 ### Many Types General
@@ -135,5 +141,18 @@ composite_combo<-specify_combination(combo_type = "composite",
                                      base_charts = c("scatter_chart","bar_alt","scatter_chart_two"))
 
 plot(composite_combo)
+
+```
+### Color Linked Combinations
+
+```{r}
+ebov<-tab_dat@data[[1]] #make this nicer
+ebov_case_counts<-ebov %>% 
+  group_by(country,month) %>%
+  count()
+
+line_chart<-specify_base(chart_type = "line",data="ebov_case_counts",x = "month",y="n",group = "country")
+
+#let's link these results to a scatter chart and the phylogenetic tree
 
 ```

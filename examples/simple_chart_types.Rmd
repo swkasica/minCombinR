@@ -104,7 +104,13 @@ plot(cat_stripe_chart)
 
 ## Relational charts
 
+### TO DO: NODE-LINK DIAGRAM
+
 ## Spatial charts
+```{r map_charts,message=FALSE,warning=FALSE}
+map_chart<-specify_base("geographic map",data="tab_dat",lat = "latitude",long = "longitude")
+plot(map_chart)
+```
 
 ## Tree charts
 ```{r tree_charts,message=FALSE,warning=FALSE,fig.height=2,fig.width=2,units="in"}
@@ -113,5 +119,109 @@ plot(phyloTree_chart)
 ```
 
 ## Genomic charts
+```{r genomic_map}
+genome_chart<-specify_base(data = "genomic_dat",chart_type = "alignment")
+plot(genome_chart)
+```
 
 ## Temporal charts
+Sometimes data contains start and end dates and its desireable to show these as different types of temporal charts. There are two times of timelines that can be created. One is a "gant chart" type timeline that will show both ranges and single events. Another is the standard epidemic curve, which is essentially a very special case of a histogram or bar chart, depending upon the user.
+
+```{r}
+#using the existing tabular data
+tmp<-tab_dat@data[[1]]
+tmp$collection_date<-as.Date(tmp$collection_date)
+
+#let's add some end dates to keep it interesting
+tmp$collection_date_end<-tmp$collection_date + sample(10:30,nrow(date_tmp),replace = TRUE)
+
+tmp$collection_date_end<-sapply(as.character(date_tmp$collection_date_end),function(x){
+   if(runif(1)>0.9)
+     return(x)
+    return(NA)
+})
+
+timeline_chart<-specify_base(chart_type = "timeline",data="tmp",start = "collection_date", end ="collection_date_end", y = "site.id")
+plot(timeline_chart)
+```
+
+
+Since there's a lot going on, let's subset this to get a better view of what is going on
+```{r}
+```
+
+## Images
+Sometimes it is desireable to use image data, these can be from interior maps or from gel images. Getting image data to work is a little bit more invovled because it requires there be some annotation data that allows you to link pixel space to something useful. There's a small application embedded withing this package that lets you do that.
+
+Here's a workflow with a few different types of images
+
+```{r imageOne_one}
+interior_img<-input_data(file = system.file("extdata", "random_interior_map.tiff", package = "gevitR"),dataType = "image")
+```
+
+It's still possible to simply draw a plot that has no metadata
+```{r imageOne_one_b}
+img_chart<-specify_base(chart_type="image",data="interior_img")
+plot(img_chart)
+```
+
+But it's nice to do something more useful with a picture, so... the error is to remind the user that there needs to be some image file loaded. So, now we'll run the special app. Note that in building this markdown file, this particular line of code is not run:
+
+```{r imageOne_two, eval=FALSE, include=FALSE}
+interior_img<-annotate_image(interior_img)
+
+#the annotations are automatically there now:
+metadata<-interior_img@data$metadata
+
+save(file="../inst/extdata/img_meta.rds",metadata)
+```
+
+```{r imageOne_three}
+#We'll load an already annotated image to keep things going
+#Normally, the user doesn't do this, but we have to do so because
+#the previous line of code was not run in the markdown notebook
+load(file = system.file("extdata", "img_meta.rds", package = "gevitR"))
+interior_img@data$metadata<-metadata
+
+#let's state the spec of the interior map
+img_chart<-specify_base(chart_type="image",data="interior_img")
+plot(img_chart)
+```
+
+Now, let's do something more interesting, let's colour these regions
+```{r}
+#Finally, lets add some arbitrary case counts to the room
+interior_img@data$metadata$counts<-c(100,35)
+
+#let's state the spec of the interior map
+img_chart<-specify_base(chart_type="image",data="interior_img",color = "counts")
+plot(img_chart)
+```
+
+The other most common type of image is a gel image - this too can now be part of the analysis fun.
+
+```{r}
+gel_img<-input_data(file = system.file("extdata", "gel_image.tiff", package = "gevitR"),dataType = "image")
+
+gel_img_chart<-specify_base(chart_type="image",data="gel_img")
+plot(gel_img_chart)
+```
+
+```{r,eval=FALSE}
+#Not run in notebook image script but once again, annotate the image
+gel_img<-annotate_image(gel_img)
+metadata<-gel_img@data$metadata
+metadata$element_name<-paste("item",1:nrow(metadata),sep="_")
+
+save(metadata,file="../inst/extdata/gel_img_meta.rds")
+```
+
+```{r}
+load(file="../inst/extdata/gel_img_meta.rds")
+gel_img@data$metadata<-metadata
+
+gel_img@data$metadata$rnd_class<-sample(c("Resistant","Susceptible"),replace = TRUE,size=nrow(metadata))
+
+gel_chart<-specify_base(data="gel_img",chart_type = "image",color="rnd_class")
+plot(gel_chart)
+```

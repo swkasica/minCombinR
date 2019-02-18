@@ -94,7 +94,9 @@ plot_simple<-function(...){
          "choropleth" = do.call(render_choropleth,args = spec_list,envir = parent.frame()),
          "geographic map"= do.call(render_geographic_map,args = spec_list,envir = parent.frame()),
          #temporal chart types - to implement
+         "timeline" = do.call(render_timeline,args = spec_list,envir = parent.frame()),
          #genomic chart types - to implement
+         "alignment" = do.call(render_alignment,args = spec_list,envir = parent.frame()),
          #other char types  - to implement
          "image" = do.call(render_image,args = spec_list,envir = parent.frame()),
           NULL)
