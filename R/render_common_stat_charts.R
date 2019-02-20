@@ -111,14 +111,14 @@ render_bar<- function(...) {
     stop("When specifying a bar chart, layout input must be: 'default' or 'divergent'.")
   }
 
-  if(!is.na(default_colour_var)) {
+  if(!is.na(color)) {
     #TODO: I added width=0.9 here because of a case with x as time, the columns overlap... and this fixes the problem.
     #   BUT it might be unneeded and maybe annoying in other cases so may have to change this later to a case basis
-    gg_chart <- gg_chart %+% geom_bar(aes_string(fill = default_colour_var), width = 0.9)
+    gg_chart <- gg_chart %+% geom_bar(aes_string(fill = color), width = 0.9)
 
     if(!is.na(colour_scale)[1]) {
       gg_chart <- gg_chart +
-        scale_fill_manual(name = default_colour_var, values = colour_scale)
+        scale_fill_manual(name = color, values = colour_scale)
     }
   }
 
@@ -163,13 +163,13 @@ render_pie <- function(...) {
     ggplot2::geom_bar(width = 1, stat = "identity") +
     ggplot2::coord_polar("y", start=0)
 
-  if(!is.na(default_colour_var)) {
-    gg_chart <- gg_chart %+% aes_string(fill = default_colour_var)
+  if(!is.na(color)) {
+    gg_chart <- gg_chart %+% aes_string(fill = color)
   }
 
   if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
-      scale_fill_manual(name = default_colour_var, values = colour_scale)
+      scale_fill_manual(name = color, values = colour_scale)
   }
 
   gg_chart<-common_stats_aesethetics(gg_chart,
@@ -203,15 +203,15 @@ render_line <- function(...) {
       geom_line(aes_string(colour = group))
   }
 
-  if(!is.na(default_colour_var)) {
+  if(!is.na(color)) {
     #Add colour variable
-    gg_chart <- gg_chart %+% aes_string(colour = default_colour_var)
+    gg_chart <- gg_chart %+% aes_string(colour = color)
   }
 
   if (!is.na(colour_scale)[1]) {
     #Scale colour variable
     gg_chart <- gg_chart +
-      scale_colour_manual(name = default_colour_var, values = colour_scale)
+      scale_colour_manual(name = color, values = colour_scale)
   }
 
 
@@ -263,7 +263,7 @@ render_scatter <- function(...) {
   # if(!is.na(colour_scale)[1]) {
   #   #Scale colour variable
   #   gg_chart <- gg_chart +
-  #     scale_colour_manual(name = default_colour_var, values = colour_scale)
+  #     scale_colour_manual(name = color, values = colour_scale)
   # }
 
 
@@ -298,15 +298,15 @@ render_histogram<- function(...) {
     geom_histogram()
 
 
-  if(!is.na(default_colour_var)) {
+  if(!is.na(color)) {
     #Add colour variable
-    gg_chart <- gg_chart %+% aes_string(fill = default_colour_var)
+    gg_chart <- gg_chart %+% aes_string(fill = color)
   }
 
   if(!is.na(colour_scale)[1]) {
     #Add manual colour scale
     gg_chart <- gg_chart +
-      scale_fill_manual(name = default_colour_var, values = colour_scale)
+      scale_fill_manual(name = color, values = colour_scale)
     # theme(legend.position = "none")
   }
 
@@ -342,14 +342,14 @@ render_1D_density <- function(...) {
                                      shrink_plot_margin = shrink_plot_margin)
 
 
-  if(!is.na(default_colour_var)) {
+  if(!is.na(color)) {
     #Add colour variable
-    gg_chart <- gg_chart %+% aes_string(fill = default_colour_var)
+    gg_chart <- gg_chart %+% aes_string(fill = color)
   }
 
   if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
-      scale_fill_manual(name = default_colour_var, values = colour_scale)
+      scale_fill_manual(name = color, values = colour_scale)
   }
 
   return(gg_chart)
@@ -372,14 +372,14 @@ render_boxplot <- function(...) {
   gg_chart <- ggplot2::ggplot(data = data, aes_string(x=x,y=y)) +
     geom_boxplot()
 
-  if(!is.na(default_colour_var)) {
+  if(!is.na(color)) {
     #Add colour variable
-    gg_chart <- gg_chart %+% aes_string(fill = default_colour_var)
+    gg_chart <- gg_chart %+% aes_string(fill = color)
   }
 
   if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
-      scale_fill_manual(name = default_colour_var, values = colour_scale)
+      scale_fill_manual(name = color, values = colour_scale)
     # theme(legend.position = "none")
   }
 
@@ -411,15 +411,15 @@ render_swarm_plot <- function(...) {
 
   gg_chart <- ggplot(data, aes_string(x, y)) + ggbeeswarm::geom_beeswarm()
 
-  if(!is.na(default_colour_var)) {
+  if(!is.na(color)) {
     #Add colour variable
-    gg_chart <- gg_chart %+% aes_string(fill = default_colour_var)
+    gg_chart <- gg_chart %+% aes_string(fill = color)
   }
 
-  #TODO: put this inside of if(!is.na(default_colour_var)) check for all of the charts!!!
+  #TODO: put this inside of if(!is.na(color)) check for all of the charts!!!
   if(!is.na(colour_scale)[1]) {
     gg_chart <- gg_chart +
-      scale_colour_manual(name = default_colour_var, values = colour_scale)
+      scale_colour_manual(name = color, values = colour_scale)
     # theme(legend.position = "none")
   }
 

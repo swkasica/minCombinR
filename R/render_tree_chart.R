@@ -1,7 +1,7 @@
 #' Render Phylogenetic Tree
 #' @title render_phylo_tree
 #' @param ...
-#'
+#' @importFrom ggtree %<+%
 #' @return
 render_phylogenetic_tree <- function(...) {
 

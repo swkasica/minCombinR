@@ -98,6 +98,9 @@ img {
 button.code-folding-btn:focus {
   outline: none;
 }
+summary {
+  display: list-item;
+}
 </style>
 
 
@@ -105,14 +108,74 @@ button.code-folding-btn:focus {
 <div class="container-fluid main-container">
 
 <!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
 <script>
 $(document).ready(function () {
   window.buildTabsets("TOC");
 });
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
 </script>
 
 <!-- code folding -->
-
 
 
 
@@ -144,20 +207,20 @@ $(document).ready(function () {
 <pre class="r"><code>devtools::load_all() #temporary once things are done
 
 #Table data
-tab_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;ebov_metadata.csv&quot;, package = &quot;gevitR&quot;),dataType = &quot;table&quot;)
+tab_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;ebov_metadata.csv&quot;, package = &quot;mincombinr&quot;),dataType = &quot;table&quot;)
 
 #Tree data
-tree_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;ebov_tree.nwk&quot;, package = &quot;gevitR&quot;),dataType = &quot;tree&quot;)
+tree_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;ebov_tree.nwk&quot;, package = &quot;mincombinr&quot;),dataType = &quot;tree&quot;)
 
 #Genomic data
-genomic_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;ebov_GIN_genomic.fasta&quot;, package = &quot;gevitR&quot;),dataType = &quot;dna&quot;)
+genomic_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;ebov_GIN_genomic.fasta&quot;, package = &quot;mincombinr&quot;),dataType = &quot;dna&quot;)
 
 #Shape files
 #Shape files require that .shp,.shx,and .prj files at a minimun to be in the same directory
 #to add metadata to the shape file, you can also add .dbf files
-gin_shape_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;gin_admbnda_adm1_ocha_itos.shp&quot;, package = &quot;gevitR&quot;),dataType = &quot;spatial&quot;)
-lbr_shape_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;lbr_admbnda_adm1_ocha.shp&quot;, package = &quot;gevitR&quot;),dataType = &quot;spatial&quot;)
-sle_shape_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;sle_admbnda_adm1_1m_gov_ocha_20161017.shp&quot;, package = &quot;gevitR&quot;),dataType = &quot;spatial&quot;)</code></pre>
+gin_shape_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;gin_admbnda_adm1_ocha_itos.shp&quot;, package = &quot;mincombinr&quot;),dataType = &quot;spatial&quot;)
+lbr_shape_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;lbr_admbnda_adm1_ocha.shp&quot;, package = &quot;mincombinr&quot;),dataType = &quot;spatial&quot;)
+sle_shape_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;sle_admbnda_adm1_1m_gov_ocha_20161017.shp&quot;, package = &quot;mincombinr&quot;),dataType = &quot;spatial&quot;)</code></pre>
 </div>
 <div id="essential-gevitr-commands" class="section level2">
 <h2>Essential gevitR commands</h2>
@@ -168,7 +231,8 @@ sle_shape_dat&lt;-input_data(file = system.file(&quot;extdata&quot;, &quot;sle_a
 ##  [7] &quot;boxplot&quot;           &quot;pie&quot;               &quot;heatmap&quot;          
 ## [10] &quot;category stripe&quot;   &quot;node-link&quot;         &quot;genomic&quot;          
 ## [13] &quot;dendrogram&quot;        &quot;choropleth&quot;        &quot;table&quot;            
-## [16] &quot;image&quot;             &quot;density&quot;</code></pre>
+## [16] &quot;image&quot;             &quot;density&quot;           &quot;geographic map&quot;   
+## [19] &quot;timeline&quot;          &quot;alignment&quot;         &quot;sequence logo&quot;</code></pre>
 <pre class="r"><code>base_chart_specs(chart_type=&quot;bar&quot;) #to see all of the required and options specifications</code></pre>
 <pre><code>## [1] &quot;Chart type: bar&quot;                                                                                 
 ## [2] &quot;You must specify the follow parameters: data, x&quot;                                                 

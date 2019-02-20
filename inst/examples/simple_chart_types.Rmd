@@ -13,20 +13,20 @@ library(dplyr)
 library(shiny)
 
 #Table data
-tab_dat<-input_data(file = system.file("extdata", "ebov_metadata.csv", package = "gevitR"),dataType = "table")
+tab_dat<-input_data(file = system.file("extdata", "ebov_metadata.csv", package = "mincombinr"),dataType = "table")
 
 #Tree data
-tree_dat<-input_data(file = system.file("extdata", "ebov_tree.nwk", package = "gevitR"),dataType = "tree")
+tree_dat<-input_data(file = system.file("extdata", "ebov_tree.nwk", package = "mincombinr"),dataType = "tree")
 
 #Genomic data
-genomic_dat<-input_data(file = system.file("extdata", "ebov_GIN_genomic_FIXED.fasta", package = "gevitR"),dataType = "dna")
+genomic_dat<-input_data(file = system.file("extdata", "ebov_GIN_genomic_FIXED.fasta", package = "mincombinr"),dataType = "dna")
 
 #Shape files
 #Shape files require that .shp,.shx,and .prj files at a minimun to be in the same directory
 #to add metadata to the shape file, you can also add .dbf files
-gin_shape_dat<-input_data(file = system.file("extdata", "gin_admbnda_adm1_ocha_itos.shp", package = "gevitR"),dataType = "spatial")
-lbr_shape_dat<-input_data(file = system.file("extdata", "lbr_admbnda_adm1_ocha.shp", package = "gevitR"),dataType = "spatial")
-sle_shape_dat<-input_data(file = system.file("extdata", "sle_admbnda_adm1_1m_gov_ocha_20161017.shp", package = "gevitR"),dataType = "spatial")
+gin_shape_dat<-input_data(file = system.file("extdata", "gin_admbnda_adm1_ocha_itos.shp", package = "mincombinr"),dataType = "spatial")
+lbr_shape_dat<-input_data(file = system.file("extdata", "lbr_admbnda_adm1_ocha.shp", package = "mincombinr"),dataType = "spatial")
+sle_shape_dat<-input_data(file = system.file("extdata", "sle_admbnda_adm1_1m_gov_ocha_20161017.shp", package = "mincombinr"),dataType = "spatial")
 ```
 ## Common statistical charts
 
@@ -186,7 +186,7 @@ Sometimes it is desireable to use image data, these can be from interior maps or
 Here's a workflow with a few different types of images
 
 ```{r imageOne_one}
-interior_img<-input_data(file = system.file("extdata", "random_interior_map.tiff", package = "gevitR"),dataType = "image")
+interior_img<-input_data(file = system.file("extdata", "random_interior_map.tiff", package = "mincombinr"),dataType = "image")
 ```
 
 It's still possible to simply draw a plot that has no metadata
@@ -210,7 +210,7 @@ save(file="../inst/extdata/img_meta.rds",metadata)
 #We'll load an already annotated image to keep things going
 #Normally, the user doesn't do this, but we have to do so because
 #the previous line of code was not run in the markdown notebook
-load(file = system.file("extdata", "img_meta.rds", package = "gevitR"))
+load(file = system.file("extdata", "img_meta.rds", package = "mincombinr"))
 interior_img@data$metadata<-metadata
 
 #let's state the spec of the interior map
@@ -231,7 +231,7 @@ plot(img_chart)
 The other most common type of image is a gel image - this too can now be part of the analysis fun.
 
 ```{r}
-gel_img<-input_data(file = system.file("extdata", "gel_image.tiff", package = "gevitR"),dataType = "image")
+gel_img<-input_data(file = system.file("extdata", "gel_image.tiff", package = "mincombinr"),dataType = "image")
 
 gel_img_chart<-specify_base(chart_type="image",data="gel_img")
 plot(gel_img_chart)
@@ -247,7 +247,7 @@ save(metadata,file="../inst/extdata/gel_img_meta.rds")
 ```
 
 ```{r}
-load(file="../inst/extdata/gel_img_meta.rds")
+load(file = system.file("extdata", "gel_img_meta.rds", package = "mincombinr"))
 gel_img@data$metadata<-metadata
 
 gel_img@data$metadata$rnd_class<-sample(c("Resistant","Susceptible"),replace = TRUE,size=nrow(metadata))
