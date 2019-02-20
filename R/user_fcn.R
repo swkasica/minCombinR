@@ -138,6 +138,12 @@ specify_base<-function(chart_type=NULL, data=NULL,...){
     arg_vals<-checkValid$revised_args
   }
 
+  #for special variables, store the information as x and y
+  tmp_names<-names(arg_vals)
+  if("start" %in% tmp_names){arg_vals$x<-arg_vals$start}
+  if("longitude" %in% tmp_names){arg_vals$x<-arg_vals$longitude}
+  if("latitude" %in% tmp_names){arg_vals$x<-arg_vals$latitude}
+
   #arg_vals$call<-match.call()
   class(arg_vals)<-c(class(arg_vals),"gevitSpec","baseSpecs")
 
@@ -149,8 +155,8 @@ specify_base<-function(chart_type=NULL, data=NULL,...){
 specify_combination<-function(combo_type=NA,
                               base_charts = NA,
                               facet_by=NA,
-                              link_var=NA,
-                              link_mark_type="default",
+                              link_by=NA,
+                             # link_mark_type=NA,
                               alignment = NA){
 
   if(is.na(combo_type) | length(combo_type)>1)
@@ -171,24 +177,27 @@ specify_combination<-function(combo_type=NA,
 
   #get all the specifications that are not NA
   #keep everything that is not NA
-  combo_specs<-base::Filter(Negate(is.na), combo_specs)
+  #combo_specs<-base::Filter(Negate(is.na), combo_specs)
 
-  combo_spec_passed<-names(combo_specs)
+  #combo_spec_passed<-names(combo_specs)
 
 
   #making sure all the necessary parameters are passed for specfic types of combinations
 
   # ------- Small Multiples  -------
   if(combo_type == "small_multiple"){
-    if(!(all("facet_by" %in% combo_spec_passed)))
+    #if(!(all("facet_by" %in% combo_spec_passed)))
+    if(is.na(combo_specs$facet_by))
     stop("Not all parameters specified for small multiples")
 
   # ------- Many Types Linked  -------
   }else if(combo_type == "color_linked"){
-    if(!(all(c("link_var") %in% combo_spec_passed))){
+    if(is.na(combo_specs$link_by)){
       stop("Stop! You must specifcy a linking variable for many types linked")
     }
-
+    #if(!(all(c("link_var") %in% combo_spec_passed))){
+    #  stop("Stop! You must specifcy a linking variable for many types linked")
+    #}
     chart_info<-data.frame(data=NULL,
                            chart_type=NULL,
                            chart_var=NULL,
@@ -196,21 +205,115 @@ specify_combination<-function(combo_type=NA,
 
     for(spec in base_charts){
       chart_specs<-get(spec,envir=globalenv())
+      if(!is.null(chart_specs$color)){
+        warning(sprintf("Overriding the color variable that you've specificed for %s",spec))
+      }
+
       spec_info<-data.frame(chart_name = spec,
                             data = chart_specs$data,
                             chart_type = gsub("\\s+","_",tolower(chart_specs$chart_type)),
-                            #x = ifelse(!is.null(chart_specs$x),chart_specs$x,paste(spec,"gevitr_checkID",sep="_")), #id is a special place holder that says "look up the id from the chart type"
+                            x = ifelse(!is.null(chart_specs$x),chart_specs$x,paste(spec,"gevitr_checkID",sep="_")), #id is a special place holder that says "look up the id from the chart type"
                             y = ifelse(!is.null(chart_specs$y),chart_specs$y,NA),
                             stringsAsFactors = FALSE)
 
       chart_info<-rbind(chart_info,spec_info)
     }
 
-
     #return all charts that are linkable because there is a common variable
-    compat_charts<-return_compatible_chart_link(chart_info,combo_type = "many_linked")
+    compat_charts<-return_compatible_chart_link(chart_info,combo_type = "composite")
 
+    #for each of the charts, confirm that the linking variable exists
+    #and that it has the same "levels" as the other chart types
+    lvl_check<-c()
+    for(chart in chart_info$chart_name){
+      chart_name<-chart
+      chart<-get(chart,envir=globalenv())
 
+      dat<-get(chart$data,envir=globalenv())
+      if(is.data.frame(dat)){
+        if(link_by %in% colnames(dat)){
+          var_lvls<-unique(dat[,link_by])
+          lvl_check<-rbind(lvl_check,cbind(rep(chart_name,length(var_lvls)),var_lvls))
+        }
+      }else if("gevitDataObj" %in% class(dat)){
+        if(dat@type == "table"){
+          if(link_by %in% colnames(dat@data[[1]])){
+            tmp_dat<-dat@data[[1]]
+            var_lvls<-unique(tmp_dat[,link_by])
+            lvl_check<-rbind(cbind(rep(chart_name,length(var_lvls)),var_lvls),lvl_check)
+          }
+        }else{
+          if(!is.null(dat@data$metadata)){
+            #there is associated metadata
+            if(link_by %in% colnames(dat@data$metadata)){
+              tmp_dat<-dat@data$metadata
+              var_lvls<-unique(tmp_dat[,link_by])
+              lvl_check<-rbind(cbind(rep(chart_name,length(var_lvls)),var_lvls),lvl_check)
+            }
+          }else{
+            #there is no associated meta
+            #check if there is a perfect discovered a perfect link
+            compat_tmp<-dplyr::filter(compat_charts, chart_one == chart_name | chart_two == chart_name)
+
+            if(nrow(compat_tmp)>0){
+              metasrc<-setdiff(unname(unlist(compat_tmp[,c(1,2)])),chart_name)
+              metadat<-NULL
+              for(item in metasrc){
+                meta_spec<-get(item,envir=globalenv())
+                meta_tmp<-get(meta_spec$data,envir=globalenv())
+                if(meta_tmp@type == "table"){
+                  #only tables can be metadata
+                  if(link_by %in% colnames(meta_tmp@data[[1]])){
+                    dat_tmp<-meta_tmp@data[[1]]
+                    #add this to our data object
+                    dat@data$metadata<-dat_tmp
+                    assign(chart$data,dat,envir=globalenv())
+                    #now report those linkages
+                    var_lvls<-unique(dat_tmp[,link_by])
+                    lvl_check<-rbind(lvl_check,cbind(rep(chart_name,length(var_lvls)),var_lvls))
+                  }
+                }
+              }
+            }
+          }
+        }
+      }else{
+        warning(sprintf("%s has a dataype that is currently not supported by color_linked combinations. It will be dropped from the specification."))
+      }
+    }
+    if(nrow(lvl_check)==0){
+      stop("Linking variables between these chart types do not appear to be compatible. Cannot carry out this combination")
+    }
+
+    keep_charts<-unique(lvl_check[,1])
+
+    if(length(keep_charts)==1){
+      stop("Linking variables between these chart types do not appear to be compatible. Cannot carry out this combination")
+    }
+
+    #Now check that these linking variables have the same levels
+    #cause data can have the same column name but not the same entities
+    lvl_check<-data.frame(lvl_check)
+    colnames(lvl_check)<-c("chart","lvl")
+
+    # TO DO: Right now, this work if there are exact matches - not so much of inexact matches
+    keep_lvls<-lvl_check %>% group_by(lvl) %>%
+      count() %>%
+      mutate(match_items = n == length(keep_charts)) %>%
+      filter(match_items)
+
+    if(nrow(keep_lvls)==0){
+      #TO DO in future: find a combo that works, for now, just warn the user
+      stop("Linking variables between these chart types do not appear to be compatible. Cannot carry out this combination")
+    }
+
+    keep_chart<-lvl_check %>% dplyr::filter(lvl %in% keep_lvls$lvl) %>% dplyr::select(chart)
+
+    if(length(setdiff(combo_specs$base_charts,keep_chart$chart)) !=0){
+      throw_out<-setdiff(combo_specs$base_charts,keep_chart$chart)
+      warning("The following charts where not compatible with others for a color linkage and have been dropped from the specification:%s",paste(throw_out,sep=", "))
+      combo_specs$base_charts<-keep_chart$chart
+    }
 
   # ------- Composite  ------
   }else if(combo_type == "composite"){
@@ -235,6 +338,7 @@ specify_combination<-function(combo_type=NA,
       chart_info<-rbind(chart_info,spec_info)
     }
 
+
     #1. check if any charts are not alignable
     not_align<-dplyr::filter(chart_info,chart_type %in% gevitr_env$not_spatially_alignable)
 
@@ -245,11 +349,12 @@ specify_combination<-function(combo_type=NA,
 
       chart_info<-dplyr::filter(chart_info,chart_name %in% base_charts)
 
-      if(length(base_charts) == 0){
+      if(length(base_charts)< 2){
         stop("None of these charts are compatible in a composite")
       }
       combo_specs$base_charts<-base_charts
     }
+
 
     #2. Compatability check
     #comp_matrix lives inside sysdata of the package
@@ -271,7 +376,7 @@ specify_combination<-function(combo_type=NA,
         compat<-names(tmp)[tmp==1]
 
         #get the names of other compatible charts
-        tmp_info<-dplyr::filter(chart_info, type %in% compat)
+        tmp_info<-dplyr::filter(chart_info, chart_type %in% compat)
         compt_oth<-paste((setdiff(tmp_info$chart_name,lead_charts[i,'chart_name'])),collapse=", ")
 
         #return a friendly message
@@ -284,10 +389,10 @@ specify_combination<-function(combo_type=NA,
     idx_not_compat<-which(rowSums(sub_mat) == 1)
 
     if(length(idx_not_compat)>0){
-      not_compat<-dplyr::filter(chart_info,type %in% colnames(sub_mat)[idx_not_compat])
+      not_compat<-dplyr::filter(chart_info,chart_type %in% colnames(sub_mat)[idx_not_compat])
       base_charts<-setdiff(base_charts,not_compat$chart_name)
 
-      if(length(base_specs)==0){
+      if(length(base_charts)<2){
         stop("None of these charts are compatible for a composite combination")
       }else{
         combo_specs$base_charts<-base_charts
@@ -369,6 +474,11 @@ plot.gevitSpec<-function(specs = NULL,do_not_display=FALSE){
     # ------- Composite  ------
     if (specs$combo_type == "composite") {
       spec_plot<-do.call(plot_composite,args = specs, envir = parent.frame())
+    }
+
+    # ------- Many Types Linked  ------
+    if (specs$combo_type == "color_linked"){
+      spec_plot<-do.call(plot_many_linked, args = specs,envir=parent.frame())
     }
 
   }

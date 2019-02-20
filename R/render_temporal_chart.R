@@ -49,10 +49,10 @@ render_timeline<-function(...){
     aes_val<-aes_val + aes_string(color = color)
   }
 
-  p<-NULL
+  gg_chart<-NULL
 
   if(is.na(end)){
-    p<- ggplot(data=date_tmp)+
+    gg_chart<- ggplot(data=date_tmp)+
       geom_point(aes_val)+
       theme_bw()+
       theme(axis.text.y = element_blank())
@@ -63,13 +63,24 @@ render_timeline<-function(...){
     #assumes everything has a starting point and that some or all items have and endpoint
     df_range<-dplyr::filter(date_tmp,!is.na(!!sym(end)))
 
-    p<- ggplot()+
+    gg_chart<- ggplot()+
       geom_point(data = df_point,aes_val)+
       geom_segment(data = df_range,aes_val)+
       theme_bw()+
       theme(axis.text.y = element_blank())
   }
-  return(p)
+
+  gg_chart<-common_stats_aesethetics(gg_chart,
+                                     title=title,
+                                     flip_coord = flip_coord,
+                                     y_limits = y_limits,
+                                     x_limits=x_limits,
+                                     x_labels = x_labels,
+                                     y_labels = y_labels,
+                                     rm_x_labels = rm_x_labels,
+                                     rm_y_labels = rm_y_labels,
+                                     shrink_plot_margin = shrink_plot_margin)
+  return(gg_chart)
 }
 
 

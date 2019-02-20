@@ -19,7 +19,7 @@ tab_dat<-input_data(file = system.file("extdata", "ebov_metadata.csv", package =
 tree_dat<-input_data(file = system.file("extdata", "ebov_tree.nwk", package = "gevitR"),dataType = "tree")
 
 #Genomic data
-genomic_dat<-input_data(file = system.file("extdata", "ebov_GIN_genomic.fasta", package = "gevitR"),dataType = "dna")
+genomic_dat<-input_data(file = system.file("extdata", "ebov_GIN_genomic_FIXED.fasta", package = "gevitR"),dataType = "dna")
 
 #Shape files
 #Shape files require that .shp,.shx,and .prj files at a minimun to be in the same directory
@@ -143,7 +143,7 @@ plot(seqlogo_chart)
 
 But there is a slightly more clever way to go about this too:
 ```{r}
-diff_seq<-get_diff_pos(genomic_dat)
+diff_seq<-get_diff_pos(genomic_dat) #little helper function that extracts the similar sequences
 seqlogo_chart<-specify_base(data = "genomic_dat",chart_type = "sequence logo",show_pos = diff_seq[1:20])
 plot(seqlogo_chart)
 ```

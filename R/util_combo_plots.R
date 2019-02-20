@@ -41,8 +41,8 @@ check_link<-function(item_one = NA,item_two=NA){
     class_one<-class(item_one)
     class_two<-class(item_two)
 
-    item_one<-if(class_one=="factor") as.character(item_one) else item_one
-    item_two<-if(class_two=="factor") as.character(item_two) else item_two
+    item_one<-if(class_one%in%c("factor","character")) as.character(item_one) else item_one
+    item_two<-if(class_two %in% c("factor","character")) as.character(item_two) else item_two
 
     if(class_one == class_two){
       if(class_one %in% c("factor","character")){
@@ -53,6 +53,7 @@ check_link<-function(item_one = NA,item_two=NA){
         compRes<-NULL
       }
     }
+
 
   }else if(is.null(ncol(item_one)) | is.null(ncol(item_two))){
     #one vector and one data frame
@@ -128,11 +129,12 @@ return_compatible_chart_link<-function(chart_info = NA,combo_type = NA){
           comp_dat_name<-comp_dat
           comp_dat<-get(comp_dat,envir = globalenv())
 
-          main_dat<-get_raw_data(main_dat)
-          comp_dat<-get_raw_data(comp_dat)
+          if(!is.data.frame(main_dat)){main_dat<-get_raw_data(main_dat)}
+          if(!is.data.frame(comp_dat)){comp_dat<-get_raw_data(comp_dat)}
 
-          if(!is.null(main_dat) & !is.null(comp_dat))
+          if(!is.null(main_dat) & !is.null(comp_dat)){
             data_link<-check_link(main_dat,comp_dat)
+          }
 
           if(!is.null(data_link)){
             #data link can be a boolean, character, or list
@@ -151,14 +153,53 @@ return_compatible_chart_link<-function(chart_info = NA,combo_type = NA){
       }
 
     }
-
   }
 
   compat_info<-NULL
-  if(combo_type == "composite"){
+  if(combo_type %in% c("composite","many_linked")){
 
   #Create a graph that can be traversed
   chart_graph<-igraph::graph_from_data_frame(edge_list,directed = FALSE)
+
+  #Simple check if there are two charts
+  if(length(chart_layer)<3){
+    tmp<-igraph::shortest_paths(chart_graph,chart_layer[1],chart_layer[2])
+
+    tmp<-setdiff(igraph::as_ids(tmp$vpath[[1]]),c(data_layer,chart_layer))
+
+    #two objects connected
+    if(sum(grepl("gevitr_checkID",tmp)) == length(tmp)){
+
+      item_one<-get(chart_info[1,"data"],envir = globalenv())
+      item_two<-get(chart_info[2,"data"],envir = globalenv())
+
+      item_one<-get_raw_data(item_one)
+      item_two<-get_raw_data(item_two)
+
+      is_eq<-dplyr::setequal(item_one,item_two)
+
+      if(!is_eq){
+        #check if one set is a perfect subset of the other
+        if(length(setdiff(item_one,item_two)) == 0 | length(setdiff(item_two,item_one)) == 0)
+          compat_info<-data.frame(chart_one = chart_layer[1],
+                                  chart_two = chart_layer[2],
+                                  link = "gevitR_checkID")
+          return(compat_info)
+      }else{
+        compat_info<-data.frame(chart_one = chart_layer[1],
+                                chart_two = chart_layer[2],
+                                link = "gevitR_checkID")
+        return(compat_info)
+      }
+    }else{
+      tmp<-tmp[which(!grepl("gevitr_checkID",tmp))]
+      if(length(tmp) == 1){
+        compat_info<-data.frame(chart_one = chart_layer[1],
+                                chart_two = chart_layer[2],
+                                link = tmp)
+      }
+    }
+  }
 
   #All possible chart compatbilities
   chart_comp<-t(combn(chart_layer,m=2))

@@ -62,8 +62,12 @@ render_phylogenetic_tree <- function(...) {
 
   gg_chart<-ggtree::ggtree(tree,layout = layout)
 
+  if(!(all(is.na(metadata)))){
+    gg_chart<-gg_chart %<+% metadata #adding metadata
+  }
+
   if(combo_type == "small_multiple"){
-    gg_chart<- gg_chart %<+% metadata+ #adding metadata
+    gg_chart<- gg_chart + #adding metadata
       geom_tippoint(aes(colour=show_var,alpha=show_var)) +
       scale_alpha_manual(values=c(1,0))+
       theme(legend.position = "top")
@@ -75,26 +79,27 @@ render_phylogenetic_tree <- function(...) {
     gg_chart <- gg_chart + ggtree::geom_tiplab()
   }
 
-  if(!is.na(default_colour_var)) {
-    if (is.na(colour_scale)) {
-      colours <- get_colour_palette(data, default_colour_var)
-    } else {
-      colours <- colour_scale
-    }
-
-    #getting ready to merge colours into metadata
-    colours <- as.data.frame(colours)
-    tmp <- rownames(colours)
-    colours <- cbind(tmp, data.frame(colours, row.names = NULL))
-
-    #rename for joining
-    colnames(colours)[colnames(colours) == "tmp"] <- default_colour_var
-
-    #join with metadata
-    metadata <- plyr::join(x=metadata, y=colours, by=default_colour_var)
-
-    gg_chart <- gg_chart %<+% metadata + geom_tippoint(color=metadata$colours) +
-      scale_color_manual(values = colour_scale)
+  if(!is.na(color) & !all(is.na(metadata))) {
+    gg_chart<-gg_chart %+% aes_string(color = color) + geom_tippoint()
+    # if (is.na(colour_scale)) {
+    #   colours <- get_colour_palette(data, default_colour_var)
+    # } else {
+    #   colours <- colour_scale
+    # }
+    #
+    # #getting ready to merge colours into metadata
+    # colours <- as.data.frame(colours)
+    # tmp <- rownames(colours)
+    # colours <- cbind(tmp, data.frame(colours, row.names = NULL))
+    #
+    # #rename for joining
+    # colnames(colours)[colnames(colours) == "tmp"] <- default_colour_var
+    #
+    # #join with metadata
+    # metadata <- plyr::join(x=metadata, y=colours, by=default_colour_var)
+    #
+    # gg_chart <- gg_chart %<+% metadata + geom_tippoint(color=metadata$colours) +
+    #   scale_color_manual(values = colour_scale)
   }
 
   #modifying tree aesethetics

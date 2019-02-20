@@ -58,10 +58,22 @@ plot_simple<-function(...){
   if(!(is.null(spec_list$combo_axis_var))){
     if(is.data.frame(data)){
       #add a new variable to the data
-      data$combo_axis_var<-spec_list$combo_axis_var$var
+      #in proper order
+      idx_order<-match(data[,as.character(spec_list$combo_axis_var$common_var)],spec_list$combo_axis_var$var_lab)
+      data$combo_axis_var<-spec_list$combo_axis_var$var[idx_order]
+
+      #make that the variable to visualize on
       spec_list[[spec_list$combo_axis_var$var_match]]<-"combo_axis_var"
     }else{
-      print("Axis modification for non-tabular data currently not supported")
+      if(!(gsub(" ","_",spec_list$chart_type) %in% gevitr_env$lead_chart_types)){
+        # -- TO DO : expand in future --
+        if(spec_list$chart_type == "alignment"){
+          spec_list[[spec_list$combo_axis_var$var_match]]<-"combo_axis_var"
+        }else{
+          print("Axis modification for non-tabular data currently not supported")
+        }
+      }
+
     }
   }
 
@@ -111,7 +123,6 @@ plot_simple<-function(...){
 #'@return plots to display
 plot_many_types_general <- function(...) {
   args_list <- list(...)
-  #all_plots <- lapply(args_list, function(x) {do.call(plot_simple, x)})
   combo_plots<-arrange_plots(args_list, labels = "AUTO")
 
   return(combo_plots)
@@ -286,9 +297,52 @@ plot_composite<-function(...){
 
      #make sure axes align with leadChart breaks (if there is a lead chart)
      #again, assume primarily categorical variables, should change to support continous alignments
-     var_match<-c("x","y")[match(spec_list$common_var,unlist(tmp_info[,c("x","y")]))]
-     baseSpecs$combo_axis_var<-list(var = lead_axis_info$y_break, var_match=var_match)
+     if(grepl("gevitR_checkID",as.character(spec_list$common_var))){
+       # -- TO DO: Make a bit better, but generally, these are in Y for composite --
+       var_match<-"y"
+     }else{
+       var_match<-c("x","y")[match(spec_list$common_var,unlist(tmp_info[,c("x","y")]))]
+     }
 
+     #order and overlap of axis items
+     if(chart != leadChart){
+       supp_chart<-get(tmp_info$data,envir = globalenv())
+       if(is.data.frame(supp_chart)){
+          lab_dat<-supp_chart
+       }else{
+         lab_dat<-get_raw_data(supp_chart)
+       }
+
+       #Accept either exact matches, or instances where
+       #One dataset is a complete and perfect subset of the other
+       if(is.data.frame(lab_dat)){
+         match_order<-match(lab_dat[,as.character(spec_list$common_var)],lead_axis_info$y_labels)
+       }else{
+         match_order<-match(get_raw_data(supp_chart),lead_axis_info$y_labels)
+       }
+
+       #this is one exception of alignments otherwise
+       #everything must be a perfect match
+       if(length(match_order)<length(lead_axis_info$y_labels)){
+         #instances where one dataset is a perfect subset of the other
+         baseSpecs$combo_axis_var<-list(var = lead_axis_info$y_break[match_order],
+                                        var_lab = lead_axis_info$y_label[match_order],
+                                        var_match=var_match,
+                                        y_limits=c(min(lead_axis_info$y_break),max(lead_axis_info$y_break)),
+                                        common_var = spec_list$common_var)
+       }else{
+         #instances of exact matches
+         baseSpecs$combo_axis_var<-list(var = lead_axis_info$y_break,
+                                        var_lab = lead_axis_info$y_label,
+                                        var_match=var_match,
+                                        common_var = spec_list$common_var)
+       }
+     }else{
+       baseSpecs$combo_axis_var<-list(var = lead_axis_info$y_break,
+                                      var_lab = lead_axis_info$y_label,
+                                      var_match=var_match,
+                                      common_var = spec_list$common_var)
+     }
 
      #flip chart co-ordinates if necessary
      baseSpecs$flip_coord<-tmp_info$flip_coord
@@ -304,7 +358,9 @@ plot_composite<-function(...){
      baseSpecs$shrink_plot_margin <-TRUE
 
      #generate the single chart
-
+     #note, composites only support equal sets, or situations where one set is a total
+     #and complete subset of the other.. in the latter case, there needs to be
+     #more adjustment of the axis
      tmp<-do.call(plot_simple,args=baseSpecs,envir = parent.frame())
      all_plots[[chart]]<-list(plotItem = tmp) #need to store as list
   }
@@ -322,6 +378,16 @@ plot_many_linked<-function(...){
   spec_list<-list(...)
   all_plots<-c()
 
+  for(spec_name in spec_list$base_charts){
+    baseSpecs<-get(spec_name,envir = globalenv())
+    baseSpecs$color<-spec_list$link_by
+    all_plots[[spec_name]]<-do.call(plot_simple,args=baseSpecs,envir = parent.frame())
+  }
+
+  combo_plots<-arrange_plots(all_plots)
+
+  return(combo_plots)
+
 }
 
 #'Helper function to arrange plots for displaying
@@ -330,7 +396,7 @@ plot_many_linked<-function(...){
 arrange_plots <- function(chart_list, labels = NULL,align_dir=NULL, ...) {
 
   chart_list <- lapply(chart_list, function(chart) {
-    chart<-if(class(chart) == "list") chart[[1]] else chart
+    chart<-if("list" %in% class(chart)) chart[[1]] else chart
     chart_class<-class(chart)
 
     if ('ggtree' %in% chart_class) {
@@ -348,15 +414,16 @@ arrange_plots <- function(chart_list, labels = NULL,align_dir=NULL, ...) {
   })
 
 
+
   #NOTES: in order to add a shared legend, pass in shared_legend = TRUE in the ...
   if(!is.null(align_dir)){
     if(align_dir == "h"){
-      combo<-cowplot::plot_grid(plotlist = chart_list, labels = labels, nrow=1,align  = "h",scale=0.97)
+      combo<-cowplot::plot_grid(plotlist = chart_list, labels = labels, nrow=1,align  = "h",scale=0.97,...)
     }else if(algin_dir == "v"){
-      combo<-cowplot::plot_grid(plotlist = chart_list, ncol=1,labels = labels, align="v")
+      combo<-cowplot::plot_grid(plotlist = chart_list, ncol=1,labels = labels, align="v",...)
     }
   }else{
-    combo<-cowplot::plot_grid(plotlist = chart_list,labels = labels)
+    combo<-cowplot::plot_grid(plotlist = chart_list,labels = labels,...)
   }
 
   return(combo)

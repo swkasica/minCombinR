@@ -236,18 +236,21 @@ render_scatter <- function(...) {
   list2env(spec_list,env=environment())
 
   gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
-    geom_point()
+    ggplot2::geom_point()
 
-  if(!is.na(default_colour_var)) {
+  p<-ggplot2::ggplot(data,aes(x=month,y=site.id))+
+    ggplot2::geom_point()
+
+  if(!is.na(color)) {
     #Add colour variable
-    gg_chart <- gg_chart %+% aes_string(colour = default_colour_var)
+    gg_chart <- gg_chart %+% aes_string(colour = color)
   }
 
-  if(!is.na(colour_scale)[1]) {
-    #Scale colour variable
-    gg_chart <- gg_chart +
-      scale_colour_manual(name = default_colour_var, values = colour_scale)
-  }
+  # if(!is.na(colour_scale)[1]) {
+  #   #Scale colour variable
+  #   gg_chart <- gg_chart +
+  #     scale_colour_manual(name = default_colour_var, values = colour_scale)
+  # }
 
 
 

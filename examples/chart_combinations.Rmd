@@ -23,7 +23,7 @@ tab_dat<-input_data(file = system.file("extdata", "ebov_metadata.csv", package =
 tree_dat<-input_data(file = system.file("extdata", "ebov_tree.nwk", package = "gevitR"),dataType = "tree")
 
 #Genomic data
-genomic_dat<-input_data(file = system.file("extdata", "ebov_GIN_genomic.fasta", package = "gevitR"),dataType = "dna")
+genomic_dat<-input_data(file = system.file("extdata", "ebov_GIN_genomic_FIXED.fasta", package = "gevitR"),dataType = "dna")
 
 #Shape files
 #Shape files require that .shp,.shx,and .prj files at a minimun to be in the same directory
@@ -99,8 +99,7 @@ plot(sm_combo_tree)
 ```{r composite_no_error,message=FALSE,warning=FALSE}
 phyloTree_chart<-specify_base(chart_type = "phylogenetic tree",data="tree_dat")
 scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "month",y="site.id")
-scatter_chart_two<-specify_base(chart_type = "scatter",data="tab_dat",x = "country",y="site.id")
-
+scatter_chart_two<-specify_base(chart_type = "scatter",data="tab_dat",x = "country",y="site.id",title="Cases by country")
 
 composite_combo<-specify_combination(combo_type = "composite",
                                      base_charts = c("phyloTree_chart","scatter_chart","scatter_chart_two"))
@@ -114,7 +113,7 @@ Example without the phylogenetic tree
 
 *This example will have an error because pie charts cannot be part of composite combinations*
 Pie chart should be autonatically removed from the specifications
-```{r composite_no_error,message=FALSE,warning=FALSE,}
+```{r composite_no_error_two,message=FALSE,warning=FALSE,}
 
 pie_chart<-specify_base(chart_type = "pie",data="tab_dat",x = "country")
 composite_combo<-specify_combination(combo_type = "composite",
@@ -143,16 +142,57 @@ composite_combo<-specify_combination(combo_type = "composite",
 plot(composite_combo)
 
 ```
+
+Here's a combination with a genomic map..
+```{r,fig.width=10}
+#genomic chart
+#for illustrative purposes, show fewer positions
+diff_seq<-get_diff_pos(genomic_dat)
+genome_chart<-specify_base(data = "genomic_dat",chart_type = "alignment",title="Genome Alignment",show_pos=diff_seq[1:20])
+
+
+#timeline, with some fake end_dates
+#using the existing tabular data
+#using the existing tabular data
+time_dat<-tab_dat@data[[1]]
+time_dat$collection_date<-as.Date(time_dat$collection_date)
+
+#let's add some end dates to keep it interesting
+time_dat$collection_date_end<-time_dat$collection_date + sample(10:30,nrow(time_dat),replace = TRUE)
+
+time_dat$collection_date_end<-sapply(as.character(time_dat$collection_date_end),function(x){
+   if(runif(1)>0.9)
+     return(x)
+    return(NA)
+})
+
+time_dat<-dplyr::filter(time_dat,!is.na(collection_date_end))
+
+timeline_chart<-specify_base(chart_type = "timeline"
+                             ,data="time_dat",
+                             start = "collection_date",
+                             end ="collection_date_end", 
+                             y = "site.id",
+                             title="Timeline")
+
+
+
+
+composite_combo<-specify_combination(combo_type = "composite", base_charts = c("phyloTree_chart","scatter_chart_two","timeline_chart","genome_chart"))
+plot(composite_combo)
+
+```
+
+Note that in the above case genomic data is not available for all of the items in the phylogenetic tree. In fact, our source data is for Guinea only. The composite algorithm is able to adjust in instances where one dataset is a perfect subset of the other. It is to the user to ensure this. 
+
 ### Color Linked Combinations
 
+Finally, it could be interesting to link serveral different chart types together by colour. In the above examples, we may want to link the phylogenetic tree with the timeline according to the different countries. For the non-tabular data, it's important to have so associated metadata, otherwise, it is not possible to link information. It is up to the user to establish that two variables are actually linkable by the same variable. Some of the code form the composite combination is borrowed to see if two datasets are even linkable to help with the color linkage.
+
+**First scenario - no metadata provided for the tree**
+
+minCombinR will try to find if there are linkages and if there are EXACT MATCHES will link tabular data as tree's metadata
 ```{r}
-ebov<-tab_dat@data[[1]] #make this nicer
-ebov_case_counts<-ebov %>% 
-  group_by(country,month) %>%
-  count()
-
-line_chart<-specify_base(chart_type = "line",data="ebov_case_counts",x = "month",y="n",group = "country")
-
-#let's link these results to a scatter chart and the phylogenetic tree
-
+composite_combo<-specify_combination(combo_type = "color_linked", base_charts = c("phyloTree_chart","scatter_chart_two","scatter_chart"),link_by="country")
+plot(composite_combo)
 ```
