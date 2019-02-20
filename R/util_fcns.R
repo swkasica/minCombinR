@@ -1,3 +1,9 @@
+#Handy function to dynamically combine aes for ggplot
+`+.uneval` <- function(a,b) {
+  `class<-`(modifyList(a,b), "uneval")
+}
+
+
 #might go elsewhere, but essentially, calls a shinyapp like a function to allow a user to annotate their image
 #and create the image file
 #An important detail : all the spatial mappings are depend on OUR chioce of how to render the image
@@ -49,7 +55,8 @@ annotate_app<-function(img,imgDetails){
         ggplot()+
           xlim(c(0,imgDetails$width))+
           ylim(c(0,imgDetails$height))+
-          annotation_custom(imgRaster, -Inf, Inf, -Inf, Inf) +
+          #scale_x_continuous(expand=c(0,0))+
+          annotation_custom(imgRaster, 0, imgDetails$width, 0, imgDetails$height) +
           theme_bw()
       })
 
@@ -102,11 +109,19 @@ annotate_app<-function(img,imgDetails){
         elemID<-paste0(type,values$pointObj)
         values$pointObj<-values$pointObj+1
 
+        #ggplot, oddly, won't allow the origin to be 0,0 and the
+        #expand scales function appears to die when used in the way
+        #that this is used. SSo a correction if neede here
+        x<-ifelse(input$plot_click$x<0,0,input$plot_click$x)
+        y<-ifelse(input$plot_click$y<0,0,input$plot_click$y)
+
         if(!input$elementID==""){
-          values$df_data<-rbind(values$df_data,c(elemID,input$plot_click$x,input$plot_click$y,NA,NA,input$elementID,type))
+          x<-10
+          values$df_data<-rbind(values$df_data,c(elemID,x,y,NA,NA,input$elementID,type))
           updateTextInput(session,"elementID",value="")
         }else{
-          values$df_data<-rbind(values$df_data,c(elemID,input$plot_click$x,input$plot_click$y,NA,NA,"ADD ELEMENT ID",type))
+
+          values$df_data<-rbind(values$df_data,c(elemID,x,y,NA,NA,"ADD ELEMENT ID",type))
         }
 
         annotDat<<-values$df_data
@@ -133,7 +148,7 @@ annotate_app<-function(img,imgDetails){
       #observe and keep edits user makes to cell
       observeEvent(input$elementTable_cell_edit,{
         changeSite<-input$elementTable_cell_edit
-        values$df_data[changeSite$row,changeSite$col+1]<-changeSite$value
+        values$df_data[changeSite$row,changeSite$col]<-changeSite$value
 
         annotDat<<-values$df_data
       })
@@ -141,16 +156,4 @@ annotate_app<-function(img,imgDetails){
     }
   )
 
-}
-
-#---------------------------------------------------
-# Data conversion functions specific to dna inputs
-#---------------------------------------------------
-
-readVCF<-function(file = NULL){
-  print("READ VCF")
-}
-
-convAlignMat<-function(files=NULL){
-  print("ALGIN")
 }

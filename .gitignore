@@ -4,3 +4,5 @@
 .Ruserdata
 ./inst
 ./inst/examples
+./R/*_old.R
+./ana_scratch.R
