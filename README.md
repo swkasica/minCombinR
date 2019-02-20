@@ -16,7 +16,7 @@ minCombinR was inspired by our prior research to understand how analytic experts
 minCombinR implements an architecture for generating static charts and complex combinations using a minimal specification syntax. We are currently in the process of writing a manuscript that details our theoretical and technical contributions of our architecture. 
 
 #### Project Status
-minCombinR is currently stable research code. Those of you that wish to download an play around with minCombinR are welcomed to do so. Please use the issues in this repository tell us what you've found.
+minCombinR is currently stable research code. We are in the process of testing it, finding edge cases, and defining reasonable limits of what we support. Those of you that wish to download and play around with minCombinR are welcomed to do so. Please use the issues in this repository tell us what you've found.
 
 
 ### Getting started
