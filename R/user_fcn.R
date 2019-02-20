@@ -220,7 +220,7 @@ specify_combination<-function(combo_type=NA,
     }
 
     #return all charts that are linkable because there is a common variable
-    compat_charts<-return_compatible_chart_link(chart_info,combo_type = "composite")
+    #compat_charts<-return_compatible_chart_link(chart_info,combo_type = "composite")
 
     #for each of the charts, confirm that the linking variable exists
     #and that it has the same "levels" as the other chart types
@@ -253,24 +253,38 @@ specify_combination<-function(combo_type=NA,
           }else{
             #there is no associated meta
             #check if there is a perfect discovered a perfect link
-            compat_tmp<-dplyr::filter(compat_charts, chart_one == chart_name | chart_two == chart_name)
+            comp_charts<-setdiff(chart_info$chart_name,chart_name)
+            #for(comp_chart in comp_charts){
+            #  comp_info<-dplyr::filter(comp_charts, name == comp_chart)
+            #  comp_dat<-get(comp_info$data)
+            #}
 
-            if(nrow(compat_tmp)>0){
-              metasrc<-setdiff(unname(unlist(compat_tmp[,c(1,2)])),chart_name)
+            #compat_tmp<-dplyr::filter(compat_charts, chart_one == chart_name | chart_two == chart_name)
+
+            if(length(comp_charts)>0){
+              #metasrc<-setdiff(unname(unlist(compat_tmp[,c(1,2)])),chart_name)
+              metasrc<-comp_charts
               metadat<-NULL
               for(item in metasrc){
                 meta_spec<-get(item,envir=globalenv())
                 meta_tmp<-get(meta_spec$data,envir=globalenv())
                 if(meta_tmp@type == "table"){
+                  dat_raw<-get_raw_data(dat)
+                  comp_raw<-get_raw_data(meta_tmp)
+
+                  data_link<-check_link(dat_raw,comp_raw)
+
                   #only tables can be metadata
-                  if(link_by %in% colnames(meta_tmp@data[[1]])){
+                  if(length(data_link)>0 & (link_by %in% colnames(meta_tmp@data[[1]]))){
                     dat_tmp<-meta_tmp@data[[1]]
-                    #add this to our data object
-                    dat@data$metadata<-dat_tmp
-                    assign(chart$data,dat,envir=globalenv())
                     #now report those linkages
                     var_lvls<-unique(dat_tmp[,link_by])
                     lvl_check<-rbind(lvl_check,cbind(rep(chart_name,length(var_lvls)),var_lvls))
+
+                    #add this to our data object
+                    dat@data$metadata<-dat_tmp
+                    assign(chart$data,dat,envir=globalenv())
+                    break() #once you find the first compatability, stop
                   }
                 }
               }
@@ -297,7 +311,8 @@ specify_combination<-function(combo_type=NA,
     colnames(lvl_check)<-c("chart","lvl")
 
     # TO DO: Right now, this work if there are exact matches - not so much of inexact matches
-    keep_lvls<-lvl_check %>% group_by(lvl) %>%
+    keep_lvls<-lvl_check %>%
+      group_by(lvl) %>%
       count() %>%
       mutate(match_items = n == length(keep_charts)) %>%
       filter(match_items)

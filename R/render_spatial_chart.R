@@ -73,7 +73,6 @@ render_geographic_map <- function(...) {
     leaflet::addTiles() %>%
     leaflet::fitBounds(~min(long), ~min(lat), ~max(long), ~max(lat)) %>%
     leaflet::addCircleMarkers(~long, ~lat)
-
   return(map_chart)
 }
 

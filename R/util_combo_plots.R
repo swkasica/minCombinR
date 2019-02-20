@@ -203,7 +203,6 @@ return_compatible_chart_link<-function(chart_info = NA,combo_type = NA){
 
   #All possible chart compatbilities
   chart_comp<-t(combn(chart_layer,m=2))
-
   pathStep<-apply(chart_comp,1,function(x,g){
     tmp<-igraph::shortest_paths(g,x[1],x[2])
     tmp_len<-length(tmp$vpath[[1]])
@@ -233,7 +232,6 @@ return_compatible_chart_link<-function(chart_info = NA,combo_type = NA){
     group_by(link) %>%
     tally() %>%
     top_n(1)
-
     #compatible charts
     compat_info<-dplyr::filter(compat_info,link == link_item$link)
   }

@@ -235,11 +235,25 @@ render_scatter <- function(...) {
   #so they can be accessed without using a list
   list2env(spec_list,env=environment())
 
+  if(class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x]))>50){
+      print("There are more than 50 unique items to show on the x-axis, supressing the axis labels ")
+      rm_x_labels<-TRUE
+    }
+
+  }
+
+  if(class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y]))>50){
+      print("There are more than 50 unique items to show on the y-axis, supressing the axis labels ")
+      rm_y_labels<-TRUE
+    }
+
+  }
+
   gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
     ggplot2::geom_point()
 
-  p<-ggplot2::ggplot(data,aes(x=month,y=site.id))+
-    ggplot2::geom_point()
 
   if(!is.na(color)) {
     #Add colour variable
