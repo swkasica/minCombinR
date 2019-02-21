@@ -23,7 +23,7 @@ minCombinR is currently stable research code. We are in the process of testing i
 To get started with minCombinR, use the devtools package to install the most recent version from github:
 
 ```R
-devtools::install_github("sfisher4/mincombinr")
+devtools::install_github("amcrisan/mincombinr")
 ```
 
 Please note: while the *install_github* command will download most of the package dependencies for mincombinr there are two special dependencies that you must install. We recommend that you install those special dependencies *before* you install mincombinr. See the section below for more details:
