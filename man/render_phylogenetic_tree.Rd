@@ -6,9 +6,6 @@
 \usage{
 render_phylogenetic_tree(...)
 }
-\arguments{
-\item{...}{}
-}
 \description{
 Render Phylogenetic Tree
 }
