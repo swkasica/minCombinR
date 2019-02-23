@@ -27,6 +27,8 @@ genomic_dat<-input_data(file = system.file("extdata", "ebov_GIN_genomic_FIXED.fa
 gin_shape_dat<-input_data(file = system.file("extdata", "gin_admbnda_adm1_ocha_itos.shp", package = "mincombinr"),dataType = "spatial")
 lbr_shape_dat<-input_data(file = system.file("extdata", "lbr_admbnda_adm1_ocha.shp", package = "mincombinr"),dataType = "spatial")
 sle_shape_dat<-input_data(file = system.file("extdata", "sle_admbnda_adm1_1m_gov_ocha_20161017.shp", package = "mincombinr"),dataType = "spatial")
+
+join_spatial_data(gin_shape_dat,lbr_shape_dat,sle_shape_dat)
 ```
 ## Common statistical charts
 

@@ -1,7 +1,7 @@
 # Environment that holds various global variables and settings for gevitR,
 # such as the differen chart types and the require aesthetics.
 # It is not exported and should not be directly manipulated by other packages.
-
+load("R/sysdata.rda")
 gevitr_env<-new.env(parent = emptyenv())
 
 
