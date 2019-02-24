@@ -19,15 +19,23 @@ render_choropleth <- function(...) {
     data<-get(data,envir = globalenv())  #get data from the global environment
   }
 
-  ggchart <- ggplot() +
-    geom_polygon(data = data,
-                 aes_string(x = lat_var, y = long_var, group = group, fill = fill),
-                 color = "black", size = 0.25) +
-    coord_map()
+  aes_val<-aes()
 
-  if (flip_coord) {
-    gg_chart <- gg_chart %>% coord_flip()
+  if(!is.na(color)){
+    #If the user enters internal ID
+    color<-if(color == "internalID") "minID" else color
+
+    if(!(color %in% colnames(data))){
+      print("The color variable you've specificed is not in the data. Skipping..")
+    }else{
+      aes_val<-aes_val + aes_string(fill = color)
+    }
+
   }
+
+  gg_chart<-ggplot2::ggplot(data=data,aes_val)+
+    ggplot2::geom_sf()+
+    theme_bw()
 
   return(gg_chart)
 }
@@ -55,6 +63,14 @@ render_geographic_map <- function(...) {
     data<-get(data,envir = globalenv())  #get data from the global environment
   }
 
+  #for geographic maps a data frame is expected with lat and long
+  #for shape files, use choropleth maps.
+
+  # ---- TO DO : Gracefully re-direct ----
+  if(!is.data.frame(data)){
+    stop("To generate a geographic map, use tabular data and specify lat and long co-ordinates")
+  }
+
 
   #if arguements are passed as lat long instead of latitude and longitude
   if(is.na(lat) & !is.na(y)){
@@ -63,16 +79,33 @@ render_geographic_map <- function(...) {
     data$lat<-data[[lat]]
   }
 
+
   if(is.na(long) & !is.na(x)){
     data<-dplyr::rename(data,long = x)
   }else if(!is.na(long)){
     data$long<-data[[long]]
   }
 
-  map_chart <- leaflet::leaflet(data) %>%
-    leaflet::addTiles() %>%
-    leaflet::fitBounds(~min(long), ~min(lat), ~max(long), ~max(lat)) %>%
-    leaflet::addCircleMarkers(~long, ~lat)
-  return(map_chart)
+  #Draw the map
+  #Create a bounding box
+  bbox<-c(min(data[,long]),min(data[,lat]),
+          max(data[,long]),max(data[,lat]))
+
+  aes_val<-aes_string(x = long,y=lat)
+
+  if(!is.na(color)){
+    aes_val<-aes_val + aes_string(color = color)
+  }
+
+  #automatically set the alpha based upon the number of points
+  #in future, this could be a place to automatically cluster data
+
+
+  #now render it
+  gg_chart<-ggmap::get_stamenmap(bbox,maptype = "toner-lite",zoom=6) %>%
+  ggmap::ggmap()+
+    geom_point(data=data,aes_val)
+
+  return(gg_chart)
 }
 

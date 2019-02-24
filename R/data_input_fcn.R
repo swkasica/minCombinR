@@ -309,10 +309,11 @@ join_spatial_data<-function(...,obj_names = NULL){
     geo_metadata<-rbind(geo_metadata,geo_meta_tmp)
   }
 
+  source_info<-sapply(spatial_obj,function(x){x@id})
   objDat<-new("gevitDataObj",
-              id  = paste("spatial",dataID,sep="_"),
+              id  = dataID,
               type = "spatial",
-              source = paste(names(spatial_obj),sep=";"),
+              source = paste(source_info,collapse =";"),
               data = list(geometry=geo_data,
                           metadata = geo_metadata))
   return(objDat)

@@ -28,7 +28,9 @@ gin_shape_dat<-input_data(file = system.file("extdata", "gin_admbnda_adm1_ocha_i
 lbr_shape_dat<-input_data(file = system.file("extdata", "lbr_admbnda_adm1_ocha.shp", package = "mincombinr"),dataType = "spatial")
 sle_shape_dat<-input_data(file = system.file("extdata", "sle_admbnda_adm1_1m_gov_ocha_20161017.shp", package = "mincombinr"),dataType = "spatial")
 
-join_spatial_data(gin_shape_dat,lbr_shape_dat,sle_shape_dat)
+#put all the individual shape files together so that the system
+#knows to try visualize it all together
+shape_dat<-join_spatial_data(gin_shape_dat,lbr_shape_dat,sle_shape_dat)
 ```
 ## Common statistical charts
 
@@ -110,6 +112,25 @@ plot(cat_stripe_chart)
 ### TO DO: NODE-LINK DIAGRAM
 
 ## Spatial charts
+
+There are two ways to view a geographic map. First, working from shape files:
+
+First, there's everything together
+```{r}
+spatial_chart<-specify_base(chart_type="choropleth",data="shape_dat")
+plot(spatial_chart)
+```
+
+Also, it possible just to see one individual map too, not just everything together
+
+```{r}
+spatial_chart<-specify_base(chart_type="choropleth",data="gin_shape_dat")
+plot(spatial_chart)
+```
+
+
+Second, is working from a co-ordinates from a tabular data file. The background raster image is supplied by the 'Openstreemaps' package (and the broader project). They do great work, consider supporting them if you like this feature too.
+
 ```{r map_charts,message=FALSE,warning=FALSE}
 map_chart<-specify_base("geographic map",data="tab_dat",lat = "latitude",long = "longitude")
 plot(map_chart)
@@ -249,7 +270,7 @@ save(metadata,file="../inst/extdata/gel_img_meta.rds")
 ```
 
 ```{r}
-load(file = system.file("extdata", "gel_img_meta.rds", package = "mincombinr"))
+load(file = system.file("extdata", "gel_img_meta_shipped.rds", package = "mincombinr"))
 gel_img@data$metadata<-metadata
 
 gel_img@data$metadata$rnd_class<-sample(c("Resistant","Susceptible"),replace = TRUE,size=nrow(metadata))
