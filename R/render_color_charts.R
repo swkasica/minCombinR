@@ -16,7 +16,7 @@ render_heatmap <- function(...) {
     data<-get(data,envir = globalenv())  #get data from the global environment
   }
 
-  gg_chart <- ggplot(data, aes_string(x, y, fill = z)) +
+  gg_chart <- ggplot(data, aes_string(x, y, fill = color)) +
     geom_tile() +
     theme(legend.position="bottom")
 
@@ -25,6 +25,7 @@ render_heatmap <- function(...) {
     if (default_colour_var != z && !(is.na(default_colour_var))) {
       warning("z is masking link_var because link_var and z have to be the same for a heat_map when linking with colour")
     }
+
     get_palette <- colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))
     colr_pal <- get_palette(abs(diff(colour_scale)))
     gg_chart <- gg_chart +
