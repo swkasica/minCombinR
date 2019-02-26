@@ -17,6 +17,7 @@ randID <- function(n = 1) {
 #' @param ...
 #'
 #' @import dplyr
+#' @export
 #' @return
 input_data<-function(file  = NA, dataType = NA, asObj=TRUE,desc = NA,...){
   #Only supports specific data types
@@ -260,6 +261,64 @@ input_spatial<-function(file=NA,asObj=TRUE,dataID=NA,desc=NA,...){
     return(nc)
   }
 }
+
+#Helper function to join spatial file
+
+join_spatial_data<-function(...,obj_names = NULL){
+
+  spatial_obj<-list(...)
+
+  #spatial object variables
+  dataID<-paste("spatial",randID(),sep="_")
+
+  geo_data<-c()
+  geo_metadata<-c()
+
+  for(idx in 1:length(spatial_obj)){
+
+    obj<-spatial_obj[[idx]]
+
+    if(obj@type !="spatial") next
+
+    geo_tmp<-obj@data$geometry
+    geo_meta_tmp<-if(!is.null(obj@data$metadata)) obj@data$metadata else NULL
+
+    item_id<-if(is.null(obj_names)) obj@id else obj_names[idx]
+
+    ##DEV NOTE: Assumes shape file only has geometry column
+    # When read in as a shape file
+    #adding to the geometry item
+    geo_tmp_col<-colnames(geo_tmp)
+
+    if(length(geo_tmp_col)>1){
+      warning("This method assumes that your shape file data only contains geometry information. Strange sideffects may ensue.")
+    }
+
+    geo_tmp<-cbind(rep(item_id,times = nrow(geo_tmp)),geo_tmp)
+    colnames(geo_tmp)<- c("minID",geo_tmp_col)
+
+    geo_data<-rbind(geo_data,geo_tmp)
+
+    #adding to metadata item
+    if(is.null(geo_meta_tmp) | all(is.na(geo_meta_tmp))) next
+
+    geo_meta_col<-colnames(geo_meta_tmp)
+    geo_meta_tmp<-cbind(rep(item_id,times = nrow(geo_tmp)),geo_meta_tmp)
+    colnames(geo_meta_tmp)<-c("minID",geo_tmp_col)
+
+    geo_metadata<-rbind(geo_metadata,geo_meta_tmp)
+  }
+
+  source_info<-sapply(spatial_obj,function(x){x@id})
+  objDat<-new("gevitDataObj",
+              id  = dataID,
+              type = "spatial",
+              source = paste(source_info,collapse =";"),
+              data = list(geometry=geo_data,
+                          metadata = geo_metadata))
+  return(objDat)
+}
+
 
 #***************************************************************
 # INPUT PHYLOGENETIC TREE DATA

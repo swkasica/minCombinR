@@ -60,6 +60,7 @@ plot_simple<-function(...){
       #add a new variable to the data
       #in proper order
       idx_order<-match(data[,as.character(spec_list$combo_axis_var$common_var)],spec_list$combo_axis_var$var_lab)
+
       data$combo_axis_var<-spec_list$combo_axis_var$var[idx_order]
 
       #make that the variable to visualize on
@@ -237,6 +238,7 @@ plot_composite<-function(...){
     dplyr::mutate(isLead = ifelse(chart_type %in% gevitr_env$master_chart_types,TRUE,FALSE)) %>%
     dplyr::arrange(desc(isLead))
 
+
   # CHART ORDER
   # order charts, beginning with lead chart in initital position
   # data frame is already ordered from the arrange step
@@ -248,12 +250,13 @@ plot_composite<-function(...){
   #Make sure that all chart co-ordinates are flipped to match
   #the lead chart - this will depend upon alignment direction
   #default is horizontal (align all the y-axis)
-  align_dir<-"h"
 
   if(!is.null(spec_list$alignment)){
     align_dir<-ifelse(tolower(spec_list$alignment) %in% c("h","v"),
                       spec_list$alignment,
                       "h")
+  }else{
+    align_dir<-"h"
   }
 
   if(align_dir == "h"){
@@ -270,7 +273,24 @@ plot_composite<-function(...){
 
   # PLOTTING FUNCTIONS
   # Generate the lead plot first, use that information to modify axis
-  leadChart<-chart_info[which(chart_info$isLead),]$chart_name
+
+  #if there is no lead chart pick one chart
+  #but make sure the common axis is
+  flip_lead_chart<-FALSE
+  if(all(!chart_info$isLead)){
+    #pick the first chart that doesn't need to flip co-ordinates
+    leadChart<-chart_info %>% dplyr::filter(flip_coord == FALSE)
+    if(nrow(leadChart)>0){
+      leadChart<-leadChart[1,]$chart_name
+    }else{
+      #flip strongly flip the first chart
+      leadChart<-chart_info[1,]$chart_name
+      flip_lead_chart<-TRUE
+    }
+
+  }else{
+    leadChart<-chart_info[which(chart_info$isLead),]$chart_name
+  }
 
   if(length(leadChart)>1){
     stop("For some reason, this specification has two lead charts. This is not correct - specify_combination should have caught this error.")
@@ -281,7 +301,10 @@ plot_composite<-function(...){
 
   #If there is a lead chart, plot that first
   leadChart_baseSpecs<-get(leadChart,envir = globalenv())
-  leadChart_baseSpecs$shrink_plot_margin<-TRUE
+
+  if(flip_lead_chart){
+    leadChart_baseSpecs<-flip_coord<-TRUE
+  }
 
   all_plots[[leadChart]]<-list(plotItem = do.call(plot_simple,args=leadChart_baseSpecs,envir = parent.frame()))
   lead_axis_info<-get_axis_info(all_plots[[leadChart]]$plotItem,align = align_dir)
@@ -364,7 +387,6 @@ plot_composite<-function(...){
      tmp<-do.call(plot_simple,args=baseSpecs,envir = parent.frame())
      all_plots[[chart]]<-list(plotItem = tmp) #need to store as list
   }
-
 
   #return the composite plot
   combo_plots<-arrange_plots(chart_list = all_plots,align_dir = align_dir)

@@ -152,12 +152,23 @@ specify_base<-function(chart_type=NULL, data=NULL,...){
   return(arg_vals)
 }
 
+#' Specify combination
+#'
+#' @param combo_type
+#' @param base_charts
+#' @param facet_by
+#' @param link_by
+#' @param alignment
+#'
+#' @return
+#' @export
 specify_combination<-function(combo_type=NA,
                               base_charts = NA,
                               facet_by=NA,
                               link_by=NA,
                              # link_mark_type=NA,
                               alignment = NA){
+
 
   if(is.na(combo_type) | length(combo_type)>1)
     stop("Please specify a combination that is either: small_multiple, composite, many_types_linked, many_types_general. Please see www.gevit.net for examples of each type of combination")

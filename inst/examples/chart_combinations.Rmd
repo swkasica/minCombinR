@@ -6,7 +6,7 @@ output: html_document
 ---
 
 
-This document demonstrates how to combine and plot different chart types using gevitR. This document assumes that you have already run the "Getting started with gevitR" and the "Simpel Chart Types" and that the necessary data as already been loaded into your R workspace.
+This document demonstrates how to combine and plot different chart types using gevitR. This document assumes that you have already run the "Getting started with gevitR" and the "Simple Chart Types" and that the necessary data as already been loaded into your R workspace.
 
 Another good option for data: https://datadryad.org/bitstream/handle/10255/dryad.111738/ZIKV_with1966_strict_skyline_ctmc.xml?sequence=1
 Also exists in microreact
@@ -32,6 +32,7 @@ genomic_dat<-input_data(file = system.file("extdata", "ebov_GIN_genomic_FIXED.fa
 gin_shape_dat<-input_data(file = system.file("extdata", "gin_admbnda_adm1_ocha_itos.shp", package = "mincombinr"),dataType = "spatial")
 lbr_shape_dat<-input_data(file = system.file("extdata", "lbr_admbnda_adm1_ocha.shp", package = "mincombinr"),dataType = "spatial")
 sle_shape_dat<-input_data(file = system.file("extdata", "sle_admbnda_adm1_1m_gov_ocha_20161017.shp", package = "mincombinr"),dataType = "spatial")
+
 ```
 
 ## Chart Combinations
@@ -104,19 +105,19 @@ Finally, it could be interesting to link serveral different chart types together
 minCombinR will try to find if there are linkages and if there are EXACT MATCHES will link tabular data as tree's metadata
 ```{r}
 phyloTree_chart<-specify_base(chart_type = "phylogenetic tree",data="tree_dat")
-scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "month",y="latitude")
-scatter_chart_two<-specify_base(chart_type = "scatter",data="tab_dat",x = "country",y="site.id")
-composite_combo<-specify_combination(combo_type = "color_linked", base_charts = c("phyloTree_chart","scatter_chart_two","scatter_chart"),link_by="country")
-plot(composite_combo)
+epicurve<-specify_base(chart_type = "histogram",data="tab_dat",x = "month")
+
+color_combo<-specify_combination(combo_type = "color_linked", base_charts = c("phyloTree_chart","map_chart","epicurve"),link_by="country")
+
+plot(color_combo)
 ```
 
 ### Composite combinations
 
 *This example will work without any errors*
 ```{r composite_no_error,message=FALSE,warning=FALSE}
-#phyloTree_chart<-specify_base(chart_type = "phylogenetic tree",data="tree_dat")
-#scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "month",y="site.id")
-#scatter_chart_two<-specify_base(chart_type = "scatter",data="tab_dat",x = "country",y="site.id",title="Cases by country")
+scatter_chart<-specify_base(chart_type = "scatter",data="tab_dat",x = "month",y="site.id")
+scatter_chart_two<-specify_base(chart_type = "scatter",data="tab_dat",x = "country",y="site.id",title="Cases by country")
 
 composite_combo<-specify_combination(combo_type = "composite",
                                      base_charts = c("phyloTree_chart","scatter_chart","scatter_chart_two"))
@@ -154,7 +155,7 @@ plot(composite_combo)
 *It also works when there isn't a tree invovled.
 ```{r}
 composite_combo<-specify_combination(combo_type = "composite",
-                                     base_charts = c("scatter_chart","bar_alt","scatter_chart_two"))
+                                     base_charts = c("bar_alt","scatter_chart","scatter_chart_two"))
 
 plot(composite_combo)
 

@@ -68,7 +68,7 @@ render_phylogenetic_tree <- function(...) {
 
   if(combo_type == "small_multiple"){
     gg_chart<- gg_chart + #adding metadata
-      geom_tippoint(aes(colour=show_var,alpha=show_var)) +
+      ggtree::geom_tippoint(aes(colour=show_var,alpha=show_var)) +
       scale_alpha_manual(values=c(1,0))+
       theme(legend.position = "top")
   }
@@ -80,7 +80,7 @@ render_phylogenetic_tree <- function(...) {
   }
 
   if(!is.na(color) & !all(is.na(metadata))) {
-    gg_chart<-gg_chart %+% aes_string(color = color) + geom_tippoint()
+    gg_chart<-gg_chart %+% aes_string(color = color) + ggtree::geom_tippoint()
     # if (is.na(colour_scale)) {
     #   colours <- get_colour_palette(data, default_colour_var)
     # } else {

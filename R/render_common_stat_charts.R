@@ -123,6 +123,21 @@ render_bar<- function(...) {
   }
 
 
+  #getting rid of x an y labels for massive character vectors
+  if(!is.na(x) && class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x])) > 50){
+      rm_x_labels<-TRUE
+    }
+  }
+
+  if(!is.na(y) && class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y])) > 50){
+      rm_y_labels<-TRUE
+    }
+  }
+
+
+
   gg_chart<-common_stats_aesethetics(gg_chart,
                                      title=title,
                                      flip_coord = flip_coord,
@@ -235,20 +250,17 @@ render_scatter <- function(...) {
   #so they can be accessed without using a list
   list2env(spec_list,env=environment())
 
-  if(class(data[,x]) %in% c("character","factor")){
-    if(length(unique(data[,x]))>50){
-      print("There are more than 50 unique items to show on the x-axis, supressing the axis labels ")
+  #getting rid of x an y labels for massive character vectors
+  if(!is.na(x) && class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x])) > 50){
       rm_x_labels<-TRUE
     }
-
   }
 
-  if(class(data[,y]) %in% c("character","factor")){
-    if(length(unique(data[,y]))>50){
-      print("There are more than 50 unique items to show on the y-axis, supressing the axis labels ")
+  if(!is.na(y) && class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y])) > 50){
       rm_y_labels<-TRUE
     }
-
   }
 
   gg_chart <- ggplot(data, aes_string(x=x, y=y)) +
@@ -266,6 +278,18 @@ render_scatter <- function(...) {
   #     scale_colour_manual(name = color, values = colour_scale)
   # }
 
+
+  if(class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x])) > 50){
+      rm_x_labels<-TRUE
+    }
+  }
+
+  if(class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y])) > 50){
+      rm_y_labels<-TRUE
+    }
+  }
 
 
   gg_chart<-common_stats_aesethetics(gg_chart,
@@ -307,8 +331,21 @@ render_histogram<- function(...) {
     #Add manual colour scale
     gg_chart <- gg_chart +
       scale_fill_manual(name = color, values = colour_scale)
-    # theme(legend.position = "none")
   }
+
+  #getting rid of x an y labels for massive character vectors
+  if(!is.na(x) && class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x])) > 50){
+      rm_x_labels<-TRUE
+    }
+  }
+
+  if(!is.na(y) && class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y])) > 50){
+      rm_y_labels<-TRUE
+    }
+  }
+
 
   gg_chart<-common_stats_aesethetics(gg_chart,
                                      title=title,
@@ -383,6 +420,21 @@ render_boxplot <- function(...) {
     # theme(legend.position = "none")
   }
 
+  #getting rid of x an y labels for massive character vectors
+  if(!is.na(x) && class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x])) > 50){
+      rm_x_labels<-TRUE
+    }
+  }
+
+  if(!is.na(y) && class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y])) > 50){
+      rm_y_labels<-TRUE
+    }
+  }
+
+
+
   gg_chart<-common_stats_aesethetics(gg_chart,
                                      title=title,
                                      flip_coord = flip_coord,
@@ -423,6 +475,21 @@ render_swarm_plot <- function(...) {
     # theme(legend.position = "none")
   }
 
+  #getting rid of x an y labels for massive character vectors
+  if(!is.na(x) && class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x])) > 50){
+      rm_x_labels<-TRUE
+    }
+  }
+
+  if(!is.na(y) && class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y])) > 50){
+      rm_y_labels<-TRUE
+    }
+  }
+
+
+  browser()
 
   gg_chart<-common_stats_aesethetics(gg_chart,
                                      title=title,
@@ -466,7 +533,6 @@ common_stats_aesethetics<-function(gg_chart=NA,
                                    x_breaks = FALSE,
                                    y_breaks = FALSE,
                                    shrink_plot_margin=FALSE){
-
 
 
   if(!is.na(title)) {
