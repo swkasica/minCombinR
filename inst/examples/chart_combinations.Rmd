@@ -155,7 +155,7 @@ plot(composite_combo)
 *It also works when there isn't a tree invovled.
 ```{r}
 composite_combo<-specify_combination(combo_type = "composite",
-                                     base_charts = c("bar_alt","scatter_chart"))
+                                     base_charts = c("bar_alt","scatter_chart","scatter_chart_two"))
 
 plot(composite_combo)
 

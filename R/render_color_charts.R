@@ -33,6 +33,18 @@ render_heatmap <- function(...) {
     # theme(legend.position = "none")
   }
 
+  if(class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x])) > 50){
+      rm_x_labels<-TRUE
+    }
+  }
+
+  if(class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y])) > 50){
+      rm_y_labels<-TRUE
+    }
+  }
+
   gg_chart<-common_stats_aesethetics(gg_chart,
                                      title=title,
                                      flip_coord = flip_coord,
@@ -66,6 +78,19 @@ render_2D_density <- function(...) {
       scale_fill_manual(name = default_colour_var, values = ..level..)
   }
 
+  if(class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x])) > 50){
+      rm_x_labels<-TRUE
+    }
+  }
+
+  if(class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y])) > 50){
+      rm_y_labels<-TRUE
+    }
+  }
+
+
   gg_chart<-common_stats_aesethetics(gg_chart,
                                      title=title,
                                      flip_coord = flip_coord,
@@ -94,6 +119,18 @@ render_category_stripe <- function(...) {
           panel.background = element_blank(),
           legend.position = "none")
 
+
+  if(class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x])) > 50){
+      rm_x_labels<-TRUE
+    }
+  }
+
+  if(class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y])) > 50){
+      rm_y_labels<-TRUE
+    }
+  }
 
   gg_chart<-common_stats_aesethetics(gg_chart,
                                      title=title,

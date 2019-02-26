@@ -52,7 +52,7 @@ pdf_chart<-specify_base(chart_type = "pdf",data="tab_dat",x = "latitude")
 plot(pdf_chart)
 
 #works but weird a bit
-boxplot_chart<-specify_base(chart_type = "boxplot",data="tab_dat",x = "latitude",y="country")
+boxplot_chart<-specify_base(chart_type = "boxplot",data="tab_dat",x = "country", y ="latitude")
 plot(boxplot_chart)
 
 #we'll even let you make a pie chart
@@ -88,12 +88,14 @@ ebov_heat_data<-ebov %>%
   group_by(country,month) %>%
   count()
 
-heatmap_chart<-specify_base(chart_type = "heatmap",data="ebov_heat_data",x = "country",y="month",z = "n")
+heatmap_chart<-specify_base(chart_type = "heatmap",data="ebov_heat_data",x = "country",y="month",color = "n")
 plot(heatmap_chart)
 
+```
+
+```{r}
 density_chart<-specify_base(chart_type = "density",data="tab_dat",x = "latitude",y="longitude")
 plot(density_chart)
-
 ```
 
 Category stripes are not really meant to be stand alone chart types, they are generally meant to be enhancements, typically for phylogenetic trees, where adding a category stripe is a common paradigm.
