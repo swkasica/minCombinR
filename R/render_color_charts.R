@@ -16,7 +16,7 @@ render_heatmap <- function(...) {
     data<-get(data,envir = globalenv())  #get data from the global environment
   }
 
-  gg_chart <- ggplot(data, aes_string(x, y, fill = z)) +
+  gg_chart <- ggplot(data, aes_string(x, y, fill = color)) +
     geom_tile() +
     theme(legend.position="bottom")
 
@@ -25,11 +25,24 @@ render_heatmap <- function(...) {
     if (default_colour_var != z && !(is.na(default_colour_var))) {
       warning("z is masking link_var because link_var and z have to be the same for a heat_map when linking with colour")
     }
+
     get_palette <- colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))
     colr_pal <- get_palette(abs(diff(colour_scale)))
     gg_chart <- gg_chart +
       scale_fill_gradientn(colours = colr_pal, limits = colour_scale)
     # theme(legend.position = "none")
+  }
+
+  if(class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x])) > 50){
+      rm_x_labels<-TRUE
+    }
+  }
+
+  if(class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y])) > 50){
+      rm_y_labels<-TRUE
+    }
   }
 
   gg_chart<-common_stats_aesethetics(gg_chart,
@@ -65,6 +78,19 @@ render_2D_density <- function(...) {
       scale_fill_manual(name = default_colour_var, values = ..level..)
   }
 
+  if(class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x])) > 50){
+      rm_x_labels<-TRUE
+    }
+  }
+
+  if(class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y])) > 50){
+      rm_y_labels<-TRUE
+    }
+  }
+
+
   gg_chart<-common_stats_aesethetics(gg_chart,
                                      title=title,
                                      flip_coord = flip_coord,
@@ -93,6 +119,18 @@ render_category_stripe <- function(...) {
           panel.background = element_blank(),
           legend.position = "none")
 
+
+  if(class(data[,x]) %in% c("character","factor")){
+    if(length(unique(data[,x])) > 50){
+      rm_x_labels<-TRUE
+    }
+  }
+
+  if(class(data[,y]) %in% c("character","factor")){
+    if(length(unique(data[,y])) > 50){
+      rm_y_labels<-TRUE
+    }
+  }
 
   gg_chart<-common_stats_aesethetics(gg_chart,
                                      title=title,
